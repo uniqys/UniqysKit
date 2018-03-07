@@ -4,7 +4,7 @@
   "description": "Blockchain Platform Project",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "tslint -c tslint.json '**/*.ts'"
+    "lint": "tslint -c tslint.json *"
   },
   "repository": {
     "type": "git",
@@ -19,9 +19,9 @@
   "homepage": "https://github.com/mfac/BPP#readme",
   "devDependencies": {
     "tslint": "^5.9.1",
-    "tslint-config-standard": "^7.0.0"
+    "tslint-config-standard": "^7.0.0",
+    "typescript": "^2.7.2"
   },
   "dependencies": {
-    "typescript": "^2.7.2"
   }
 }
