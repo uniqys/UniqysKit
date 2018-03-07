@@ -1,0 +1,27 @@
+{
+  "name": "bpp-project",
+  "version": "0.0.1",
+  "description": "Blockchain Platform Project",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "tslint -c tslint.json *"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mfac/BPP.git"
+  },
+  "keywords": [],
+  "author": "Mobile Factory",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mfac/BPP/issues"
+  },
+  "homepage": "https://github.com/mfac/BPP#readme",
+  "devDependencies": {
+    "tslint": "^5.9.1",
+    "tslint-config-standard": "^7.0.0",
+    "typescript": "^2.7.2"
+  },
+  "dependencies": {
+  }
+}
