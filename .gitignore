@@ -1,4 +1,14 @@
+# OS
 .DS_Store
+Thumbs.db
 
-node_modules
+# npm
+node_modules/
 npm-debug.log
+yarn-error.log
+
+# build output
+dist/
+
+# test output
+coverage/
