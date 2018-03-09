@@ -12,6 +12,7 @@ class Block implements Hashable {
     this.hash = header.hash
   }
 }
+
 class BlockHeader implements Hashable {
   public readonly hash: Hash
 
@@ -66,19 +67,25 @@ class Consensus implements Hashable {
 }
 
 export class Transaction implements Hashable {
+  public readonly buffer: Buffer
   public readonly hash: Hash
 
   constructor (
-    public readonly data: Hashable,
+    public readonly sign: Signature,
     public readonly nonce: number,
-    public readonly sign: Signature
+    public readonly data: Buffer
 
   ) {
-    this.hash = Hash.fromData(Buffer.concat([
-      data.hash.buffer,
+    this.buffer = Buffer.concat([
+      sign.buffer,
       UInt64.fromNumber(nonce).buffer,
-      sign.buffer
-    ]))
+      data
+    ])
+    this.hash = Hash.fromData(this.buffer)
+  }
+
+  public toString (): string {
+    return this.buffer.toString('hex')
   }
 }
 
