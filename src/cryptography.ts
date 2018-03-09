@@ -13,27 +13,6 @@ export interface Hashable {
   hash: Hash
 }
 
-export class KeyPair {
-  public readonly publicKey: Bytes64
-  private readonly privateKey: Bytes32
-  constructor (
-    privateKey?: Buffer
-  ) {
-    if (privateKey === undefined) {
-      do {
-        privateKey = randomBytes(32)
-      } while (!secp256k1.privateKeyVerify(privateKey))
-    }
-    this.privateKey = new Bytes32(privateKey)
-    this.publicKey = new Bytes64(secp256k1.publicKeyCreate(privateKey, false).slice(1))
-  }
-
-  // Ethereum compatible
-  public sign (messageHash: Hash) {
-    return Signature.sign(messageHash, this.privateKey)
-  }
-}
-
 export class Signature implements Hashable {
   public readonly buffer: Buffer
   public readonly hash: Hash
@@ -58,5 +37,26 @@ export class Signature implements Hashable {
 
   public recover (messageHash: Hash): Bytes64 {
     return new Bytes64(secp256k1.recover(messageHash.buffer, this.buffer.slice(0, 64), this.buffer.readUInt8(64), false).slice(1))
+  }
+}
+
+export class KeyPair {
+  public readonly publicKey: Bytes64
+  private readonly privateKey: Bytes32
+  constructor (
+    privateKey?: Buffer
+  ) {
+    if (privateKey === undefined) {
+      do {
+        privateKey = randomBytes(32)
+      } while (!secp256k1.privateKeyVerify(privateKey))
+    }
+    this.privateKey = new Bytes32(privateKey)
+    this.publicKey = new Bytes64(secp256k1.publicKeyCreate(privateKey, false).slice(1))
+  }
+
+  // Ethereum compatible
+  public sign (messageHash: Hash) {
+    return Signature.sign(messageHash, this.privateKey)
   }
 }

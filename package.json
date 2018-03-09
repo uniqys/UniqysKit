@@ -13,6 +13,7 @@
     "watch": "run-p watch:*",
     "watch:ts": "tsc -w",
     "//watch:app": "nodemon dist/app.js",
+    "pretest": "run-s build lint",
     "test": "jest --forceExit --coverage --verbose"
   },
   "repository": {
