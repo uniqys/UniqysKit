@@ -18,13 +18,13 @@ export function privateKeyTweakAdd(): any;
 
 export function privateKeyTweakMul(): any;
 
-export function privateKeyVerify(): any;
+export function privateKeyVerify(privateKey: Buffer): boolean;
 
 export function publicKeyCombine(): any;
 
 export function publicKeyConvert(): any;
 
-export function publicKeyCreate(): any;
+export function publicKeyCreate(privateKey: Buffer, compressed?: boolean): Buffer;
 
 export function publicKeyTweakAdd(): any;
 
@@ -32,7 +32,7 @@ export function publicKeyTweakMul(): any;
 
 export function publicKeyVerify(): any;
 
-export function recover(): any;
+export function recover(message: Buffer, signature: Buffer, recovery: number , compressed?: boolean): Buffer;
 
 export function sign(message: Buffer, privateKey: Buffer , options?: any): {signature: Buffer, recovery: number};
 

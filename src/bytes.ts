@@ -5,6 +5,10 @@ export class Byte {
   ) {
     if (buffer.length !== 1) { throw TypeError() }
   }
+
+  public equals (other: Byte): boolean {
+    return this.buffer.equals(other.buffer)
+  }
 }
 
 export class Bytes4 {
@@ -12,6 +16,10 @@ export class Bytes4 {
     public readonly buffer: Buffer
   ) {
     if (buffer.length !== 4) { throw TypeError() }
+  }
+
+  public equals (other: Bytes4): boolean {
+    return this.buffer.equals(other.buffer)
   }
 }
 
@@ -21,6 +29,10 @@ export class Bytes8 {
   ) {
     if (buffer.length !== 8) { throw TypeError() }
   }
+
+  public equals (other: Bytes8): boolean {
+    return this.buffer.equals(other.buffer)
+  }
 }
 
 export class Bytes32 {
@@ -28,6 +40,21 @@ export class Bytes32 {
     public readonly buffer: Buffer
   ) {
     if (buffer.length !== 32) { throw TypeError() }
+  }
+  public equals (other: Bytes32): boolean {
+    return this.buffer.equals(other.buffer)
+  }
+}
+
+export class Bytes64 {
+  constructor (
+    public readonly buffer: Buffer
+  ) {
+    if (buffer.length !== 64) { throw TypeError() }
+  }
+
+  public equals (other: Bytes64): boolean {
+    return this.buffer.equals(other.buffer)
   }
 }
 
