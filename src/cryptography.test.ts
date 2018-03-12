@@ -1,4 +1,5 @@
 import { Hash, KeyPair } from 'cryptography'
+import { Bytes32 } from 'bytes'
 
 /* tslint:disable:no-unused-expression */
 describe('Hash', () => {
@@ -10,7 +11,7 @@ describe('Hash', () => {
 
 describe('KeyPair', () => {
   it('can be made by specific private key', () => {
-    const privateKey = new Buffer('This is very awesome private key')
+    const privateKey = new Bytes32(new Buffer('This is very awesome private key'))
     expect(() => { new KeyPair(privateKey) }).not.toThrow()
   })
   it('can be made by random generated key', () => {

@@ -44,15 +44,17 @@ export class KeyPair {
   public readonly publicKey: Bytes64
   private readonly privateKey: Bytes32
   constructor (
-    privateKey?: Buffer
+    privateKey?: Bytes32
   ) {
     if (privateKey === undefined) {
+      let privateKeyBuff: Buffer
       do {
-        privateKey = randomBytes(32)
-      } while (!secp256k1.privateKeyVerify(privateKey))
+        privateKeyBuff = randomBytes(32)
+      } while (!secp256k1.privateKeyVerify(privateKeyBuff))
+      privateKey = new Bytes32(privateKeyBuff)
     }
-    this.privateKey = new Bytes32(privateKey)
-    this.publicKey = new Bytes64(secp256k1.publicKeyCreate(privateKey, false).slice(1))
+    this.privateKey = privateKey
+    this.publicKey = new Bytes64(secp256k1.publicKeyCreate(privateKey.buffer, false).slice(1))
   }
 
   // Ethereum compatible
