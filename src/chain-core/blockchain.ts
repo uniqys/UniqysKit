@@ -2,18 +2,40 @@ import { Hash, Hashable, Signature } from 'cryptography'
 import { MerkleTree } from 'structure'
 import { UInt64 } from 'bytes'
 
-class Block implements Hashable {
-  public readonly hash: Hash
+export class Blockchain {
+  public readonly blocks: Block[] = []
 
   constructor (
-    public readonly header: BlockHeader,
-    public readonly data: BlockData
+    public readonly genesisBlock: Block
+
+  ) {
+    this.blocks.push(genesisBlock)
+  }
+
+  public lastBlockHash (): Hash {
+    return this.blocks[this.height() - 1].hash
+  }
+
+  public height (): number {
+    return this.blocks.length
+  }
+
+  public addBlock (block: Block) {
+    this.blocks.push(block)
+  }
+}
+
+export class Block implements Hashable {
+  public readonly hash: Hash
+  constructor (
+    public readonly data: BlockData,
+    public readonly header: BlockHeader
   ) {
     this.hash = header.hash
   }
 }
 
-class BlockHeader implements Hashable {
+export class BlockHeader implements Hashable {
   public readonly hash: Hash
 
   constructor (
@@ -37,12 +59,12 @@ class BlockHeader implements Hashable {
   }
 }
 
-class BlockData implements Hashable {
+export class BlockData implements Hashable {
   public readonly hash: Hash
 
   constructor (
-    public readonly lastBlockConsensus: Consensus,
-    public readonly transactions: MerkleTree<Transaction>
+    public readonly transactions: MerkleTree<Transaction>,
+    public readonly lastBlockConsensus: Consensus
 
   ) {
     this.hash = Hash.fromData(Buffer.concat([
@@ -52,7 +74,7 @@ class BlockData implements Hashable {
   }
 }
 
-class Consensus implements Hashable {
+export class Consensus implements Hashable {
   public readonly hash: Hash
 
   constructor (
@@ -87,18 +109,8 @@ export class Transaction implements Hashable {
   public toString (): string {
     return this.buffer.toString('hex')
   }
-}
 
-export class Blockchain {
-  public blocks: Block[] = []
-  public height: number = 0
-
-  constructor (
-    public readonly genesisHash: Hash
-
-  ) {}
-
-  public lastBlockHash (): Hash {
-    return this.height === 0 ? this.genesisHash : this.blocks[this.height - 1].hash
+  public equals (other: Transaction): boolean {
+    return this.buffer.equals(other.buffer)
   }
 }

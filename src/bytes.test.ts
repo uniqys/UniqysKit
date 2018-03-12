@@ -8,6 +8,9 @@ describe('Byte', () => {
   it('throw error when wrong size', () => {
     expect(() => { new Byte(new Buffer(2)) }).toThrow()
   })
+  it('is equatable', () => {
+    expect(new Byte(new Buffer('a')).equals(new Byte(new Buffer('a')))).toBeTruthy()
+  })
 })
 
 describe('Bytes4', () => {
@@ -16,6 +19,9 @@ describe('Bytes4', () => {
   })
   it('throw error when wrong size', () => {
     expect(() => { new Bytes4(new Buffer(1)) }).toThrow()
+  })
+  it('is equatable', () => {
+    expect(new Bytes4(new Buffer('buzz')).equals(new Bytes4(new Buffer('buzz')))).toBeTruthy()
   })
 })
 
@@ -26,14 +32,21 @@ describe('Bytes8', () => {
   it('throw error when wrong size', () => {
     expect(() => { new Bytes8(new Buffer(1)) }).toThrow()
   })
-}
-)
+  it('is equatable', () => {
+    expect(new Bytes8(new Buffer('fizzBuzz')).equals(new Bytes8(new Buffer('fizzBuzz')))).toBeTruthy()
+  })
+})
+
 describe('Bytes32', () => {
   it('can create from 32 byte buffer', () => {
     expect(() => { new Bytes32(new Buffer(32)) }).not.toThrow()
   })
   it('throw error when wrong size', () => {
     expect(() => { new Bytes32(new Buffer(1)) }).toThrow()
+  })
+  it('is equatable', () => {
+    expect(new Bytes32(new Buffer('This sentence has no meaning yet'))
+      .equals(new Bytes32(new Buffer('This sentence has no meaning yet')))).toBeTruthy()
   })
 })
 
@@ -43,6 +56,10 @@ describe('Bytes64', () => {
   })
   it('throw error when wrong size', () => {
     expect(() => { new Bytes64(new Buffer(1)) }).toThrow()
+  })
+  it('is equatable', () => {
+    expect(new Bytes64(new Buffer('This sentence had no meaning, this sentence still has no meaning'))
+      .equals(new Bytes64(new Buffer('This sentence had no meaning, this sentence still has no meaning')))).toBeTruthy()
   })
 })
 

@@ -1,5 +1,4 @@
-import { Transaction, Blockchain } from 'chain-core/blockchain'
-import { Hash } from 'cryptography'
+import { Transaction, Blockchain, Block } from 'chain-core/blockchain'
 
 class TransactionPool implements IterableIterator<Transaction> {
   private pool = new Map<string, Transaction>()
@@ -26,9 +25,9 @@ export class Validator {
   private readonly transactionPool = new TransactionPool()
 
   constructor (
-    genesisHash: Hash
+    genesisBlock: Block
   ) {
-    this.blockchain = new Blockchain(genesisHash)
+    this.blockchain = new Blockchain(genesisBlock)
   }
 
   public addTransaction (tx: Transaction) {

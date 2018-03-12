@@ -17,6 +17,7 @@
         "hashable",
         "keccak",
         "merkle",
-        "secp"
+        "secp",
+        "truthy"
     ]
 }
