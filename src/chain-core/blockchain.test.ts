@@ -23,9 +23,10 @@ describe('block', () => {
   it('can create', () => {
     const data = new BlockData(new MerkleTree([]), new Consensus(0, new MerkleTree([])))
     const lastBlockHash = new Hash((b => { b.write('foo'); return b })(new Buffer(32)))
-    const state = new MerkleTree([])
+    const state = new Hash((b => { b.write('bar'); return b })(new Buffer(32)))
+    const validator = new Hash((b => { b.write('buzz'); return b })(new Buffer(32)))
     const epoch = 1520825696
-    const header = new BlockHeader(1, epoch, lastBlockHash, data.transactions.root, data.lastBlockConsensus.hash, state.root, 0)
+    const header = new BlockHeader(1, epoch, lastBlockHash, data.transactions.root, data.lastBlockConsensus.hash, state, validator)
     expect(() => { new Block(data, header) }).not.toThrow()
   })
 })

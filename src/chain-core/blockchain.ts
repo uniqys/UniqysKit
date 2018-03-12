@@ -12,8 +12,12 @@ export class Blockchain {
     this.blocks.push(genesisBlock)
   }
 
+  public lastBlock (): Block {
+    return this.blocks[this.height() - 1]
+  }
+
   public lastBlockHash (): Hash {
-    return this.blocks[this.height() - 1].hash
+    return this.lastBlock().hash
   }
 
   public height (): number {
@@ -44,8 +48,8 @@ export class BlockHeader implements Hashable {
     public readonly lastBlockHash: Hash,
     public readonly transactionRoot: Hash,
     public readonly lastBlockConsensusHash: Hash,
-    public readonly stateRoot: Hash,
-    public readonly lastValidatorSetChanged: number
+    public readonly appStateHash: Hash,
+    public readonly validatorSetHash: Hash
   ) {
     this.hash = Hash.fromData(Buffer.concat([
       UInt64.fromNumber(height).buffer,
@@ -53,8 +57,8 @@ export class BlockHeader implements Hashable {
       lastBlockHash.buffer,
       transactionRoot.buffer,
       lastBlockConsensusHash.buffer,
-      stateRoot.buffer,
-      UInt64.fromNumber(lastValidatorSetChanged).buffer
+      appStateHash.buffer,
+      validatorSetHash.buffer
     ]))
   }
 }
