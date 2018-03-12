@@ -16,6 +16,12 @@
     "pretest": "run-s build lint",
     "test": "jest --forceExit --coverage --verbose"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "run-s build lint",
+      "pre-push": "yarn test"
+    }
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mfac/BPP.git"
@@ -30,6 +36,7 @@
   "devDependencies": {
     "@types/jest": "^22.2.0",
     "@types/node": "^9.4.6",
+    "husky": "^0.15.0-rc.8",
     "jest": "^22.0.4",
     "nodemon": "^1.13.0",
     "npm-run-all": "^4.1.2",
