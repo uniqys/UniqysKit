@@ -1,7 +1,6 @@
 import levelup from 'levelup'
 import memdown from 'memdown'
-import semaphore, { Semaphore } from 'semaphore'
-import { resolve } from 'path'
+import semaphore from 'semaphore'
 
 interface IDatabaseOps {
   db: string,
@@ -22,38 +21,57 @@ export class Block {
 }
 
 export class Database {
-  blockDatabase: any
-  blockDatabaseOps: Array<IDatabaseOps>
-  semaphore: Semaphore
+  private semaphore: semaphore.Semaphore
+  private blockDatabase: any
+  private blockDatabaseOps: Array<IDatabaseOps>
 
-  constructor (options: any) {
-    this.blockDatabase = options.database ? options.database : levelup(memdown())
+  constructor () {
+    this.blockDatabase = levelup(memdown())
     this.blockDatabaseOps = []
     this.semaphore = semaphore(1)
   }
 
-  public putBlock (block: Block): Promise<void> {
-    return new Promise((resolve) => {
-      this.semaphore.take(() => {
-        this.blockDatabaseOps.push({
-          db: 'block',
-          type: 'put',
-          key: block.hash(),
-          value: block.serialize(),
-          valueEncoding: 'binary'
-        })
-        this.batchDatabaseOps()
-        this.semaphore.leave()
-        return resolve()
-      })
+  public touch (fn: semaphore.Task): void {
+    this.semaphore.take(() => {
+      fn()
     })
   }
 
-  public getBlock (hash: string): Promise<Buffer> {
+  public leave (): void {
+    this.semaphore.leave()
+  }
+
+  public isLocked (): boolean {
+    return this.semaphore.available(1) === false
+  }
+
+  public putBlock (block: Block): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.blockDatabaseOps.push({
+        db: 'block',
+        type: 'put',
+        key: block.hash(),
+        value: block.serialize(),
+        valueEncoding: 'binary'
+      })
+      this.batchDatabaseOps()
+        .then(() => {
+          resolve()
+        })
+        .catch(err => {
+          reject(err)
+        })
+    })
+  }
+
+  public getBlock (hash: string): Promise <Buffer > {
     return this.blockDatabase.get(hash)
   }
 
-  private batchDatabaseOps (): Promise<any> {
+  private batchDatabaseOps (): Promise<any > {
+    if (!this.isLocked()) {
+      return Promise.reject(new Error('do not use database without lock.'))
+    }
     return this.blockDatabase.batch(this.blockDatabaseOps)
   }
 }
