@@ -1,6 +1,5 @@
-import { Transaction, Blockchain, BlockData, Consensus, BlockHeader, Block } from 'chain-core/blockchain'
+import { Transaction, Blockchain, BlockData, Consensus, BlockHeader, Block, ValidatorSet, Validator } from 'chain-core/blockchain'
 import { MerkleTree } from 'structure'
-import { Bytes32 } from 'bytes'
 import { KeyPair, Hash } from 'cryptography'
 import * as dapi from 'chain-core/dapi'
 
@@ -25,7 +24,7 @@ class TransactionPool implements Iterable<Transaction> {
 
 class ValidatorCore implements dapi.Core {
   constructor (
-    private readonly validator: Validator
+    private readonly validator: ValidatorNode
   ) {}
 
   sendTransaction (transaction: Transaction): void {
@@ -33,7 +32,7 @@ class ValidatorCore implements dapi.Core {
   }
 }
 
-export class Validator {
+export class ValidatorNode {
   public readonly blockchain: Blockchain
   private readonly transactionPool = new TransactionPool()
   private readonly keyPair: KeyPair
@@ -45,10 +44,10 @@ export class Validator {
   constructor (
     dappsConstructor: dapi.DappsConstructor,
     genesisBlock: Block,
-    privateKey?: Bytes32
+    keyPair?: KeyPair
   ) {
     this.blockchain = new Blockchain(genesisBlock)
-    this.keyPair = new KeyPair(privateKey)
+    this.keyPair = keyPair === undefined ? new KeyPair() : keyPair
 
     this.lastAppStateHash = genesisBlock.header.appStateHash
     this.lastExecuteBlockHeight = 0
@@ -68,9 +67,9 @@ export class Validator {
 
   public addReachedBlock (block: Block) {
     // validate and update app state
-    // TODO: more validation
     if (this.blockchain.height() !== this.lastExecuteBlockHeight) { throw new Error('need execute last block transactions') }
     if (!block.header.appStateHash.equals(this.lastAppStateHash)) { throw new Error('invalid block') }
+    this.blockchain.validateNewBlock(block)
     this.blockchain.addBlock(block)
     this.transactionPool.remove(block.data.transactions)
   }
@@ -83,19 +82,19 @@ export class Validator {
 
     // TODO: 複数Validator対応
     // only my signature
-    const lastBlockConsensus = new Consensus(0, new MerkleTree([this.keyPair.sign(this.blockchain.lastBlockHash())]))
+    const lastBlockConsensus = new Consensus(0, new MerkleTree([this.keyPair.sign(this.blockchain.lastBlock().hash)]))
     // unchangeable validator set
-    const validatorSetHash = Hash.fromData('dummy')
+    const nextValidatorSet = new ValidatorSet([new Validator(this.keyPair.address(), 100)])
 
-    const data = new BlockData(new MerkleTree(txs), lastBlockConsensus)
+    const data = new BlockData(new MerkleTree(txs), lastBlockConsensus, nextValidatorSet)
     const header = new BlockHeader(
       this.blockchain.height() + 1,
       Math.floor((new Date().getTime()) / 1000),
-      this.blockchain.lastBlockHash(),
+      this.blockchain.lastBlock().hash,
       data.transactions.root,
       data.lastBlockConsensus.hash,
-      this.lastAppStateHash,
-      validatorSetHash
+      nextValidatorSet.root,
+      this.lastAppStateHash
     )
     const block = new Block(data, header)
     this.blockchain.addBlock(block)

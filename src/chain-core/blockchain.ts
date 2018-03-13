@@ -1,4 +1,4 @@
-import { Hash, Hashable, Signature } from 'cryptography'
+import { Hash, Hashable, Signature, Address } from 'cryptography'
 import { MerkleTree } from 'structure'
 import { UInt64 } from 'bytes'
 
@@ -12,12 +12,23 @@ export class Blockchain {
     this.blocks.push(genesisBlock)
   }
 
-  public lastBlock (): Block {
-    return this.blocks[this.height() - 1]
+  public blockOf (height: number): Block {
+    if (!(1 <= height && height <= this.height())) { throw new Error('height out of range') }
+    return this.blocks[height - 1]
   }
 
-  public lastBlockHash (): Hash {
-    return this.lastBlock().hash
+  public validatorSetOf (height: number): ValidatorSet {
+    if (!(1 <= height && height <= (this.height() + 1))) { throw new Error('height out of range') }
+    // this block validatorSet is last block nextValidatorSet
+    return this.blockOf(Math.max(height - 1, 1)).data.nextValidatorSet
+  }
+
+  public lastBlock (): Block {
+    return this.blockOf(this.height())
+  }
+
+  public lastValidatorSet (): ValidatorSet {
+    return this.validatorSetOf(this.height())
   }
 
   public height (): number {
@@ -26,6 +37,18 @@ export class Blockchain {
 
   public addBlock (block: Block) {
     this.blocks.push(block)
+  }
+
+  public validateNewBlock (block: Block) {
+    const lastBlock = this.lastBlock()
+    const lastValidatorSet = this.lastValidatorSet()
+    if (!(block.header.height === lastBlock.header.height + 1)) { throw new Error('invalid block height') }
+    if (!(block.header.timestamp > lastBlock.header.timestamp)) { throw new Error('invalid block timestamp') }
+    if (!(block.header.lastBlockHash.equals(lastBlock.hash))) { throw new Error('invalid lastBlockHash') }
+    // validate data
+    block.validate()
+    // verify consensus
+    block.data.lastBlockConsensus.validate(lastBlock.hash, lastValidatorSet)
   }
 }
 
@@ -36,6 +59,12 @@ export class Block implements Hashable {
     public readonly header: BlockHeader
   ) {
     this.hash = header.hash
+  }
+
+  public validate () {
+    if (this.header.transactionRoot !== this.data.transactions.root) { throw new Error('invalid transactionRoot') }
+    if (this.header.lastBlockConsensusHash !== this.data.lastBlockConsensus.hash) { throw new Error('invalid lastBlockConsensusHash') }
+    if (this.header.nextValidatorSetRoot !== this.data.nextValidatorSet.root) { throw new Error('invalid nextValidatorSetRoot') }
   }
 }
 
@@ -48,8 +77,8 @@ export class BlockHeader implements Hashable {
     public readonly lastBlockHash: Hash,
     public readonly transactionRoot: Hash,
     public readonly lastBlockConsensusHash: Hash,
-    public readonly appStateHash: Hash,
-    public readonly validatorSetHash: Hash
+    public readonly nextValidatorSetRoot: Hash,
+    public readonly appStateHash: Hash
   ) {
     this.hash = Hash.fromData(Buffer.concat([
       UInt64.fromNumber(height).buffer,
@@ -57,25 +86,18 @@ export class BlockHeader implements Hashable {
       lastBlockHash.buffer,
       transactionRoot.buffer,
       lastBlockConsensusHash.buffer,
-      appStateHash.buffer,
-      validatorSetHash.buffer
+      nextValidatorSetRoot.buffer,
+      appStateHash.buffer
     ]))
   }
 }
 
-export class BlockData implements Hashable {
-  public readonly hash: Hash
-
+export class BlockData {
   constructor (
     public readonly transactions: MerkleTree<Transaction>,
-    public readonly lastBlockConsensus: Consensus
-
-  ) {
-    this.hash = Hash.fromData(Buffer.concat([
-      transactions.root.buffer,
-      lastBlockConsensus.hash.buffer
-    ]))
-  }
+    public readonly lastBlockConsensus: Consensus,
+    public readonly nextValidatorSet: ValidatorSet
+  ) { }
 }
 
 export class Consensus implements Hashable {
@@ -90,6 +112,16 @@ export class Consensus implements Hashable {
       signatures.root.buffer
     ]))
   }
+
+  public validate (messageHash: Hash, validatorSet: ValidatorSet) {
+    let power = 0
+    for (const sign of this.signatures) {
+      const address = Address.fromPublicKey(sign.recover(messageHash))
+      if (!validatorSet.exists(address)) { throw new Error('not exists in validator set') }
+      power += validatorSet.powerOf(address)
+    }
+    if (!(power * 3 >= validatorSet.allPower * 2)) { throw new Error('signatures power less than 2/3 validator set power') }
+  }
 }
 
 export class Transaction implements Hashable {
@@ -103,7 +135,7 @@ export class Transaction implements Hashable {
 
   ) {
     this.buffer = Buffer.concat([
-      sign.buffer,
+      sign.hash.buffer,
       UInt64.fromNumber(nonce).buffer,
       data
     ])
@@ -116,5 +148,40 @@ export class Transaction implements Hashable {
 
   public equals (other: Transaction): boolean {
     return this.buffer.equals(other.buffer)
+  }
+}
+
+export class Validator implements Hashable {
+  public readonly hash: Hash
+  constructor (
+    public readonly address: Address,
+    public readonly power: number
+  ) {
+    this.hash = Hash.fromData(Buffer.concat([
+      address.buffer,
+      UInt64.fromNumber(power).buffer
+    ]))
+  }
+}
+
+export class ValidatorSet extends MerkleTree<Validator> {
+  public readonly allPower: number
+  private readonly power: Map<string, number>
+  constructor (
+    validators: Validator[]
+  ) {
+    super(validators)
+    this.power = new Map(validators.map<[string, number]>(v => [v.address.toString(), v.power]))
+    let sum = 0
+    for (const v of validators) { sum += v.power }
+    this.allPower = sum
+  }
+
+  public exists (address: Address) {
+    return this.power.get(address.toString()) !== undefined
+  }
+
+  public powerOf (address: Address) {
+    return this.power.get(address.toString())!
   }
 }

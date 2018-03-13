@@ -1,4 +1,4 @@
-import { Hash, KeyPair } from 'cryptography'
+import { Hash, KeyPair, Address } from 'cryptography'
 import { Bytes32 } from 'bytes'
 
 /* tslint:disable:no-unused-expression */
@@ -20,9 +20,32 @@ describe('KeyPair', () => {
 })
 
 describe('Signature', () => {
-  it('sign message and recovery', () => {
+  it('sign message and recover', () => {
     const message = Hash.fromData('The quick brown fox jumps over the lazy dog')
     const key = new KeyPair()
     expect(key.sign(message).recover(message).equals(key.publicKey)).toBeTruthy()
+  })
+  it('can not recover invalid signature', () => {
+    const message = Hash.fromData('The quick brown fox jumps over the lazy dog')
+    // random key can recover after modified rarely
+    const key = new KeyPair(new Bytes32(new Buffer('cbfde2698ab8d8d3f2ddfea748d972bcc9cd5b74f3152c13d51d9c576e0a15f5', 'hex')))
+    const sign = key.sign(message)
+    sign.signature.buffer.write('modify')
+    expect(() => { sign.recover(message) }).toThrow('couldn\'t recover public key from signature')
+  })
+})
+
+describe('Address', () => {
+  it('can be made from public key', () => {
+    expect(() => { Address.fromPublicKey(new KeyPair().publicKey) }).not.toThrow()
+  })
+  it('can be made from key pair shorthand', () => {
+    const keyPair = new KeyPair()
+    expect(keyPair.address().toString()).toBe(Address.fromPublicKey(keyPair.publicKey).toString())
+  })
+  it('has string representation', () => {
+    const address = new KeyPair().address()
+    const stringRepresentation = address.toString()
+    expect(Address.fromString(stringRepresentation).equals(address)).toBeTruthy()
   })
 })

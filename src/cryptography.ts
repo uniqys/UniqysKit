@@ -14,29 +14,55 @@ export interface Hashable {
 }
 
 export class Signature implements Hashable {
-  public readonly buffer: Buffer
   public readonly hash: Hash
 
   constructor (
-    signature: Bytes64,
-    recovery: UInt8
+    public signature: Bytes64,
+    public recovery: number
   ) {
-    this.buffer = Buffer.concat([
+    this.hash = Hash.fromData(Buffer.concat([
       signature.buffer,
-      recovery.buffer
-    ])
-    this.hash = Hash.fromData(this.buffer)
+      UInt8.fromNumber(recovery).buffer
+    ]))
   }
 
   // Ethereum compatible
   public static sign (messageHash: Hash, privateKey: Bytes32) {
     const sig = secp256k1.sign(new Buffer(messageHash.buffer), new Buffer(privateKey.buffer))
 
-    return new Signature(new Bytes64(sig.signature), UInt8.fromNumber(sig.recovery))
+    return new Signature(new Bytes64(sig.signature), sig.recovery)
   }
 
   public recover (messageHash: Hash): Bytes64 {
-    return new Bytes64(secp256k1.recover(messageHash.buffer, this.buffer.slice(0, 64), this.buffer.readUInt8(64), false).slice(1))
+    try {
+      return new Bytes64(secp256k1.recover(messageHash.buffer, this.signature.buffer, this.recovery, false).slice(1))
+    } catch (e) {
+      throw new Error('couldn\'t recover public key from signature')
+    }
+  }
+}
+
+export class Address {
+  constructor (
+    public readonly buffer: Buffer
+  ) { }
+
+  public static fromPublicKey (publicKey: Bytes64): Address {
+    // TODO: something conversion
+    return new Address(publicKey.buffer)
+  }
+
+  // string representation
+  // TODO: checksum? base58?
+  public static fromString (addressString: string): Address {
+    return new Address(new Buffer(addressString, 'hex'))
+  }
+  public toString (): string {
+    return this.buffer.toString('hex')
+  }
+
+  public equals (other: Address): boolean {
+    return this.buffer.equals(other.buffer)
   }
 }
 
@@ -60,5 +86,9 @@ export class KeyPair {
   // Ethereum compatible
   public sign (messageHash: Hash) {
     return Signature.sign(messageHash, this.privateKey)
+  }
+
+  public address (): Address {
+    return Address.fromPublicKey(this.publicKey)
   }
 }
