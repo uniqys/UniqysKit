@@ -1,29 +1,22 @@
 import levelup from 'levelup'
 import memdown from 'memdown'
 import semaphore from 'semaphore'
+import { Block } from 'chain-core/blockchain'
+import { Hash } from 'cryptography'
 
-interface IDatabaseOps {
+interface IBlockDatabaseOps {
   db: string,
   type: string,
-  key: string,
+  key: Hash,
   keyEncoding?: string,
   value: string,
   valueEncoding?: string
 }
 
-export class Block {
-  hash (): string {
-    return 'test-hash'
-  }
-  serialize (): string {
-    return 'test-serialize'
-  }
-}
-
 export class Database {
   private semaphore: semaphore.Semaphore
   private blockDatabase: any
-  private blockDatabaseOps: Array<IDatabaseOps>
+  private blockDatabaseOps: Array<IBlockDatabaseOps>
 
   constructor () {
     this.blockDatabase = levelup(memdown())
@@ -45,13 +38,14 @@ export class Database {
     return this.semaphore.available(1) === false
   }
 
-  public putBlock (block: Block): Promise<void> {
+  public addBlock (block: Block): Promise<void> {
     return new Promise((resolve, reject) => {
       this.blockDatabaseOps.push({
         db: 'block',
         type: 'put',
-        key: block.hash(),
-        value: block.serialize(),
+        key: block.hash,
+        // FIXME ちゃんとserializeする
+        value: JSON.stringify(block),
         valueEncoding: 'binary'
       })
       this.batchDatabaseOps()
@@ -64,11 +58,15 @@ export class Database {
     })
   }
 
-  public getBlock (hash: string): Promise <Buffer > {
+  public getBlock (hash: Hash): Promise <Block> {
     return this.blockDatabase.get(hash)
+      .then((buf: Buffer) => {
+        let jsonBlock = JSON.parse((buf.toString()))
+        return new Block(jsonBlock.data, jsonBlock.header)
+      })
   }
 
-  private batchDatabaseOps (): Promise<any > {
+  private batchDatabaseOps (): Promise<any> {
     if (!this.isLocked()) {
       return Promise.reject(new Error('do not use database without lock.'))
     }
