@@ -13,7 +13,14 @@
     "watch": "run-p watch:*",
     "watch:ts": "tsc -w",
     "//watch:app": "nodemon dist/app.js",
+    "pretest": "run-s build lint",
     "test": "jest --forceExit --coverage --verbose"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "run-s build lint",
+      "pre-push": "yarn test"
+    }
   },
   "repository": {
     "type": "git",
@@ -30,6 +37,7 @@
     "@types/jest": "^22.2.0",
     "@types/node": "^9.4.6",
     "@types/semaphore": "^1.1.0",
+    "husky": "^0.15.0-rc.8",
     "jest": "^22.0.4",
     "nodemon": "^1.13.0",
     "npm-run-all": "^4.1.2",
@@ -42,6 +50,8 @@
   "dependencies": {
     "levelup": "^2.0.2",
     "memdown": "^2.0.0",
-    "semaphore": "^1.1.0"
+    "semaphore": "^1.1.0",
+    "keccak": "^1.4.0",
+    "secp256k1": "^3.5.0"
   }
 }
