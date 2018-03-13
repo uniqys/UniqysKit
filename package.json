@@ -29,6 +29,7 @@
   "devDependencies": {
     "@types/jest": "^22.2.0",
     "@types/node": "^9.4.6",
+    "@types/semaphore": "^1.1.0",
     "jest": "^22.0.4",
     "nodemon": "^1.13.0",
     "npm-run-all": "^4.1.2",
@@ -40,6 +41,7 @@
   },
   "dependencies": {
     "levelup": "^2.0.2",
-    "memdown": "^2.0.0"
+    "memdown": "^2.0.0",
+    "semaphore": "^1.1.0"
   }
 }
