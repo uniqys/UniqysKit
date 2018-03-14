@@ -7,10 +7,15 @@ import { Hash } from 'cryptography'
 interface IBlockDatabaseOps {
   db: string,
   type: string,
-  key: Hash,
+  key: string,
   keyEncoding?: string,
   value: string,
   valueEncoding?: string
+}
+
+export interface IChainHead {
+  height: number,
+  lastBlockHash: Hash
 }
 
 export class Database {
@@ -43,11 +48,26 @@ export class Database {
       this.blockDatabaseOps.push({
         db: 'block',
         type: 'put',
-        key: block.hash,
+        key: block.hash.toString(),
+        keyEncoding: 'string',
         // FIXME ちゃんとserializeする
         value: JSON.stringify(block),
-        valueEncoding: 'binary'
+        valueEncoding: 'string'
       })
+
+      this.blockDatabaseOps.push({
+        db: 'block',
+        type: 'put',
+        key: 'head',
+        keyEncoding: 'string',
+        // FIXME ちゃんとserializeする
+        value: JSON.stringify({
+          height: block.header.height,
+          lastBlockHash: block.hash
+        }),
+        valueEncoding: 'json'
+      })
+
       this.batchDatabaseOps()
         .then(() => {
           resolve()
@@ -63,6 +83,37 @@ export class Database {
       .then((buf: Buffer) => {
         let jsonBlock = JSON.parse((buf.toString()))
         return new Block(jsonBlock.data, jsonBlock.header)
+      })
+  }
+
+  public getLastBlock (): Promise<Block> {
+    return this.getHead()
+      .then((head: IChainHead) => {
+        return this.blockDatabase.get(head.lastBlockHash.toString())
+      })
+      .then((buf: Buffer) => {
+        return JSON.parse((buf.toString()))
+      })
+  }
+
+  public getLastBlockHash (): Promise<Hash> {
+    return this.getLastBlock()
+      .then((lastBlock: Block) => {
+        return lastBlock.hash
+      })
+  }
+
+  public getHeight (): Promise<number> {
+    return this.getHead()
+      .then((head: IChainHead) => {
+        return head.height
+      })
+  }
+
+  public getHead (): Promise<IChainHead> {
+    return this.blockDatabase.get('head')
+      .then((buf: Buffer) => {
+        return JSON.parse((buf.toString()))
       })
   }
 

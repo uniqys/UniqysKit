@@ -1,4 +1,4 @@
-import { Database } from 'chain-core/db'
+import { Database, IChainHead } from 'chain-core/db'
 import { Block, BlockData, Consensus, BlockHeader } from 'chain-core/blockchain'
 import { MerkleTree } from 'structure'
 import { Hash } from 'cryptography'
@@ -8,7 +8,7 @@ describe('Database', () => {
   let block: Block
 
   beforeAll(() => {
-    // validator testからコピったので気になったら綺麗にする
+    // TODO validator testからコピったので気になったら綺麗にする
     const data = new BlockData(new MerkleTree([]), new Consensus(0, new MerkleTree([])))
     const lastBlockHash = Hash.fromData('genesis!')
     const state = Hash.fromData('genesis state')
@@ -28,7 +28,7 @@ describe('Database', () => {
     })
   })
 
-  it('can not use without lock', () => {
+  it('can not addBlock without lock', () => {
     return expect(database.addBlock(block))
       .rejects.toBeInstanceOf(Error)
   })
@@ -47,17 +47,58 @@ describe('Database', () => {
     })
   })
 
-  test('can get block after put a block', done => {
-    database.touch(() => {
-      database.getBlock(block.hash)
-        .then((block: Block) => {
-          expect(block).toBeInstanceOf(Block)
-          database.leave()
-          done()
-        })
-        .catch((err: Error) => {
-          throw err
-        })
-    })
+  it('can get block after put a block', done => {
+    database.getBlock(block.hash)
+      .then((block: Block) => {
+        expect(block).toBeInstanceOf(Block)
+        done()
+      })
+      .catch((err: Error) => {
+        throw err
+      })
+  })
+
+  it('can get head meta', done => {
+    database.getHead()
+      .then((head: IChainHead) => {
+        expect(head.lastBlockHash.buffer).toEqual(block.hash.buffer.toJSON())
+        done()
+      })
+      .catch((err: Error) => {
+        throw err
+      })
+  })
+
+  it('can get lastBlock', done => {
+    database.getLastBlock()
+      .then((lastBlock: Block) => {
+        expect(lastBlock.hash.buffer).toEqual(block.hash.buffer.toJSON())
+        done()
+      })
+      .catch((err: Error) => {
+        throw err
+      })
+  })
+
+  it('can get lastBlockHash', done => {
+    database.getLastBlockHash()
+      .then((hash: Hash) => {
+        expect(hash.buffer).toEqual(block.hash.buffer.toJSON())
+        done()
+      })
+      .catch((err: Error) => {
+        throw err
+      })
+  })
+
+  it('can get height', done => {
+    database.getHeight()
+      .then((height: number) => {
+        expect(height).toEqual(1)
+        done()
+      })
+      .catch((err: Error) => {
+        throw err
+      })
   })
 })
