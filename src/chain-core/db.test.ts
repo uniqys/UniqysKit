@@ -1,4 +1,4 @@
-import { Database, IChainHead } from './db'
+import { Database, ChainHead } from './db'
 import { Block, BlockData, Consensus, BlockHeader, ValidatorSet } from './blockchain'
 import { MerkleTree } from '../structure'
 import { Hash } from '../cryptography'
@@ -60,7 +60,7 @@ describe('Database', () => {
 
   it('can get head meta', done => {
     database.getHead()
-      .then((head: IChainHead) => {
+      .then((head: ChainHead) => {
         expect(head.lastBlockHash.buffer).toEqual(block.hash.buffer.toJSON())
         done()
       })

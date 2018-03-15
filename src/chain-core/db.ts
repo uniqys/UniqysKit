@@ -4,7 +4,7 @@ import semaphore from 'semaphore'
 import { Block } from './blockchain'
 import { Hash } from '../cryptography'
 
-interface IBlockDatabaseOps {
+interface BlockDatabasePayload {
   db: string,
   type: string,
   key: string,
@@ -13,7 +13,7 @@ interface IBlockDatabaseOps {
   valueEncoding?: string
 }
 
-export interface IChainHead {
+export interface ChainHead {
   height: number,
   lastBlockHash: Hash
 }
@@ -21,7 +21,7 @@ export interface IChainHead {
 export class Database {
   private semaphore: semaphore.Semaphore
   private blockDatabase: any
-  private blockDatabaseOps: Array<IBlockDatabaseOps>
+  private blockDatabaseOps: Array<BlockDatabasePayload>
 
   constructor () {
     this.blockDatabase = levelup(memdown())
@@ -88,7 +88,7 @@ export class Database {
 
   public getLastBlock (): Promise<Block> {
     return this.getHead()
-      .then((head: IChainHead) => {
+      .then((head: ChainHead) => {
         return this.blockDatabase.get(head.lastBlockHash.toString())
       })
       .then((buf: Buffer) => {
@@ -105,12 +105,12 @@ export class Database {
 
   public getHeight (): Promise<number> {
     return this.getHead()
-      .then((head: IChainHead) => {
+      .then((head: ChainHead) => {
         return head.height
       })
   }
 
-  public getHead (): Promise<IChainHead> {
+  public getHead (): Promise<ChainHead> {
     return this.blockDatabase.get('head')
       .then((buf: Buffer) => {
         return JSON.parse((buf.toString()))
