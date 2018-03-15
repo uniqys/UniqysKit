@@ -9,5 +9,13 @@ module.exports = {
   moduleFileExtensions: [
     'ts',
     'js',
-  ]
+  ],
+  coverageThreshold: {
+    // this is too strict?
+    '**/*.ts': {
+      statements: 90,
+      branches: 90,
+      functions: 95,
+    }
+  }
 };

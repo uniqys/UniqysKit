@@ -31,7 +31,6 @@ class TransactionPool implements Iterable<Transaction> {
 abstract class Node {
   private immediateId: any = undefined
 
-  public abstract mainLoop (): void
   public start () {
     const loop = () => {
       this.mainLoop()
@@ -41,8 +40,13 @@ abstract class Node {
   }
 
   public stop () {
-    if (this.immediateId) { clearImmediate(this.immediateId) }
+    if (this.immediateId !== undefined) {
+      clearImmediate(this.immediateId)
+      this.immediateId = undefined
+    }
   }
+
+  protected abstract mainLoop (): void
 }
 
 class ValidatorCore<T extends dapi.Dapp> implements dapi.Core {
@@ -60,9 +64,11 @@ export class ValidatorNode<T extends dapi.Dapp> extends Node {
   public readonly dapp: T
   private readonly transactionPool = new TransactionPool()
   private readonly keyPair: KeyPair
-  private lastAppStateHash: Hash
+  private appStateHash: Hash
 
   private lastExecuteBlockHeight: number
+
+  private isConsensusInProgress: boolean = false
 
   constructor (
     dappsConstructor: dapi.DappsConstructor<T>,
@@ -73,7 +79,7 @@ export class ValidatorNode<T extends dapi.Dapp> extends Node {
     this.blockchain = new Blockchain(genesisBlock)
     this.keyPair = keyPair === undefined ? new KeyPair() : keyPair
 
-    this.lastAppStateHash = genesisBlock.header.appStateHash
+    this.appStateHash = genesisBlock.header.appStateHash
     this.lastExecuteBlockHeight = 0
 
     // init dapps
@@ -81,27 +87,14 @@ export class ValidatorNode<T extends dapi.Dapp> extends Node {
     this.dapp = new dappsConstructor(core)
   }
 
-  public mainLoop () {
-    this.proceedConsensus()
+  public proceedConsensusUntilSteady () {
+    do {
+      this.proceedConsensus()
+    } while (this.isConsensusInProgress)
   }
 
   public addTransaction (tx: Transaction) {
     this.transactionPool.add(tx)
-  }
-
-  public proceedConsensus () {
-    if (this.transactionPool.size) {
-      logger('transaction reached')
-      this.constructBlock()
-    }
-    if (!this.lastAppStateHash.equals(this.blockchain.lastBlock().header.appStateHash)) {
-      logger('need appState proof block')
-      this.constructBlock()
-    }
-    if (this.blockchain.height() !== this.lastExecuteBlockHeight) {
-      logger('execute last block')
-      this.executeLastBlockTransactions()
-    }
   }
 
   public transactionsInPool (): Iterable<Transaction> {
@@ -109,15 +102,56 @@ export class ValidatorNode<T extends dapi.Dapp> extends Node {
   }
 
   public addReachedBlock (block: Block) {
+    // proceed in progress consensus
+    if (this.isConsensusInProgress) { this.proceedConsensusUntilSteady() }
+    // already have block
+    if (block.header.height <= this.blockchain.height()) {
+      if (!this.blockchain.blockOf(block.header.height).hash.equals(block.hash)) { throw new Error('invalid block') }
+      return
+    }
     // validate and update app state
-    if (this.blockchain.height() !== this.lastExecuteBlockHeight) { throw new Error('need execute last block transactions') }
-    if (!block.header.appStateHash.equals(this.lastAppStateHash)) { throw new Error('invalid block') }
     this.blockchain.validateNewBlock(block)
     this.blockchain.addBlock(block)
     this.transactionPool.remove(block.data.transactions)
   }
 
-  public constructBlock () {
+  protected mainLoop () {
+    this.proceedConsensus()
+  }
+
+  private proceedConsensus () {
+    if (this.blockchain.height() !== this.lastExecuteBlockHeight) {
+      logger(`execute transaction in block(${this.lastExecuteBlockHeight + 1})`)
+      this.executeBlockTransactions()
+      this.isConsensusInProgress = true
+      return
+    }
+    if (this.transactionPool.size) {
+      logger('transaction reached')
+      this.constructBlock()
+      this.isConsensusInProgress = true
+      return
+    }
+    if (!this.appStateHash.equals(this.blockchain.lastBlock().header.appStateHash)) {
+      logger('need appState proof block')
+      this.constructBlock()
+      this.isConsensusInProgress = true
+      return
+    }
+    this.isConsensusInProgress = false
+  }
+
+  private executeBlockTransactions () {
+    if (this.blockchain.height() === this.lastExecuteBlockHeight) { throw new Error('all block executed') }
+    const block = this.blockchain.blockOf(this.lastExecuteBlockHeight + 1)
+    for (const tx of block.data.transactions) {
+      this.dapp.executeTransaction(tx)
+    }
+    this.appStateHash = this.dapp.getAppStateHash()
+    this.lastExecuteBlockHeight = block.header.height
+  }
+
+  private constructBlock () {
     if (this.blockchain.height() !== this.lastExecuteBlockHeight) { throw new Error('need execute last block transactions') }
     // TODO: select transaction intelligently
     const txs = Array.from(this.transactionPool)
@@ -137,26 +171,11 @@ export class ValidatorNode<T extends dapi.Dapp> extends Node {
       data.transactions.root,
       data.lastBlockConsensus.hash,
       nextValidatorSet.root,
-      this.lastAppStateHash
+      this.appStateHash
     )
     const block = new Block(data, header)
     this.blockchain.addBlock(block)
 
     logger(`add block(${block.header.height}): ${block.hash.buffer.toString('hex')}`)
-  }
-
-  // update state
-  public executeLastBlockTransactions () {
-    if (this.blockchain.height() === this.lastExecuteBlockHeight) { throw new Error('already executed block') }
-    const block = this.blockchain.lastBlock()
-    for (const tx of block.data.transactions) {
-      this.executeTransaction(tx)
-    }
-    this.lastAppStateHash = this.dapp.getAppStateHash()
-    this.lastExecuteBlockHeight = block.header.height
-  }
-
-  private executeTransaction (tx: Transaction) {
-    this.dapp.executeTransaction(tx)
   }
 }

@@ -5,7 +5,7 @@ import { MerkleTree } from '../structure'
 
 /* tslint:disable:no-unused-expression */
 describe('transaction', () => {
-  const signer = { sign: (_: Hash) => { return new Signature(new Bytes32(new Buffer(32)), 0) } }
+  const signer = new KeyPair()
   it('can create', () => {
     const sign = new Signature(new Bytes32(new Buffer(32)), 0)
     expect(new Transaction(sign, new TransactionData(1234, new Buffer(32)))).toBeInstanceOf(Transaction)
@@ -13,6 +13,10 @@ describe('transaction', () => {
   it('can create by sign', () => {
     const data = new TransactionData(1234, new Buffer(32))
     expect(data.sign(signer)).toBeInstanceOf(Transaction)
+  })
+  it('can get signer', () => {
+    const data = new TransactionData(1234, new Buffer(32))
+    expect(data.sign(signer).signer.equals(signer.address)).toBeTruthy()
   })
   it('can set to map', () => {
     const transaction = new TransactionData(1234, new Buffer('The quick brown fox jumps over the lazy dog')).sign(signer)

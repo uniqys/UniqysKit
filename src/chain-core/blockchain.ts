@@ -43,7 +43,7 @@ export class Blockchain {
     const lastBlock = this.lastBlock()
     const lastValidatorSet = this.lastValidatorSet()
     if (!(block.header.height === lastBlock.header.height + 1)) { throw new Error('invalid block height') }
-    if (!(block.header.timestamp > lastBlock.header.timestamp)) { throw new Error('invalid block timestamp') }
+    if (!(block.header.timestamp >= lastBlock.header.timestamp)) { throw new Error('invalid block timestamp') }
     if (!(block.header.lastBlockHash.equals(lastBlock.hash))) { throw new Error('invalid lastBlockHash') }
     // validate data
     block.validate()

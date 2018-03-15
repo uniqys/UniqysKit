@@ -42,6 +42,15 @@ describe('validator', () => {
   it('can create', () => {
     expect(() => { new ValidatorNode(MockDapps, genesis) }).not.toThrow()
   })
+  it('can start and stop node', () => {
+    const validator = new ValidatorNode(MockDapps, genesis, keyPair)
+    expect(() => { validator.start() }).not.toThrow()
+    expect(validator['immediateId']).toBeDefined()
+    expect(() => { validator.stop() }).not.toThrow()
+    expect(validator['immediateId']).not.toBeDefined()
+    expect(() => { validator.stop() }).not.toThrow()
+    expect(validator['immediateId']).not.toBeDefined()
+  })
   it('can add transaction', () => {
     const validator = new ValidatorNode(MockDapps, genesis, keyPair)
     const transaction = new TransactionData(1234, new Buffer('The quick brown fox jumps over the lazy dog')).sign(signer)
@@ -50,85 +59,54 @@ describe('validator', () => {
     expect(Array.from(validator.transactionsInPool()).length).toBe(1)
     expect(validator.transactionsInPool()[Symbol.iterator]().next().value.equals(transaction)).toBeTruthy()
   })
-  describe('with dapps', () => {
-    it('is sent transaction by dapps', () => {
-      const validator = new ValidatorNode(MockDapps, genesis, keyPair)
-      const transaction = new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer)
-      expect(Array.from(validator.transactionsInPool()).length).toBe(0)
-      validator.dapp.sendTransaction(transaction)
-      expect(Array.from(validator.transactionsInPool()).length).toBe(1)
-      expect(validator.transactionsInPool()[Symbol.iterator]().next().value.equals(transaction)).toBeTruthy()
-    })
-    it('construct block', () => {
-      const validator = new ValidatorNode(MockDapps, genesis, keyPair)
-      validator.executeLastBlockTransactions() // no txs in genesis
-      validator.dapp.sendTransaction(new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer))
-      validator.dapp.sendTransaction(new TransactionData(1235, new Buffer('Dapps transaction')).sign(signer))
-      expect(validator.blockchain.height()).toBe(1)
-      expect(Array.from(validator.transactionsInPool()).length).toBe(2)
-      validator.constructBlock()
-      expect(validator.blockchain.height()).toBe(2)
-      expect(Array.from(validator.transactionsInPool()).length).toBe(0)
-      expect(validator.blockchain.lastBlock().data.transactions.items.length).toBe(2)
-      expect(validator.blockchain.lastBlock().header.appStateHash.equals(Hash.fromData('state: 0'))).toBeTruthy()
-    })
-    it('execute last block transactions', () => {
-      const validator = new ValidatorNode(MockDapps, genesis, keyPair)
-      // construct block include transactions
-      validator.executeLastBlockTransactions() // no txs in genesis
-      validator.dapp.sendTransaction(new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer))
-      validator.dapp.sendTransaction(new TransactionData(1235, new Buffer('Dapps transaction')).sign(signer))
-      validator.constructBlock()
-      expect(validator.dapp.getAppStateHash().equals(Hash.fromData('state: 0'))).toBeTruthy()
-      validator.executeLastBlockTransactions() // two txs executed
-      expect(validator.dapp.getAppStateHash().equals(Hash.fromData('state: 2'))).toBeTruthy()
-    })
-    it('add reach block include transactions', () => {
-      const validator = new ValidatorNode(MockDapps, genesis, keyPair)
-      const dapp = validator.dapp
-      const validator2 = new ValidatorNode(MockDapps, genesis, keyPair) // same signer
-      const dapp2 = validator2.dapp
-      validator.executeLastBlockTransactions() // no txs in genesis
-      validator2.executeLastBlockTransactions() // no txs in genesis
-      dapp.sendTransaction(new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer))
-      dapp.sendTransaction(new TransactionData(1235, new Buffer('Dapps transaction')).sign(signer))
-      dapp2.sendTransaction(new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer))
-      dapp2.sendTransaction(new TransactionData(1235, new Buffer('Dapps transaction')).sign(signer))
-      // construct block include transactions
-      validator2.constructBlock()
-      const block = validator2.blockchain.lastBlock()
+  it('is sent transaction by dapps', () => {
+    const validator = new ValidatorNode(MockDapps, genesis, keyPair)
+    const transaction = new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer)
+    expect(Array.from(validator.transactionsInPool()).length).toBe(0)
+    validator.dapp.sendTransaction(transaction)
+    expect(Array.from(validator.transactionsInPool()).length).toBe(1)
+    expect(validator.transactionsInPool()[Symbol.iterator]().next().value.equals(transaction)).toBeTruthy()
+  })
+  it('proceed consensus if need', () => {
+    const validator = new ValidatorNode(MockDapps, genesis, keyPair)
+    validator.dapp.sendTransaction(new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer))
+    validator.dapp.sendTransaction(new TransactionData(1235, new Buffer('Dapps transaction')).sign(signer))
+    expect(validator.blockchain.height()).toBe(1)
+    expect(Array.from(validator.transactionsInPool()).length).toBe(2)
+    validator.proceedConsensusUntilSteady()
+    expect(validator.blockchain.height()).toBe(3) // tx block and appState proof block
+    expect(Array.from(validator.transactionsInPool()).length).toBe(0)
+    expect(validator.blockchain.blockOf(2).data.transactions.items.length).toBe(2)
+    expect(validator.blockchain.blockOf(3).header.appStateHash.equals(Hash.fromData('state: 2'))).toBeTruthy()
+  })
+  it('add reach block include transactions', () => {
+    const validator = new ValidatorNode(MockDapps, genesis, keyPair)
+    const dapp = validator.dapp
+    const validator2 = new ValidatorNode(MockDapps, genesis, keyPair) // same signer
+    const dapp2 = validator2.dapp
+    dapp.sendTransaction(new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer))
+    dapp.sendTransaction(new TransactionData(1235, new Buffer('Dapps transaction')).sign(signer))
+    dapp2.sendTransaction(new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer))
+    dapp2.sendTransaction(new TransactionData(1235, new Buffer('Dapps transaction')).sign(signer))
+    // construct block include transactions
+    validator2.proceedConsensusUntilSteady()
+    const block2 = validator2.blockchain.blockOf(2)
 
-      expect(validator.blockchain.height()).toBe(1)
-      expect(Array.from(validator.transactionsInPool()).length).toBe(2)
-      validator.addReachedBlock(block)
-      expect(validator.blockchain.height()).toBe(2)
-      expect(Array.from(validator.transactionsInPool()).length).toBe(0)
-      expect(dapp.getAppStateHash().equals(Hash.fromData('state: 0'))).toBeTruthy()
-      validator.executeLastBlockTransactions() // two txs executed
-      expect(dapp.getAppStateHash().equals(Hash.fromData('state: 2'))).toBeTruthy()
-    })
+    expect(validator.blockchain.height()).toBe(1)
+    expect(Array.from(validator.transactionsInPool()).length).toBe(2)
+    validator.addReachedBlock(block2)
+    expect(validator.blockchain.height()).toBe(2)
+    expect(Array.from(validator.transactionsInPool()).length).toBe(0)
+    expect(dapp.getAppStateHash().equals(Hash.fromData('state: 0'))).toBeTruthy()
+    validator.proceedConsensusUntilSteady()
+    expect(validator.blockchain.height()).toBe(3) // make proof block by myself
+    expect(dapp.getAppStateHash().equals(Hash.fromData('state: 2'))).toBeTruthy()
+    const block3 = validator2.blockchain.blockOf(3)
+    // already have block
+    expect(() => { validator.addReachedBlock(block3) }).not.toThrow()
+    expect(validator.blockchain.height()).toBe(3)
   })
   describe('error case', () => {
-    it('cant construct block before execute last block transaction', () => {
-      const validator = new ValidatorNode(MockDapps, genesis, keyPair)
-      validator.dapp.sendTransaction(new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer))
-      validator.dapp.sendTransaction(new TransactionData(1235, new Buffer('Dapps transaction')).sign(signer))
-      expect(() => { validator.constructBlock() }).toThrow('need execute last block transactions')
-    })
-    it('cant execute block multiple times', () => {
-      const validator = new ValidatorNode(MockDapps, genesis, keyPair)
-      expect(() => { validator.executeLastBlockTransactions() }).not.toThrow()
-      expect(() => { validator.executeLastBlockTransactions() }).toThrow('already executed block')
-    })
-    it('cant add reach block before execute last block transaction', () => {
-      const validator = new ValidatorNode(MockDapps, genesis, keyPair)
-      const validator2 = new ValidatorNode(MockDapps, genesis, keyPair)
-      validator2.executeLastBlockTransactions()
-      validator2.constructBlock()
-      const block = validator2.blockchain.lastBlock()
-
-      expect(() => { validator.addReachedBlock(block) }).toThrow('need execute last block transactions')
-    })
     it('cant add reached block contain invalid app state', () => {
       const validator = new ValidatorNode(MockDapps, genesis, keyPair)
       const invalidValidator = new ValidatorNode(MockDapps, genesis, keyPair)
@@ -136,12 +114,22 @@ describe('validator', () => {
       // hack txCount
       invalidDapps.txCount++
       // construct invalid block
-      invalidValidator.executeLastBlockTransactions()
-      invalidValidator.constructBlock()
+      invalidValidator.proceedConsensusUntilSteady()
       const block = invalidValidator.blockchain.lastBlock()
 
-      validator.executeLastBlockTransactions() // valid execute
+      validator.proceedConsensusUntilSteady() // valid
       expect(() => { validator.addReachedBlock(block) }).toThrow('invalid block')
+    })
+  })
+  describe('private error case', () => {
+    it('cant construct block before execute last block', () => {
+      const validator = new ValidatorNode(MockDapps, genesis, keyPair)
+      expect(() => { validator['constructBlock']() }).toThrow()
+    })
+    it('cant execute block when all block executed', () => {
+      const validator = new ValidatorNode(MockDapps, genesis, keyPair)
+      validator.proceedConsensusUntilSteady()
+      expect(() => { validator['executeBlockTransactions']() }).toThrow()
     })
   })
 })
