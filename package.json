@@ -4,8 +4,7 @@
   "description": "Blockchain Platform Project",
   "private": true,
   "scripts": {
-    "//start": "yarn app",
-    "//app": "node dist/app.js",
+    "cli": "DEBUG=validator ts-node src/app/cli.ts ",
     "build": "run-p build:*",
     "build:ts": "tsc -p tsconfig.build.json",
     "lint": "run-p lint:*",
