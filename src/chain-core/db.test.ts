@@ -1,7 +1,7 @@
-import { Database, IChainHead } from 'chain-core/db'
-import { Block, BlockData, Consensus, BlockHeader } from 'chain-core/blockchain'
-import { MerkleTree } from 'structure'
-import { Hash } from 'cryptography'
+import { Database, IChainHead } from './db'
+import { Block, BlockData, Consensus, BlockHeader, ValidatorSet } from './blockchain'
+import { MerkleTree } from '../structure'
+import { Hash } from '../cryptography'
 
 describe('Database', () => {
   let database: Database
@@ -9,7 +9,7 @@ describe('Database', () => {
 
   beforeAll(() => {
     // TODO validator testからコピったので気になったら綺麗にする
-    const data = new BlockData(new MerkleTree([]), new Consensus(0, new MerkleTree([])))
+    const data = new BlockData(new MerkleTree([]), new Consensus(0, new MerkleTree([])), new ValidatorSet([]))
     const lastBlockHash = Hash.fromData('genesis!')
     const state = Hash.fromData('genesis state')
     const validator = Hash.fromData('validator set')

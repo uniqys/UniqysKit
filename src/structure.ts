@@ -1,4 +1,4 @@
-import { Hash, Hashable } from 'cryptography'
+import { Hash, Hashable } from './cryptography'
 
 export class MerkleTree<T extends Hashable> implements Iterable<T>, Hashable {
   public readonly hash: Hash

@@ -1,7 +1,7 @@
-import { Transaction, Block, BlockHeader, BlockData, Consensus, Blockchain, ValidatorSet, Validator } from 'chain-core/blockchain'
-import { Signature, Hash, KeyPair } from 'cryptography'
-import { Bytes32 } from 'bytes'
-import { MerkleTree } from 'structure'
+import { Transaction, Block, BlockHeader, BlockData, Consensus, Blockchain, ValidatorSet, Validator } from './blockchain'
+import { Signature, Hash, KeyPair } from '../cryptography'
+import { Bytes32 } from '../bytes'
+import { MerkleTree } from '../structure'
 
 /* tslint:disable:no-unused-expression */
 describe('transaction', () => {

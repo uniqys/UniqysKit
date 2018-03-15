@@ -1,4 +1,4 @@
-import { Byte, Bytes4, Bytes8, Bytes32, Bytes64, UInt8, UInt32, UInt64 } from 'bytes'
+import { Byte, Bytes4, Bytes8, Bytes32, Bytes64, UInt8, UInt32, UInt64 } from './bytes'
 
 /* tslint:disable:no-unused-expression */
 describe('Byte', () => {

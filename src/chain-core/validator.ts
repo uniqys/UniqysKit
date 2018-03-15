@@ -1,7 +1,7 @@
-import { Transaction, Blockchain, BlockData, Consensus, BlockHeader, Block, ValidatorSet, Validator } from 'chain-core/blockchain'
-import { MerkleTree } from 'structure'
-import { KeyPair, Hash } from 'cryptography'
-import * as dapi from 'chain-core/dapi'
+import { Transaction, Blockchain, BlockData, Consensus, BlockHeader, Block, ValidatorSet, Validator } from './blockchain'
+import { MerkleTree } from '../structure'
+import { KeyPair, Hash } from '../cryptography'
+import * as dapi from './dapi'
 
 class TransactionPool implements Iterable<Transaction> {
   private pool = new Map<string, Transaction>()

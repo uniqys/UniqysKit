@@ -1,6 +1,6 @@
-import { Hash, Hashable, Signature, Address } from 'cryptography'
-import { MerkleTree } from 'structure'
-import { UInt64 } from 'bytes'
+import { Hash, Hashable, Signature, Address } from '../cryptography'
+import { MerkleTree } from '../structure'
+import { UInt64 } from '../bytes'
 
 export class Blockchain {
   public readonly blocks: Block[] = []

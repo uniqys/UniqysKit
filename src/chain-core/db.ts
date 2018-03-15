@@ -1,8 +1,8 @@
 import levelup from 'levelup'
 import memdown from 'memdown'
 import semaphore from 'semaphore'
-import { Block } from 'chain-core/blockchain'
-import { Hash } from 'cryptography'
+import { Block } from './blockchain'
+import { Hash } from '../cryptography'
 
 interface IBlockDatabaseOps {
   db: string,

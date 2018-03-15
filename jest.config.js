@@ -9,8 +9,5 @@ module.exports = {
   moduleFileExtensions: [
     'ts',
     'js',
-  ],
-  modulePaths : [
-    '<rootDir>/src/',
-  ],
+  ]
 };

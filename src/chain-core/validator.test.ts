@@ -1,9 +1,9 @@
-import { BlockData, Consensus, BlockHeader, Block, Transaction, ValidatorSet, Validator } from 'chain-core/blockchain'
-import { MerkleTree } from 'structure'
-import { Hash, Signature, KeyPair } from 'cryptography'
-import { ValidatorNode } from 'chain-core/validator'
-import { Bytes32 } from 'bytes'
-import { Dapps, Core } from 'chain-core/dapi'
+import { ValidatorNode } from './validator'
+import { BlockData, Consensus, BlockHeader, Block, Transaction, ValidatorSet, Validator } from './blockchain'
+import { MerkleTree } from '../structure'
+import { Hash, Signature, KeyPair } from '../cryptography'
+import { Bytes32 } from '../bytes'
+import { Dapps, Core } from './dapi'
 
 // mock
 let mockDapps: MockDapps

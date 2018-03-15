@@ -1,6 +1,6 @@
 import createKeccakHash from 'keccak'
 import secp256k1 from 'secp256k1'
-import { Bytes32, Bytes64, UInt8 } from 'bytes'
+import { Bytes32, Bytes64, UInt8 } from './bytes'
 import { randomBytes } from 'crypto'
 
 export class Hash extends Bytes32 {

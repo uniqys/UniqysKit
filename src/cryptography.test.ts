@@ -1,5 +1,5 @@
-import { Hash, KeyPair, Address } from 'cryptography'
-import { Bytes32 } from 'bytes'
+import { Hash, KeyPair, Address } from './cryptography'
+import { Bytes32 } from './bytes'
 
 /* tslint:disable:no-unused-expression */
 describe('Hash', () => {

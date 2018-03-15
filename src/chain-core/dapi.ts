@@ -1,5 +1,5 @@
-import { Transaction } from 'chain-core/blockchain'
-import { Hash } from 'cryptography'
+import { Transaction } from './blockchain'
+import { Hash } from '../cryptography'
 
 export interface Core {
   sendTransaction (transaction: Transaction): void
