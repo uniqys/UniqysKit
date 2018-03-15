@@ -1,4 +1,4 @@
-import { Hash, Hashable, Signature, Address } from '../cryptography'
+import { Hash, Hashable, Signature, Address, Signer } from '../cryptography'
 import { MerkleTree } from '../structure'
 import { UInt64 } from '../bytes'
 
@@ -130,14 +130,13 @@ export class Transaction implements Hashable {
 
   constructor (
     public readonly sign: Signature,
-    public readonly nonce: number,
-    public readonly data: Buffer
+
+    public readonly data: TransactionData
 
   ) {
     this.buffer = Buffer.concat([
-      sign.hash.buffer,
-      UInt64.fromNumber(nonce).buffer,
-      data
+      sign.buffer,
+      data.buffer
     ])
     this.hash = Hash.fromData(this.buffer)
   }
@@ -148,6 +147,33 @@ export class Transaction implements Hashable {
 
   public equals (other: Transaction): boolean {
     return this.buffer.equals(other.buffer)
+  }
+
+  get signer (): Address {
+    return Address.fromPublicKey(this.sign.recover(this.data.hash))
+  }
+}
+
+export class TransactionData implements Hashable {
+  public readonly buffer: Buffer
+  public readonly hash: Hash
+  constructor (
+    public readonly nonce: number,
+    public readonly data: Buffer
+
+  ) {
+    this.buffer = Buffer.concat([
+      UInt64.fromNumber(nonce).buffer,
+      data
+    ])
+    this.hash = Hash.fromData(this.buffer)
+  }
+
+  public sign (signer: Signer): Transaction {
+    return new Transaction(
+      signer.sign(this.hash),
+      this
+    )
   }
 }
 

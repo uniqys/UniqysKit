@@ -41,10 +41,10 @@ describe('Address', () => {
   })
   it('can be made from key pair shorthand', () => {
     const keyPair = new KeyPair()
-    expect(keyPair.address().toString()).toBe(Address.fromPublicKey(keyPair.publicKey).toString())
+    expect(keyPair.address.toString()).toBe(Address.fromPublicKey(keyPair.publicKey).toString())
   })
   it('has string representation', () => {
-    const address = new KeyPair().address()
+    const address = new KeyPair().address
     const stringRepresentation = address.toString()
     expect(Address.fromString(stringRepresentation).equals(address)).toBeTruthy()
   })

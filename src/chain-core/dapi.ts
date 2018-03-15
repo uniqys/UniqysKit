@@ -5,11 +5,11 @@ export interface Core {
   sendTransaction (transaction: Transaction): void
 }
 
-export interface DappsConstructor {
-  new (core: Core): Dapps
+export interface DappsConstructor<T extends Dapp> {
+  new (core: Core): T
 }
 
-export interface Dapps {
+export interface Dapp {
   executeTransaction (transaction: Transaction): void
   getAppStateHash (): Hash
 }

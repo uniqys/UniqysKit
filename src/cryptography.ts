@@ -15,15 +15,17 @@ export interface Hashable {
 
 export class Signature implements Hashable {
   public readonly hash: Hash
+  public readonly buffer: Buffer
 
   constructor (
     public signature: Bytes64,
     public recovery: number
   ) {
-    this.hash = Hash.fromData(Buffer.concat([
+    this.buffer = Buffer.concat([
       signature.buffer,
       UInt8.fromNumber(recovery).buffer
-    ]))
+    ])
+    this.hash = Hash.fromData(this.buffer)
   }
 
   // Ethereum compatible
@@ -40,6 +42,7 @@ export class Signature implements Hashable {
       throw new Error('couldn\'t recover public key from signature')
     }
   }
+
 }
 
 export class Address {
@@ -66,7 +69,11 @@ export class Address {
   }
 }
 
-export class KeyPair {
+export interface Signer {
+  sign (messageHash: Hash): Signature
+}
+
+export class KeyPair implements Signer {
   public readonly publicKey: Bytes64
   private readonly privateKey: Bytes32
   constructor (
@@ -88,7 +95,7 @@ export class KeyPair {
     return Signature.sign(messageHash, this.privateKey)
   }
 
-  public address (): Address {
+  get address (): Address {
     return Address.fromPublicKey(this.publicKey)
   }
 }

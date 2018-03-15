@@ -1,20 +1,24 @@
-import { Transaction, Block, BlockHeader, BlockData, Consensus, Blockchain, ValidatorSet, Validator } from './blockchain'
+import { Transaction, Block, BlockHeader, BlockData, Consensus, Blockchain, ValidatorSet, Validator, TransactionData } from './blockchain'
 import { Signature, Hash, KeyPair } from '../cryptography'
 import { Bytes32 } from '../bytes'
 import { MerkleTree } from '../structure'
 
 /* tslint:disable:no-unused-expression */
 describe('transaction', () => {
+  const signer = { sign: (_: Hash) => { return new Signature(new Bytes32(new Buffer(32)), 0) } }
   it('can create', () => {
     const sign = new Signature(new Bytes32(new Buffer(32)), 0)
-    expect(new Transaction(sign, 1234, new Buffer(32))).toBeDefined()
+    expect(new Transaction(sign, new TransactionData(1234, new Buffer(32)))).toBeInstanceOf(Transaction)
+  })
+  it('can create by sign', () => {
+    const data = new TransactionData(1234, new Buffer(32))
+    expect(data.sign(signer)).toBeInstanceOf(Transaction)
   })
   it('can set to map', () => {
-    const sign = new Signature(new Bytes32(new Buffer(32)), 0)
-    const transaction = new Transaction(sign, 1234, new Buffer('The quick brown fox jumps over the lazy dog'))
+    const transaction = new TransactionData(1234, new Buffer('The quick brown fox jumps over the lazy dog')).sign(signer)
     const map = new Map<string, Transaction>()
     map.set(transaction.toString(), transaction)
-    const sameTransaction = new Transaction(sign, 1234, new Buffer('The quick brown fox jumps over the lazy dog'))
+    const sameTransaction = new TransactionData(1234, new Buffer('The quick brown fox jumps over the lazy dog')).sign(signer)
     expect(map.get(sameTransaction.toString())!.equals(sameTransaction)).toBeTruthy()
   })
 })
@@ -25,9 +29,9 @@ describe('consensus', () => {
   const signer2 = new KeyPair()
   const signer3 = new KeyPair()
   const validatorSet = new ValidatorSet([
-    new Validator(signer1.address(), 10),
-    new Validator(signer2.address(), 19),
-    new Validator(signer3.address(), 1)
+    new Validator(signer1.address, 10),
+    new Validator(signer2.address, 19),
+    new Validator(signer3.address, 1)
   ])
   it('validate if it has more than 2/3 power signature', () => {
     const consensus = new Consensus(0, new MerkleTree([signer2.sign(hash), signer3.sign(hash)])) // 2/3
@@ -132,7 +136,7 @@ describe('blockchain', () => {
   })
   describe('validate new block', () => {
     const signer = new KeyPair()
-    const validatorSet = new ValidatorSet([ new Validator(signer.address(), 100) ])
+    const validatorSet = new ValidatorSet([ new Validator(signer.address, 100) ])
     const genesisData = new BlockData(new MerkleTree([]), new Consensus(0, new MerkleTree([])), validatorSet)
     const genesisHeader = new BlockHeader(1, 100, Hash.fromData('genesis'),
       genesisData.transactions.root, genesisData.lastBlockConsensus.hash, genesisData.nextValidatorSet.root, Hash.fromData('state'))
