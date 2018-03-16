@@ -4,6 +4,7 @@
   "description": "Blockchain Platform Project",
   "private": true,
   "scripts": {
+    "chain-init": "ts-node src/app/init.ts",
     "cli": "DEBUG=validator ts-node src/app/cli.ts ",
     "prebuild": "ts-node dev-script/generate-config-type-definition.ts",
     "build": "run-p build:*",
@@ -43,6 +44,7 @@
     "@types/jest": "^22.2.0",
     "@types/node": "^9.4.6",
     "@types/semaphore": "^1.1.0",
+    "@types/yargs": "^11.0.0",
     "glob": "^7.1.2",
     "husky": "^0.15.0-rc.8",
     "jest": "^22.0.4",
@@ -63,6 +65,7 @@
     "levelup": "^2.0.2",
     "memdown": "^2.0.0",
     "secp256k1": "^3.5.0",
-    "semaphore": "^1.1.0"
+    "semaphore": "^1.1.0",
+    "yargs": "^11.0.0"
   }
 }

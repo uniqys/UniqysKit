@@ -80,14 +80,18 @@ export class KeyPair implements Signer {
     privateKey?: Bytes32
   ) {
     if (privateKey === undefined) {
-      let privateKeyBuff: Buffer
-      do {
-        privateKeyBuff = randomBytes(32)
-      } while (!secp256k1.privateKeyVerify(privateKeyBuff))
-      privateKey = new Bytes32(privateKeyBuff)
+      privateKey = KeyPair.generatePrivateKey()
     }
     this.privateKey = privateKey
     this.publicKey = new Bytes64(secp256k1.publicKeyCreate(privateKey.buffer, false).slice(1))
+  }
+
+  public static generatePrivateKey (): Bytes32 {
+    let privateKeyBuff: Buffer
+    do {
+      privateKeyBuff = randomBytes(32)
+    } while (!secp256k1.privateKeyVerify(privateKeyBuff))
+    return new Bytes32(privateKeyBuff)
   }
 
   // Ethereum compatible
