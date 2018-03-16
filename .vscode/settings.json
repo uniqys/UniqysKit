@@ -21,6 +21,7 @@
         "keccak",
         "memdown",
         "merkle",
+        "prebuild",
         "secp",
         "truthy",
         "validators"
