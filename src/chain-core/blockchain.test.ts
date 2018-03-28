@@ -7,7 +7,7 @@ import { MerkleTree } from '../structure'
 describe('transaction', () => {
   const signer = new KeyPair()
   it('can create', () => {
-    const sign = new Signature(new Bytes32(new Buffer(32)), 0)
+    const sign = new Signature(new Buffer(33))
     expect(new Transaction(sign, new TransactionData(1234, new Buffer(32)))).toBeInstanceOf(Transaction)
   })
   it('can create by sign', () => {
@@ -130,13 +130,13 @@ describe('blockchain', () => {
     const genesisBlockHash = Hash.fromData('foo')
     const genesisBlock = { hash: genesisBlockHash } as Block
     const blockchain = new Blockchain(genesisBlock)
-    expect(blockchain.height()).toBe(1)
-    expect(blockchain.lastBlock().hash.equals(genesisBlockHash)).toBeTruthy()
+    expect(blockchain.height).toBe(1)
+    expect(blockchain.lastBlock.hash.equals(genesisBlockHash)).toBeTruthy()
     const dummyBlockHash = Hash.fromData('bar')
     const dummyBlock = { hash: dummyBlockHash } as Block
     blockchain.addBlock(dummyBlock)
-    expect(blockchain.height()).toBe(2)
-    expect(blockchain.lastBlock().hash.equals(dummyBlockHash)).toBeTruthy()
+    expect(blockchain.height).toBe(2)
+    expect(blockchain.lastBlock.hash.equals(dummyBlockHash)).toBeTruthy()
   })
   describe('validate new block', () => {
     const signer = new KeyPair()

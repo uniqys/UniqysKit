@@ -13,25 +13,25 @@ export class Blockchain {
   }
 
   public blockOf (height: number): Block {
-    if (!(1 <= height && height <= this.height())) { throw new Error('height out of range') }
+    if (!(1 <= height && height <= this.height)) { throw new Error('height out of range') }
     return this.blocks[height - 1]
   }
 
   public validatorSetOf (height: number): ValidatorSet {
-    if (!(1 <= height && height <= (this.height() + 1))) { throw new Error('height out of range') }
+    if (!(1 <= height && height <= (this.height + 1))) { throw new Error('height out of range') }
     // this block validatorSet is last block nextValidatorSet
     return this.blockOf(Math.max(height - 1, 1)).data.nextValidatorSet
   }
 
-  public lastBlock (): Block {
-    return this.blockOf(this.height())
+  public get lastBlock (): Block {
+    return this.blockOf(this.height)
   }
 
-  public lastValidatorSet (): ValidatorSet {
-    return this.validatorSetOf(this.height())
+  public get lastValidatorSet (): ValidatorSet {
+    return this.validatorSetOf(this.height)
   }
 
-  public height (): number {
+  public get height (): number {
     return this.blocks.length
   }
 
@@ -40,8 +40,8 @@ export class Blockchain {
   }
 
   public validateNewBlock (block: Block) {
-    const lastBlock = this.lastBlock()
-    const lastValidatorSet = this.lastValidatorSet()
+    const lastBlock = this.lastBlock
+    const lastValidatorSet = this.lastValidatorSet
     if (!(block.header.height === lastBlock.header.height + 1)) { throw new Error('invalid block height') }
     if (!(block.header.timestamp >= lastBlock.header.timestamp)) { throw new Error('invalid block timestamp') }
     if (!(block.header.lastBlockHash.equals(lastBlock.hash))) { throw new Error('invalid lastBlockHash') }

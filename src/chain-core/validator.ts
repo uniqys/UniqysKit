@@ -1,8 +1,10 @@
 import { Transaction, Blockchain, BlockData, Consensus, BlockHeader, Block, ValidatorSet, Validator } from './blockchain'
 import { MerkleTree } from '../structure'
-import { KeyPair, Hash } from '../cryptography'
-import * as dapi from './dapi'
+import { KeyPair } from '../cryptography'
+import * as dapi from '../interface/dapi'
 import debug from 'debug'
+import * as iterable from '../iterable'
+import { EventEmitter } from 'events'
 const logger = debug('validator')
 
 class TransactionPool implements Iterable<Transaction> {
@@ -28,13 +30,19 @@ class TransactionPool implements Iterable<Transaction> {
   }
 }
 
-abstract class Node {
+export abstract class Node extends EventEmitter {
   private immediateId: any = undefined
 
   public start () {
     const loop = () => {
       this.mainLoop()
-      this.immediateId = setImmediate(loop)
+        .then(() => {
+          this.immediateId = setImmediate(loop)
+        })
+        .catch((e) => {
+          this.emit('error', e)
+          this.stop()
+        })
     }
     loop()
   }
@@ -44,34 +52,35 @@ abstract class Node {
       clearImmediate(this.immediateId)
       this.immediateId = undefined
     }
+    this.emit('end')
   }
 
-  protected abstract mainLoop (): void
+  protected abstract async mainLoop (): Promise<void>
 }
 
-class ValidatorCore<T extends dapi.Dapp> implements dapi.Core {
-  constructor (
-    private readonly validator: ValidatorNode<T>
-  ) {}
-
-  sendTransaction (transaction: Transaction): void {
-    this.validator.addTransaction(transaction)
-  }
-}
+// class ValidatorCore<T extends dapi.Dapp> implements dapi.Core {
+//  constructor (
+//    private readonly validator: ValidatorNode<T>
+//  ) {}
+//
+//  public sendTransaction (transaction: Transaction): Promise<void> {
+//    return new Promise((resolve, _) => {
+//      resolve(this.validator.addTransaction(transaction))
+//    })
+//  }
+// }
 
 export class ValidatorNode<T extends dapi.Dapp> extends Node {
   public readonly blockchain: Blockchain
-  public readonly dapp: T
+  private readonly dapp: T
+  private initialized: Boolean = false
   private readonly transactionPool = new TransactionPool()
   private readonly keyPair: KeyPair
-  private appStateHash: Hash
-
-  private lastExecuteBlockHeight: number
-
+  private lastAppState?: dapi.AppState
   private isConsensusInProgress: boolean = false
 
   constructor (
-    dappsConstructor: dapi.DappsConstructor<T>,
+    dapp: T,
     genesisBlock: Block,
     keyPair?: KeyPair
   ) {
@@ -79,17 +88,15 @@ export class ValidatorNode<T extends dapi.Dapp> extends Node {
     this.blockchain = new Blockchain(genesisBlock)
     this.keyPair = keyPair === undefined ? new KeyPair() : keyPair
 
-    this.appStateHash = genesisBlock.header.appStateHash
-    this.lastExecuteBlockHeight = 0
-
-    // init dapps
-    const core = new ValidatorCore<T>(this)
-    this.dapp = new dappsConstructor(core)
+    this.dapp = dapp
   }
 
-  public proceedConsensusUntilSteady () {
+  public async proceedConsensusUntilSteady () {
+    if (!this.initialized) {
+      await this.initialize()
+    }
     do {
-      this.proceedConsensus()
+      await this.proceedConsensus()
     } while (this.isConsensusInProgress)
   }
 
@@ -101,11 +108,11 @@ export class ValidatorNode<T extends dapi.Dapp> extends Node {
     return this.transactionPool
   }
 
-  public addReachedBlock (block: Block) {
+  public async addReachedBlock (block: Block) {
     // proceed in progress consensus
-    if (this.isConsensusInProgress) { this.proceedConsensusUntilSteady() }
+    if (this.isConsensusInProgress) { await this.proceedConsensusUntilSteady() }
     // already have block
-    if (block.header.height <= this.blockchain.height()) {
+    if (block.header.height <= this.blockchain.height) {
       if (!this.blockchain.blockOf(block.header.height).hash.equals(block.hash)) { throw new Error('invalid block') }
       return
     }
@@ -115,14 +122,26 @@ export class ValidatorNode<T extends dapi.Dapp> extends Node {
     this.transactionPool.remove(block.data.transactions)
   }
 
-  protected mainLoop () {
-    this.proceedConsensus()
+  protected async mainLoop () {
+    if (!this.initialized) {
+      await this.initialize()
+    }
+    await this.proceedConsensus()
   }
 
-  private proceedConsensus () {
-    if (this.blockchain.height() !== this.lastExecuteBlockHeight) {
-      logger(`execute transaction in block(${this.lastExecuteBlockHeight + 1})`)
-      this.executeBlockTransactions()
+  private async initialize () {
+    // connect dapp
+    this.lastAppState = await this.dapp.connect()
+    if (this.lastAppState.height > this.blockchain.height) { throw new Error('need reset app') }
+    logger(`initialized at block(${this.lastAppState.height})`)
+    this.initialized = true
+  }
+
+  private async proceedConsensus () {
+    if (this.lastAppState === undefined) { throw new Error('not initialized') }
+    if (this.blockchain.height !== this.lastAppState.height) {
+      logger(`execute transaction in block(${this.lastAppState.height + 1})`)
+      await this.executeBlockTransactions()
       this.isConsensusInProgress = true
       return
     }
@@ -132,7 +151,7 @@ export class ValidatorNode<T extends dapi.Dapp> extends Node {
       this.isConsensusInProgress = true
       return
     }
-    if (!this.appStateHash.equals(this.blockchain.lastBlock().header.appStateHash)) {
+    if (!this.lastAppState.hash.equals(this.blockchain.lastBlock.header.appStateHash)) {
       logger('need appState proof block')
       this.constructBlock()
       this.isConsensusInProgress = true
@@ -141,37 +160,37 @@ export class ValidatorNode<T extends dapi.Dapp> extends Node {
     this.isConsensusInProgress = false
   }
 
-  private executeBlockTransactions () {
-    if (this.blockchain.height() === this.lastExecuteBlockHeight) { throw new Error('all block executed') }
-    const block = this.blockchain.blockOf(this.lastExecuteBlockHeight + 1)
-    for (const tx of block.data.transactions) {
-      this.dapp.executeTransaction(tx)
-    }
-    this.appStateHash = this.dapp.getAppStateHash()
-    this.lastExecuteBlockHeight = block.header.height
+  private async executeBlockTransactions () {
+    if (this.lastAppState === undefined) { throw new Error('not initialized') }
+    if (this.blockchain.height === this.lastAppState.height) { throw new Error('all block executed') }
+    const block = this.blockchain.blockOf(this.lastAppState.height + 1)
+    const appState = await this.dapp.execute(iterable.toAsync(block.data.transactions))
+    if (appState.height !== block.header.height) { throw new Error('block height mismatch') }
+    this.lastAppState = appState
   }
 
   private constructBlock () {
-    if (this.blockchain.height() !== this.lastExecuteBlockHeight) { throw new Error('need execute last block transactions') }
+    if (this.lastAppState === undefined) { throw new Error('not initialized') }
+    if (this.blockchain.height !== this.lastAppState.height) { throw new Error('need execute last block transactions') }
     // TODO: select transaction intelligently
     const txs = Array.from(this.transactionPool)
     this.transactionPool.remove(txs)
 
     // TODO: 複数Validator対応
     // only my signature
-    const lastBlockConsensus = new Consensus(0, new MerkleTree([this.keyPair.sign(this.blockchain.lastBlock().hash)]))
+    const lastBlockConsensus = new Consensus(0, new MerkleTree([this.keyPair.sign(this.blockchain.lastBlock.hash)]))
     // unchangeable validator set
     const nextValidatorSet = new ValidatorSet([new Validator(this.keyPair.address, 100)])
 
     const data = new BlockData(new MerkleTree(txs), lastBlockConsensus, nextValidatorSet)
     const header = new BlockHeader(
-      this.blockchain.height() + 1,
+      this.blockchain.height + 1,
       Math.floor((new Date().getTime()) / 1000),
-      this.blockchain.lastBlock().hash,
+      this.blockchain.lastBlock.hash,
       data.transactions.root,
       data.lastBlockConsensus.hash,
       nextValidatorSet.root,
-      this.appStateHash
+      this.lastAppState.hash
     )
     const block = new Block(data, header)
     this.blockchain.addBlock(block)

@@ -15,24 +15,29 @@ export interface Hashable {
 
 export class Signature implements Hashable {
   public readonly hash: Hash
-  public readonly buffer: Buffer
 
   constructor (
-    public signature: Bytes64,
-    public recovery: number
+    public readonly buffer: Buffer
   ) {
-    this.buffer = Buffer.concat([
-      signature.buffer,
-      UInt8.fromNumber(recovery).buffer
-    ])
     this.hash = Hash.fromData(this.buffer)
   }
 
+  public get signature (): Bytes64 {
+    return new Bytes64(this.buffer.slice(0, 64))
+  }
+
+  public get recovery (): number {
+    return this.buffer.readUInt8(64)
+  }
+
   // Ethereum compatible
-  public static sign (messageHash: Hash, privateKey: Bytes32) {
+  public static sign (messageHash: Hash, privateKey: Bytes32): Signature {
     const sig = secp256k1.sign(new Buffer(messageHash.buffer), new Buffer(privateKey.buffer))
 
-    return new Signature(new Bytes64(sig.signature), sig.recovery)
+    return new Signature(Buffer.concat([
+      sig.signature,
+      UInt8.fromNumber(sig.recovery).buffer
+    ]))
   }
 
   public recover (messageHash: Hash): Bytes64 {

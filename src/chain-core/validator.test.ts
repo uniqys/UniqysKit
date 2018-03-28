@@ -1,27 +1,65 @@
-import { ValidatorNode } from './validator'
+import { ValidatorNode, Node } from './validator'
 import { BlockData, Consensus, BlockHeader, Block, Transaction, ValidatorSet, Validator, TransactionData } from './blockchain'
 import { MerkleTree } from '../structure'
 import { Hash, Signature, KeyPair, Signer } from '../cryptography'
-import { Bytes32 } from '../bytes'
-import { Dapp, Core } from './dapi'
+import { Dapp, AppState } from '../interface/dapi'
 
 // mock
-class MockDapps implements Dapp {
+class MockDapp implements Dapp {
   public txCount = 0
-  constructor (
-    private readonly core: Core
-  ) { }
+  public height = 0
 
-  executeTransaction (_: Transaction): void {
-    this.txCount++
+  get appState (): AppState {
+    return new AppState(this.height, Hash.fromData(`state: ${this.txCount}`))
   }
-  getAppStateHash (): Hash {
-    return Hash.fromData(`state: ${this.txCount}`)
+
+  connect (): Promise<AppState> {
+    return Promise.resolve(this.appState)
   }
-  sendTransaction (tx: Transaction): void {
-    this.core.sendTransaction(tx)
+
+  async execute (transactions: AsyncIterable<Transaction>): Promise<AppState> {
+    for await (const _ of transactions) {
+      this.txCount++
+    }
+    this.height++
+    return this.appState
   }
 }
+
+class MockNode extends Node {
+  protected mainLoop (): Promise<void> {
+    return Promise.resolve()
+  }
+}
+class MockRejectionNode extends Node {
+  protected mainLoop (): Promise<void> {
+    return Promise.reject(':(')
+  }
+}
+
+describe('node', () => {
+  it('can start and stop node', (done) => {
+    const node = new MockNode()
+    expect(() => { node.start() }).not.toThrow()
+    node.on('end', done)
+    process.nextTick(() => {
+      expect(node['immediateId']).toBeDefined()
+      expect(() => { node.stop() }).not.toThrow()
+      expect(node['immediateId']).not.toBeDefined()
+      expect(() => { node.stop() }).not.toThrow()
+    })
+  })
+  it('can start and stop node', (done) => {
+    const node = new MockRejectionNode()
+    const handler = jest.fn()
+    node.start()
+    node.on('error', handler)
+    node.on('end', () => {
+      expect(handler).toBeCalled()
+      done()
+    })
+  })
+})
 
 /* tslint:disable:no-unused-expression */
 describe('validator', () => {
@@ -37,99 +75,115 @@ describe('validator', () => {
     const epoch = 1520825696
     const header = new BlockHeader(1, epoch, lastBlockHash, data.transactions.root, data.lastBlockConsensus.hash, state, validator)
     genesis = new Block(data, header)
-    signer = { sign: (_: Hash) => { return new Signature(new Bytes32(new Buffer(32)), 0) } }
+    signer = { sign: (_: Hash) => { return new Signature(new Buffer(33)) } }
   })
   it('can create', () => {
-    expect(() => { new ValidatorNode(MockDapps, genesis) }).not.toThrow()
+    expect(() => { new ValidatorNode(new MockDapp(), genesis) }).not.toThrow()
   })
-  it('can start and stop node', () => {
-    const validator = new ValidatorNode(MockDapps, genesis, keyPair)
-    expect(() => { validator.start() }).not.toThrow()
-    expect(validator['immediateId']).toBeDefined()
-    expect(() => { validator.stop() }).not.toThrow()
-    expect(validator['immediateId']).not.toBeDefined()
-    expect(() => { validator.stop() }).not.toThrow()
-    expect(validator['immediateId']).not.toBeDefined()
+  it('can do mainLoop', async () => {
+    const validator = new ValidatorNode(new MockDapp(), genesis, keyPair)
+    // do 10 times
+    for (let i = 0; i < 10; i++) {
+      await expect(validator['mainLoop']()).resolves.not.toThrow()
+    }
   })
   it('can add transaction', () => {
-    const validator = new ValidatorNode(MockDapps, genesis, keyPair)
+    const validator = new ValidatorNode(new MockDapp(), genesis, keyPair)
     const transaction = new TransactionData(1234, new Buffer('The quick brown fox jumps over the lazy dog')).sign(signer)
     expect(Array.from(validator.transactionsInPool()).length).toBe(0)
     validator.addTransaction(transaction)
     expect(Array.from(validator.transactionsInPool()).length).toBe(1)
     expect(validator.transactionsInPool()[Symbol.iterator]().next().value.equals(transaction)).toBeTruthy()
   })
-  it('is sent transaction by dapps', () => {
-    const validator = new ValidatorNode(MockDapps, genesis, keyPair)
-    const transaction = new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer)
-    expect(Array.from(validator.transactionsInPool()).length).toBe(0)
-    validator.dapp.sendTransaction(transaction)
-    expect(Array.from(validator.transactionsInPool()).length).toBe(1)
-    expect(validator.transactionsInPool()[Symbol.iterator]().next().value.equals(transaction)).toBeTruthy()
-  })
-  it('proceed consensus if need', () => {
-    const validator = new ValidatorNode(MockDapps, genesis, keyPair)
-    validator.dapp.sendTransaction(new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer))
-    validator.dapp.sendTransaction(new TransactionData(1235, new Buffer('Dapps transaction')).sign(signer))
-    expect(validator.blockchain.height()).toBe(1)
+  it('proceed consensus if need', async () => {
+    const validator = new ValidatorNode(new MockDapp(), genesis, keyPair)
+    validator.addTransaction(new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer))
+    validator.addTransaction(new TransactionData(1235, new Buffer('Dapps transaction')).sign(signer))
+    expect(validator.blockchain.height).toBe(1)
     expect(Array.from(validator.transactionsInPool()).length).toBe(2)
-    validator.proceedConsensusUntilSteady()
-    expect(validator.blockchain.height()).toBe(3) // tx block and appState proof block
+    await validator.proceedConsensusUntilSteady()
+    expect(validator.blockchain.height).toBe(3) // tx block and appState proof block
     expect(Array.from(validator.transactionsInPool()).length).toBe(0)
     expect(validator.blockchain.blockOf(2).data.transactions.items.length).toBe(2)
     expect(validator.blockchain.blockOf(3).header.appStateHash.equals(Hash.fromData('state: 2'))).toBeTruthy()
   })
-  it('add reach block include transactions', () => {
-    const validator = new ValidatorNode(MockDapps, genesis, keyPair)
-    const dapp = validator.dapp
-    const validator2 = new ValidatorNode(MockDapps, genesis, keyPair) // same signer
-    const dapp2 = validator2.dapp
-    dapp.sendTransaction(new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer))
-    dapp.sendTransaction(new TransactionData(1235, new Buffer('Dapps transaction')).sign(signer))
-    dapp2.sendTransaction(new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer))
-    dapp2.sendTransaction(new TransactionData(1235, new Buffer('Dapps transaction')).sign(signer))
+  it('add reach block include transactions', async () => {
+    const dapp = new MockDapp()
+    const validator = new ValidatorNode(dapp, genesis, keyPair)
+    const dapp2 = new MockDapp()
+    const validator2 = new ValidatorNode(dapp2, genesis, keyPair) // same signer
+    validator.addTransaction(new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer))
+    validator.addTransaction(new TransactionData(1235, new Buffer('Dapps transaction')).sign(signer))
+    validator2.addTransaction(new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer))
+    validator2.addTransaction(new TransactionData(1235, new Buffer('Dapps transaction')).sign(signer))
     // construct block include transactions
-    validator2.proceedConsensusUntilSteady()
+    await validator2.proceedConsensusUntilSteady()
     const block2 = validator2.blockchain.blockOf(2)
 
-    expect(validator.blockchain.height()).toBe(1)
+    expect(validator.blockchain.height).toBe(1)
     expect(Array.from(validator.transactionsInPool()).length).toBe(2)
-    validator.addReachedBlock(block2)
-    expect(validator.blockchain.height()).toBe(2)
+    await validator.addReachedBlock(block2)
+    // allow reach already have block
+    await expect(validator.addReachedBlock(block2)).resolves.not.toThrow()
+    expect(validator.blockchain.height).toBe(2)
     expect(Array.from(validator.transactionsInPool()).length).toBe(0)
-    expect(dapp.getAppStateHash().equals(Hash.fromData('state: 0'))).toBeTruthy()
-    validator.proceedConsensusUntilSteady()
-    expect(validator.blockchain.height()).toBe(3) // make proof block by myself
-    expect(dapp.getAppStateHash().equals(Hash.fromData('state: 2'))).toBeTruthy()
-    const block3 = validator2.blockchain.blockOf(3)
-    // already have block
-    expect(() => { validator.addReachedBlock(block3) }).not.toThrow()
-    expect(validator.blockchain.height()).toBe(3)
+    expect(dapp.appState.hash.equals(Hash.fromData('state: 0'))).toBeTruthy()
+    await validator.proceedConsensusUntilSteady()
+    expect(validator.blockchain.height).toBe(3) // make proof block by myself
+    expect(dapp.appState.hash.equals(Hash.fromData('state: 2'))).toBeTruthy()
   })
   describe('error case', () => {
-    it('cant add reached block contain invalid app state', () => {
-      const validator = new ValidatorNode(MockDapps, genesis, keyPair)
-      const invalidValidator = new ValidatorNode(MockDapps, genesis, keyPair)
-      const invalidDapps = validator.dapp
+    it('cant add reached block contain invalid app state', async () => {
+      const validator = new ValidatorNode(new MockDapp(), genesis, keyPair)
+      const invalidDapp = new MockDapp()
+      const invalidValidator = new ValidatorNode(invalidDapp, genesis, keyPair)
       // hack txCount
-      invalidDapps.txCount++
+      invalidDapp.txCount++
       // construct invalid block
-      invalidValidator.proceedConsensusUntilSteady()
-      const block = invalidValidator.blockchain.lastBlock()
+      await invalidValidator.proceedConsensusUntilSteady()
+      const block = invalidValidator.blockchain.lastBlock
 
-      validator.proceedConsensusUntilSteady() // valid
-      expect(() => { validator.addReachedBlock(block) }).toThrow('invalid block')
+      await validator.proceedConsensusUntilSteady() // valid
+      await expect(validator.addReachedBlock(block)).rejects.toThrow('invalid block')
     })
   })
   describe('private error case', () => {
-    it('cant construct block before execute last block', () => {
-      const validator = new ValidatorNode(MockDapps, genesis, keyPair)
+    it('cant proceed consensus before initialize', async () => {
+      const validator = new ValidatorNode(new MockDapp(), genesis, keyPair)
+      await expect(validator['proceedConsensus']()).rejects.toThrow('not initialized')
+    })
+    it('cant construct block before initialize', () => {
+      const validator = new ValidatorNode(new MockDapp(), genesis, keyPair)
+      expect(() => { validator['constructBlock']() }).toThrow('not initialized')
+    })
+    it('cant construct block before execute last block', async () => {
+      const validator = new ValidatorNode(new MockDapp(), genesis, keyPair)
+      await validator['initialize']()
       expect(() => { validator['constructBlock']() }).toThrow()
     })
-    it('cant execute block when all block executed', () => {
-      const validator = new ValidatorNode(MockDapps, genesis, keyPair)
-      validator.proceedConsensusUntilSteady()
-      expect(() => { validator['executeBlockTransactions']() }).toThrow()
+    it('cant execute block before initialize', async () => {
+      const validator = new ValidatorNode(new MockDapp(), genesis, keyPair)
+      await expect(validator['executeBlockTransactions']()).rejects.toThrow('not initialized')
+    })
+    it('cant execute block when all block executed', async () => {
+      const validator = new ValidatorNode(new MockDapp(), genesis, keyPair)
+      await validator.proceedConsensusUntilSteady()
+      await expect(validator['executeBlockTransactions']()).rejects.toThrow()
+    })
+    it('throw error if connected app block height over known it', async () => {
+      const invalidDapp = new MockDapp()
+      const invalidValidator = new ValidatorNode(invalidDapp, genesis, keyPair)
+      // hack height
+      invalidDapp.height = 10
+      await expect(invalidValidator['initialize']()).rejects.toThrow('need reset app')
+    })
+    it('throw error if executed app block height is wrong', async () => {
+      const invalidDapp = new MockDapp()
+      const invalidValidator = new ValidatorNode(invalidDapp, genesis, keyPair)
+      await invalidValidator['initialize']()
+      // hack height
+      invalidDapp.height++
+      await expect(invalidValidator['executeBlockTransactions']()).rejects.toThrow('block height mismatch')
     })
   })
 })
