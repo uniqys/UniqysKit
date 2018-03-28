@@ -1,5 +1,7 @@
 import { isNull } from 'util'
 
+// https://github.com/nodejs/node/pull/17755
+// In future, probably Node.js official support this.
 export class StreamIterable<T> implements AsyncIterableIterator<T> {
   private resolve?: (result: IteratorResult<T>) => void
   private reject?: (err: any) => void
