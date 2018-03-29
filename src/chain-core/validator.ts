@@ -2,8 +2,8 @@ import { Transaction, Blockchain, BlockData, Consensus, BlockHeader, Block, Vali
 import { MerkleTree } from '../structure'
 import { KeyPair } from '../cryptography'
 import * as dapi from '../interface/dapi'
-import debug from 'debug'
 import { EventEmitter } from 'events'
+import debug from 'debug'
 const logger = debug('validator')
 
 class TransactionPool implements Iterable<Transaction> {
@@ -57,19 +57,7 @@ export abstract class Node extends EventEmitter {
   protected abstract async mainLoop (): Promise<void>
 }
 
-// class ValidatorCore<T extends dapi.Dapp> implements dapi.Core {
-//  constructor (
-//    private readonly validator: ValidatorNode<T>
-//  ) {}
-//
-//  public sendTransaction (transaction: Transaction): Promise<void> {
-//    return new Promise((resolve, _) => {
-//      resolve(this.validator.addTransaction(transaction))
-//    })
-//  }
-// }
-
-export class ValidatorNode<T extends dapi.Dapp> extends Node {
+export class ValidatorNode<T extends dapi.Dapp> extends Node implements dapi.Core {
   public readonly blockchain: Blockchain
   private readonly dapp: T
   private initialized: Boolean = false
@@ -88,6 +76,10 @@ export class ValidatorNode<T extends dapi.Dapp> extends Node {
     this.keyPair = keyPair === undefined ? new KeyPair() : keyPair
 
     this.dapp = dapp
+  }
+
+  public sendTransaction (transaction: Transaction): Promise<void> {
+    return Promise.resolve(this.addTransaction(transaction))
   }
 
   public async proceedConsensusUntilSteady () {
