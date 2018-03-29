@@ -7,6 +7,8 @@
     "ts-node": "node --harmony -r ts-node/register",
     "chain-init": "yarn ts-node src/app/init.ts",
     "sample": "yarn ts-node src/app/sample/in-process.ts",
+    "sample:core": "yarn ts-node src/app/sample/grpc-core.ts",
+    "sample:dapp": "yarn ts-node src/app/sample/grpc-dapp.ts",
     "prebuild": "run-p prebuild:*",
     "prebuild:config": "ts-node dev-script/generate-config-type-definition.ts",
     "prebuild:protoc": "ts-node dev-script/protoc.ts",
