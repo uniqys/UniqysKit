@@ -6,8 +6,8 @@
   "scripts": {
     "ts-node": "node --harmony -r ts-node/register",
     "chain-init": "yarn ts-node src/app/init.ts",
-    "sample-cli": "DEBUG=validator yarn ts-node src/app/sample-cli.ts --harmony",
     "prebuild": "ts-node dev-script/generate-config-type-definition.ts",
+    "sample": "yarn ts-node src/app/sample/in-process.ts",
     "build": "run-p build:*",
     "build:ts": "tsc -p tsconfig.build.json",
     "lint": "run-p lint:*",
