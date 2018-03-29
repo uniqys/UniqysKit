@@ -14,5 +14,5 @@ export interface Core {
 
 export interface Dapp {
   connect (): Promise<AppState>
-  execute (transactions: AsyncIterable<Transaction>): Promise<AppState>
+  execute (transactions: Transaction[]): Promise<AppState>
 }

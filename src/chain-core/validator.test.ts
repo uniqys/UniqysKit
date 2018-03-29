@@ -17,8 +17,8 @@ class MockDapp implements Dapp {
     return Promise.resolve(this.appState)
   }
 
-  async execute (transactions: AsyncIterable<Transaction>): Promise<AppState> {
-    for await (const _ of transactions) {
+  async execute (transactions: Transaction[]): Promise<AppState> {
+    for (const _ of transactions) {
       this.txCount++
     }
     this.height++

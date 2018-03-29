@@ -23,8 +23,8 @@ class CliApp implements Dapp {
     return Promise.resolve(this.appState)
   }
 
-  public async execute (transactions: AsyncIterable<Transaction>): Promise<AppState> {
-    for await (const tx of transactions) {
+  public async execute (transactions: Transaction[]): Promise<AppState> {
+    for (const tx of transactions) {
       this.transactions.push(tx)
     }
     this.height++

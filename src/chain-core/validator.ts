@@ -3,7 +3,6 @@ import { MerkleTree } from '../structure'
 import { KeyPair } from '../cryptography'
 import * as dapi from '../interface/dapi'
 import debug from 'debug'
-import * as iterable from '../iterable'
 import { EventEmitter } from 'events'
 const logger = debug('validator')
 
@@ -164,7 +163,7 @@ export class ValidatorNode<T extends dapi.Dapp> extends Node {
     if (this.lastAppState === undefined) { throw new Error('not initialized') }
     if (this.blockchain.height === this.lastAppState.height) { throw new Error('all block executed') }
     const block = this.blockchain.blockOf(this.lastAppState.height + 1)
-    const appState = await this.dapp.execute(iterable.toAsync(block.data.transactions))
+    const appState = await this.dapp.execute(block.data.transactions.items)
     if (appState.height !== block.header.height) { throw new Error('block height mismatch') }
     this.lastAppState = appState
   }
