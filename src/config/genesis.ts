@@ -1,8 +1,9 @@
 import { Config } from './loader'
 import { Genesis } from './schema-generated/genesis'
-import { MerkleTree } from '../structure'
-import { Address, Hash } from '../cryptography'
-import { Block, BlockData, Consensus, ValidatorSet, Validator, BlockHeader } from '../chain-core/blockchain'
+import { MerkleTree } from '../structure/merkle-tree'
+import { Hash } from '../structure/cryptography'
+import { Address } from '../structure/address'
+import { Block, BlockData, Consensus, ValidatorSet, Validator, BlockHeader } from '../structure/blockchain'
 
 export class GenesisConfig extends Config<Genesis> {
   constructor () { super(require('./schema-generated/genesis.json')) }

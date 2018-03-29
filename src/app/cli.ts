@@ -1,5 +1,5 @@
-import { KeyPair } from '../cryptography'
-import { TransactionData } from '../chain-core/blockchain'
+import { KeyPair } from '../structure/cryptography'
+import { TransactionData } from '../structure/blockchain'
 import repl from 'repl'
 import { Dapp, Core } from '../interface/dapi'
 

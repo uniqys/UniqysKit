@@ -1,7 +1,7 @@
 import { ValidatorNode, Node } from './validator'
-import { BlockData, Consensus, BlockHeader, Block, Transaction, ValidatorSet, Validator, TransactionData } from './blockchain'
-import { MerkleTree } from '../structure'
-import { Hash, Signature, KeyPair, Signer } from '../cryptography'
+import { BlockData, Consensus, BlockHeader, Block, Transaction, ValidatorSet, Validator, TransactionData } from '../structure/blockchain'
+import { MerkleTree } from '../structure/merkle-tree'
+import { Hash, Signature, KeyPair, Signer } from '../structure/cryptography'
 import { Dapp, AppState } from '../interface/dapi'
 
 // mock

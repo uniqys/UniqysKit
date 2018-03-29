@@ -1,7 +1,7 @@
 import { Config } from './loader'
 import { Key } from './schema-generated/key'
-import { KeyPair } from '../cryptography'
-import { Bytes32 } from '../bytes'
+import { KeyPair } from '../structure/cryptography'
+import { Bytes32 } from '../structure/bytes'
 
 export class KeyConfig extends Config<Key> {
   constructor () { super(require('./schema-generated/key.json')) }

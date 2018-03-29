@@ -1,5 +1,5 @@
-import { Transaction } from '../chain-core/blockchain'
-import { Hash } from '../cryptography'
+import { Transaction } from '../structure/blockchain'
+import { Hash } from '../structure/cryptography'
 
 export class AppState {
   constructor (

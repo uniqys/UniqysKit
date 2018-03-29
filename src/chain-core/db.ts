@@ -1,8 +1,8 @@
 import levelup from 'levelup'
 import memdown from 'memdown'
 import semaphore from 'semaphore'
-import { Block } from './blockchain'
-import { Hash } from '../cryptography'
+import { Block } from '../structure/blockchain'
+import { Hash } from '../structure/cryptography'
 
 interface BlockDatabasePayload {
   db: string,

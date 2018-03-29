@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import yargs = require('yargs')
-import { KeyPair } from '../cryptography'
+import { KeyPair } from '../structure/cryptography'
 import { Genesis } from '../config/schema-generated/genesis'
 import { Key } from '../config/schema-generated/key'
 

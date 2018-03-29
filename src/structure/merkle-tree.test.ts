@@ -1,6 +1,6 @@
 
+import { MerkleTree } from './merkle-tree'
 import { Hash, Hashable } from './cryptography'
-import { MerkleTree } from './structure'
 
 class MockHashable implements Hashable {
   public readonly hash: Hash
@@ -13,7 +13,7 @@ class MockHashable implements Hashable {
 
 const concatHash = (a: Hash, b: Hash): Hash => Hash.fromData(Buffer.concat([a.buffer, b.buffer]))
 
-describe('Hash', () => {
+describe('MerkleTree', () => {
   it('root is H(a) if items are [a]', () => {
     const a = new MockHashable('The quick brown fox jumps over the lazy dog')
     const tree = new MerkleTree([a])

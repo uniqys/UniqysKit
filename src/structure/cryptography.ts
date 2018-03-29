@@ -1,7 +1,8 @@
 import createKeccakHash from 'keccak'
 import secp256k1 from 'secp256k1'
-import { Bytes32, Bytes64, UInt8 } from './bytes'
 import { randomBytes } from 'crypto'
+import { Bytes32, Bytes64, UInt8 } from './bytes'
+import { Address } from './address'
 
 export class Hash extends Bytes32 {
   public static fromData (data: string | Buffer | DataView) {
@@ -48,30 +49,6 @@ export class Signature implements Hashable {
     }
   }
 
-}
-
-export class Address {
-  constructor (
-    public readonly buffer: Buffer
-  ) { }
-
-  public static fromPublicKey (publicKey: Bytes64): Address {
-    // TODO: something conversion
-    return new Address(publicKey.buffer)
-  }
-
-  // string representation
-  // TODO: checksum? base58?
-  public static fromString (addressString: string): Address {
-    return new Address(new Buffer(addressString, 'hex'))
-  }
-  public toString (): string {
-    return this.buffer.toString('hex')
-  }
-
-  public equals (other: Address): boolean {
-    return this.buffer.equals(other.buffer)
-  }
 }
 
 export interface Signer {

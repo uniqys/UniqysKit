@@ -1,6 +1,6 @@
 import { Dapp, AppState } from '../../interface/dapi'
-import { KeyPair, Hash } from '../../cryptography'
-import { Transaction, TransactionData } from '../../chain-core/blockchain'
+import { KeyPair, Hash } from '../../structure/cryptography'
+import { Transaction, TransactionData } from '../../structure/blockchain'
 import debug from 'debug'
 const logger = debug('sample')
 
