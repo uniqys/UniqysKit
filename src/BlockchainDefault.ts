@@ -1,6 +1,6 @@
-import { Block, BlockHeader, BlockData, Consensus, Blockchain, ValidatorSet, Validator } from './chain-core/blockchain'
-import { Hash, KeyPair } from './cryptography'
-import { MerkleTree } from './structure'
+import { Block, BlockHeader, BlockData, Consensus, Blockchain, ValidatorSet, Validator } from './structure/blockchain'
+import { Hash, KeyPair } from './structure/cryptography'
+import { MerkleTree } from './structure/merkle-tree'
 
 // Blockchainの使いまわし方が見えたら Blockchain.tsと合体するかも
 export class BlockchainDefault {

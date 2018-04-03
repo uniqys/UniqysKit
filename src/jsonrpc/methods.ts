@@ -13,7 +13,7 @@ export function getblockhash (args: Array<number>, callback: Function) {
 }
 
 export function getblockcount (callback: Function) {
-  callback(null, BlockchainDefault.instance.height())
+  callback(null, BlockchainDefault.instance.height)
 }
 
 // ナイヨー

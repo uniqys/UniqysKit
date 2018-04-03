@@ -1,5 +1,5 @@
 import * as methods from './methods'
-import { Block } from '../chain-core/blockchain'
+import { Block } from '../structure/blockchain'
 
 describe('RPC raw methods', () => {
 

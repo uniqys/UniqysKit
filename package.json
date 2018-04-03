@@ -4,7 +4,14 @@
   "description": "Blockchain Platform Project",
   "private": true,
   "scripts": {
-    "cli": "DEBUG=validator ts-node src/app/cli.ts ",
+    "ts-node": "node --harmony -r ts-node/register",
+    "chain-init": "yarn ts-node src/app/init.ts",
+    "sample": "yarn ts-node src/app/sample/in-process.ts",
+    "sample:core": "yarn ts-node src/app/sample/grpc-core.ts",
+    "sample:dapp": "yarn ts-node src/app/sample/grpc-dapp.ts",
+    "prebuild": "run-p prebuild:*",
+    "prebuild:config": "ts-node dev-script/generate-config-type-definition.ts",
+    "prebuild:protoc": "ts-node dev-script/protoc.ts",
     "build": "run-p build:*",
     "build:ts": "tsc -p tsconfig.build.json",
     "lint": "run-p lint:*",
@@ -15,7 +22,7 @@
     "test": "run-s test:build test:lint test:jest",
     "test:build": "tsc -p tsconfig.json --noEmit",
     "test:lint": "yarn lint",
-    "test:jest": "jest --forceExit --coverage --verbose"
+    "test:jest": "node --harmony --experimental_extras ./node_modules/.bin/jest --forceExit --coverage --verbose"
   },
   "husky": {
     "hooks": {
@@ -35,27 +42,43 @@
   },
   "homepage": "https://github.com/mfac/BPP#readme",
   "devDependencies": {
+    "@types/ajv": "^1.0.0",
     "@types/debug": "^0.0.30",
+    "@types/fs-extra": "^5.0.1",
+    "@types/glob": "^5.0.35",
+    "@types/google-protobuf": "^3.2.7",
     "@types/jest": "^22.2.0",
     "@types/node": "^9.4.6",
+    "@types/protobufjs": "^6.0.0",
     "@types/semaphore": "^1.1.0",
+    "@types/tmp": "^0.0.33",
+    "@types/yargs": "^11.0.0",
+    "glob": "^7.1.2",
+    "grpc-tools": "^1.6.6",
     "husky": "^0.15.0-rc.8",
     "jest": "^22.0.4",
+    "json-schema-to-typescript": "^5.4.0",
     "nodemon": "^1.13.0",
     "npm-run-all": "^4.1.2",
+    "tmp": "^0.0.33",
     "ts-jest": "^22.0.4",
     "ts-node": "^5.0.0",
+    "ts-protoc-gen": "^0.4.0",
     "tslint": "^5.9.1",
     "tslint-config-standard": "^7.0.0",
     "typescript": "^2.7.2"
   },
   "dependencies": {
+    "ajv": "^6.2.1",
     "debug": "^3.1.0",
     "jayson": "^2.0.5",
+    "fs-extra": "^5.0.0",
+    "grpc": "^1.10.0",
     "keccak": "^1.4.0",
     "levelup": "^2.0.2",
     "memdown": "^2.0.0",
     "secp256k1": "^3.5.0",
-    "semaphore": "^1.1.0"
+    "semaphore": "^1.1.0",
+    "yargs": "^11.0.0"
   }
 }

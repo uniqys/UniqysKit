@@ -1,7 +1,7 @@
 import { Database, ChainHead } from './db'
-import { Block, BlockData, Consensus, BlockHeader, ValidatorSet } from './blockchain'
-import { MerkleTree } from '../structure'
-import { Hash } from '../cryptography'
+import { Block, BlockData, Consensus, BlockHeader, ValidatorSet } from '../structure/blockchain'
+import { MerkleTree } from '../structure/merkle-tree'
+import { Hash } from '../structure/cryptography'
 
 describe('Database', () => {
   let database: Database
