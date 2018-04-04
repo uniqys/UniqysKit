@@ -22,7 +22,7 @@
     "test": "run-s test:build test:lint test:jest",
     "test:build": "tsc -p tsconfig.json --noEmit",
     "test:lint": "yarn lint",
-    "test:jest": "node --harmony --experimental_extras ./node_modules/.bin/jest --forceExit --coverage --verbose"
+    "test:jest": "node --harmony ./node_modules/.bin/jest --forceExit --coverage --verbose"
   },
   "husky": {
     "hooks": {
