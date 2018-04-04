@@ -16,6 +16,10 @@
         "dapi",
         "dapp",
         "dapps",
+        "deserializable",
+        "deserialize",
+        "deserialized",
+        "deserializer",
         "ethereum",
         "grpc",
         "hashable",
@@ -26,6 +30,7 @@
         "protobuf",
         "protoc",
         "secp",
+        "serializable",
         "truthy",
         "validators"
     ]
