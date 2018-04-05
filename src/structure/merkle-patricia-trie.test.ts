@@ -13,22 +13,6 @@ class Value implements Serializable {
   serialize (): Buffer { return Buffer.from(this.message) }
 }
 
-function entries<T extends Serializable> (mpt: MerklePatriciaTrie<T>): [Buffer, T][] {
-  let entries = []
-  for (const entry of mpt) { entries.push(entry) }
-  return entries
-}
-function keys<T extends Serializable> (mpt: MerklePatriciaTrie<T>): Buffer[] {
-  let keys = []
-  for (const key of mpt.keys()) { keys.push(key) }
-  return keys
-}
-function values<T extends Serializable> (mpt: MerklePatriciaTrie<T>): T[] {
-  let values = []
-  for (const value of mpt.values()) { values.push(value) }
-  return values
-}
-
 describe('Merkle Patricia Trie', () => {
   const cat = Buffer.from('cat')
   const catalog = Buffer.from('catalog')
@@ -77,9 +61,9 @@ describe('Merkle Patricia Trie', () => {
     expect(mpt.get(catalyst)).toBeUndefined()
   })
   it('iterate empty', () => {
-    expect(entries(mpt)).toEqual([])
-    expect(keys(mpt)).toEqual([])
-    expect(values(mpt)).toEqual([])
+    expect(Array.from(mpt)).toEqual([])
+    expect(Array.from(mpt.keys())).toEqual([])
+    expect(Array.from(mpt.values())).toEqual([])
   })
   it('iterate key-values in dictionary order', () => {
     mpt.set(category, bar)
@@ -87,9 +71,9 @@ describe('Merkle Patricia Trie', () => {
     mpt.set(catalyst, foo)
     mpt.set(cattle, foo)
     mpt.set(catalog, bar)
-    expect(entries(mpt)).toEqual([[cat, meow], [catalog, bar], [catalyst, foo], [category, bar], [cattle, foo]])
-    expect(keys(mpt)).toEqual([cat, catalog, catalyst, category, cattle])
-    expect(values(mpt)).toEqual([meow, bar, foo, bar, foo])
+    expect(Array.from(mpt)).toEqual([[cat, meow], [catalog, bar], [catalyst, foo], [category, bar], [cattle, foo]])
+    expect(Array.from(mpt.keys())).toEqual([cat, catalog, catalyst, category, cattle])
+    expect(Array.from(mpt.values())).toEqual([meow, bar, foo, bar, foo])
     let count = 0
     mpt.forEach((value, key) => {
       switch (count) {
@@ -124,7 +108,7 @@ describe('Merkle Patricia Trie', () => {
     mpt.set(cat, meow)
     mpt.set(cattle, foo)
     mpt.set(category, bar)
-    expect(entries(mpt)).toEqual([[cat, meow], [catalog, bar], [catalyst, foo], [category, bar], [cattle, foo]])
+    expect(Array.from(mpt)).toEqual([[cat, meow], [catalog, bar], [catalyst, foo], [category, bar], [cattle, foo]])
   })
   it('is hashable on root node', () => {
     mpt.set(cat, meow)
