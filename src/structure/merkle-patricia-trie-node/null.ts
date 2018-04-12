@@ -1,35 +1,29 @@
-import { Hash } from '../cryptography'
-import { HashStore } from '../hash-store'
-import { Serializable } from '../serializable'
+import { Serializable, Deserialized } from '../serializable'
 import { UInt8 } from '../bytes'
-import { Node, Key } from './common'
+import { Node, Key, NodeRef, NodeStore } from './common'
 import { Leaf } from './leaf'
+import { Optional } from '../optional'
 
-export class Null<T extends Serializable> implements Node<T>, Serializable {
-  public readonly hash: Hash
-  private constructor (
-  ) {
-    this.hash = Hash.fromData(this.serialize())
-  }
-  public static construct<T extends Serializable> (): Node<T> {
-    return new Null()
-  }
-  public *entries (): IterableIterator<[Key, T]> {
-    return undefined
-  }
-  public get (_1: HashStore<Node<T>>, _2: Key): T | undefined {
-    return undefined
-  }
-  public set (_: HashStore<Node<T>>, key: Key, value: T): Node<T> {
-    return Leaf.construct(key, value)
-  }
-  public delete (_1: HashStore<Node<T>>, _2: Key): Node<T> {
-    return this
-  }
-  public reference (_: HashStore<Node<T>>): Hash | Node < T > {
-    return this
+export class Null implements Node, Serializable {
+  public static deserialize (buffer: Buffer): Deserialized<Null> {
+    return { rest: buffer.slice(1), value: new Null() }
   }
   public serialize (): Buffer {
     return UInt8.fromNumber(0).serialize() // identify the Null
+  }
+  public async *entries (): AsyncIterableIterator<[Key, Buffer]> {
+    return undefined
+  }
+  public async get (_1: NodeStore, _2: Key): Promise<Optional<Buffer>> {
+    return Optional.none()
+  }
+  public async set (_: NodeStore, key: Key, value: Buffer): Promise<Node> {
+    return new Leaf(key, value)
+  }
+  public async delete (_1: NodeStore, _2: Key): Promise<Node> {
+    return this
+  }
+  public async reference (_: NodeStore): Promise<NodeRef> {
+    return NodeRef.ofNode(this)
   }
 }

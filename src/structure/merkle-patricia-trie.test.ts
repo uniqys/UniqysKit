@@ -1,16 +1,40 @@
-import { Serializable } from './serializable'
 import { MerklePatriciaTrie } from './merkle-patricia-trie'
 import { Leaf } from './merkle-patricia-trie-node/leaf'
-import { Key, Node, NodeRef } from './merkle-patricia-trie-node/common'
+import { Key, Node, NodeRef, NodeStore } from './merkle-patricia-trie-node/common'
 import { Null } from './merkle-patricia-trie-node/null'
-import { HashStore } from './hash-store'
 import { Extension } from './merkle-patricia-trie-node/extension'
 import { Branch } from './merkle-patricia-trie-node/branch'
 import { Optional } from './optional'
+import { Hash } from './cryptography'
 
-class Value implements Serializable {
-  constructor (public readonly message: string) {}
-  serialize (): Buffer { return Buffer.from(this.message) }
+class InMemoryNodeStore implements NodeStore {
+  private store = new Map<string, Buffer>()
+  public get (key: Hash): Promise<Node> {
+    const value = this.store.get(key.serialize().toString('hex'))
+    if (value) {
+      return Promise.resolve(Node.deserialize(value).value)
+    } else {
+      return Promise.reject(new Error('NotFound'))
+    }
+  }
+  public delete (key: Hash): Promise<void> {
+    this.store.delete(key.serialize().toString('hex'))
+    return Promise.resolve()
+  }
+  public set (value: Node): Promise<Hash> {
+    const buff = value.serialize()
+    const key = Hash.fromData(buff)
+    this.store.set(key.serialize().toString('hex'), buff)
+    return Promise.resolve(key)
+  }
+}
+
+async function collect<T> (iter: AsyncIterable<T>): Promise<T[]> {
+  let collect = []
+  for await (const v of iter) {
+    collect.push(v)
+  }
+  return collect
 }
 
 describe('Merkle Patricia Trie', () => {
@@ -19,118 +43,96 @@ describe('Merkle Patricia Trie', () => {
   const catalyst = Buffer.from('catalyst')
   const category = Buffer.from('category')
   const cattle = Buffer.from('cattle')
-  const meow = new Value('meow')
-  const foo = new Value('foo')
-  const bar = new Value('bar')
+  const meow = Buffer.from('meow')
+  const foo = Buffer.from('foo')
+  const bar = Buffer.from('bar')
 
-  let mpt: MerklePatriciaTrie<Value>
-  beforeEach(() => {
-    mpt = new MerklePatriciaTrie()
+  let mpt = new MerklePatriciaTrie(new InMemoryNodeStore())
+  beforeEach(async () => {
+    await mpt.init()
   })
 
-  it('can set and get values of key', () => {
-    mpt.set(cat, meow)
-    mpt.set(catalyst, foo)
+  it('can set and get values of key', async () => {
+    await mpt.set(cat, meow)
+    await mpt.set(catalyst, foo)
     expect(mpt.size).toBe(2)
-    expect(mpt.get(cat)!.message).toBe(meow.message)
-    expect(mpt.get(catalyst)!.message).toBe(foo.message)
+    expect((await mpt.get(cat)).match(v => v.equals(meow), () => false)).toBeTruthy()
+    expect((await mpt.get(catalyst)).match(v => v.equals(foo), () => false)).toBeTruthy()
   })
-  it('can check contain keys', () => {
-    mpt.set(cat, meow)
-    expect(mpt.has(cat)).toBeTruthy()
-    expect(mpt.has(catalog)).not.toBeTruthy()
+  it('return optional when get value', async () => {
+    await mpt.set(cat, meow)
+    expect((await mpt.get(cat)).hasValue).toBeTruthy()
+    expect((await mpt.get(catalog)).hasValue).not.toBeTruthy()
   })
-  it('can delete a value of key', () => {
-    mpt.set(cat, meow)
-    mpt.delete(cat)
+  it('can delete a value of key', async () => {
+    await mpt.set(cat, meow)
+    expect((await mpt.get(cat)).hasValue).toBeTruthy()
+    await mpt.delete(cat)
     expect(mpt.size).toBe(0)
-    expect(mpt.get(cat)).toBeUndefined()
+    expect((await mpt.get(cat)).hasValue).not.toBeTruthy()
   })
-  it('can update a value of key', () => {
-    mpt.set(cat, foo)
-    mpt.set(cat, meow)
+  it('can update a value of key', async () => {
+    await mpt.set(cat, foo)
+    await mpt.set(cat, meow)
     expect(mpt.size).toBe(1)
-    expect(mpt.get(cat)!.message).toBe(meow.message)
+    expect((await mpt.get(cat)).match(v => v.equals(meow), () => false)).toBeTruthy()
   })
-  it('can clear values', () => {
-    mpt.set(cat, meow)
-    mpt.set(catalyst, foo)
-    mpt.clear()
+  it('can clear values', async () => {
+    await mpt.set(cat, meow)
+    await mpt.set(catalyst, foo)
+    expect(mpt.size).toBe(2)
+    await mpt.clear()
     expect(mpt.size).toBe(0)
-    expect(mpt.get(cat)).toBeUndefined()
-    expect(mpt.get(catalyst)).toBeUndefined()
+    expect((await mpt.get(cat)).hasValue).not.toBeTruthy()
+    expect((await mpt.get(catalyst)).hasValue).not.toBeTruthy()
   })
-  it('iterate empty', () => {
-    expect(Array.from(mpt)).toEqual([])
-    expect(Array.from(mpt.keys())).toEqual([])
-    expect(Array.from(mpt.values())).toEqual([])
+  it('iterate empty', async () => {
+    expect(await collect(mpt)).toEqual([])
+    expect(await collect(mpt.keys())).toEqual([])
+    expect(await collect(mpt.values())).toEqual([])
   })
-  it('iterate key-values in dictionary order', () => {
-    mpt.set(category, bar)
-    mpt.set(cat, meow)
-    mpt.set(catalyst, foo)
-    mpt.set(cattle, foo)
-    mpt.set(catalog, bar)
-    expect(Array.from(mpt)).toEqual([[cat, meow], [catalog, bar], [catalyst, foo], [category, bar], [cattle, foo]])
-    expect(Array.from(mpt.keys())).toEqual([cat, catalog, catalyst, category, cattle])
-    expect(Array.from(mpt.values())).toEqual([meow, bar, foo, bar, foo])
-    let count = 0
-    mpt.forEach((value, key) => {
-      switch (count) {
-        case 0:
-          expect(key.equals(cat)).toBeTruthy()
-          expect(value.message).toBe(meow.message)
-          break
-        case 1:
-          expect(key.equals(catalog)).toBeTruthy()
-          expect(value.message).toBe(bar.message)
-          break
-        case 2:
-          expect(key.equals(catalyst)).toBeTruthy()
-          expect(value.message).toBe(foo.message)
-          break
-        case 3:
-          expect(key.equals(category)).toBeTruthy()
-          expect(value.message).toBe(bar.message)
-          break
-        case 4:
-          expect(key.equals(cattle)).toBeTruthy()
-          expect(value.message).toBe(foo.message)
-          break
-      }
-      count++
-    })
+  it('iterate key-values in dictionary order', async () => {
+    await mpt.set(category, bar)
+    await mpt.set(cat, meow)
+    await mpt.set(catalyst, foo)
+    await mpt.set(cattle, foo)
+    await mpt.set(catalog, bar)
+    expect(await collect(mpt)).toEqual([[cat, meow], [catalog, bar], [catalyst, foo], [category, bar], [cattle, foo]])
+    expect(await collect(mpt.keys())).toEqual([cat, catalog, catalyst, category, cattle])
+    expect(await collect(mpt.values())).toEqual([meow, bar, foo, bar, foo])
   })
-  it('can set values in another order', () => {
+  it('can set values in another order', async () => {
     // for another process of constructing
-    mpt.set(catalyst, foo)
-    mpt.set(catalog, bar)
-    mpt.set(cat, meow)
-    mpt.set(cattle, foo)
-    mpt.set(category, bar)
-    expect(Array.from(mpt)).toEqual([[cat, meow], [catalog, bar], [catalyst, foo], [category, bar], [cattle, foo]])
+    await mpt.set(catalyst, foo)
+    await mpt.set(catalog, bar)
+    await mpt.set(cat, meow)
+    await mpt.set(cattle, foo)
+    await mpt.set(category, bar)
+    expect(await collect(mpt)).toEqual([[cat, meow], [catalog, bar], [catalyst, foo], [category, bar], [cattle, foo]])
   })
-  it('is hashable on root node', () => {
-    mpt.set(cat, meow)
-    const node = Leaf.construct(Key.bufferToKey(cat), meow)
+  it('is hashable on root node', async () => {
+    await mpt.set(cat, meow)
+    const root = Hash.fromData(new Leaf(Key.bufferToKey(cat), meow).serialize())
 
-    expect(mpt.root.equals(node.hash)).toBeTruthy()
-    expect(mpt.hash.equals(node.hash)).toBeTruthy()
+    expect(mpt.root.equals(root)).toBeTruthy()
+    expect(mpt.hash.equals(root)).toBeTruthy()
   })
-  it('is deterministic', () => {
-    const mpt1 = new MerklePatriciaTrie()
-    mpt1.set(cat, meow)
-    mpt1.set(catalyst, foo)
-    mpt1.set(cattle, foo)
+  it('is deterministic', async () => {
+    const mpt1 = new MerklePatriciaTrie(new InMemoryNodeStore())
+    await mpt1.init()
+    await mpt1.set(cat, meow)
+    await mpt1.set(catalyst, foo)
+    await mpt1.set(cattle, foo)
 
-    const mpt2 = new MerklePatriciaTrie()
-    mpt2.set(catalyst, meow)
-    mpt2.set(catalog, bar)
-    mpt2.delete(catalog)
-    mpt2.set(cattle, foo)
-    mpt2.set(catalyst, foo)
-    mpt2.set(cat, meow)
-    mpt2.delete(catalog)
+    const mpt2 = new MerklePatriciaTrie(new InMemoryNodeStore())
+    await mpt2.init()
+    await mpt2.set(catalyst, meow)
+    await mpt2.set(catalog, bar)
+    await mpt2.delete(catalog)
+    await mpt2.set(cattle, foo)
+    await mpt2.set(catalyst, foo)
+    await mpt2.set(cat, meow)
+    await mpt2.delete(catalog)
 
     expect(mpt1.root.equals(mpt2.root)).toBeTruthy()
   })
@@ -138,73 +140,63 @@ describe('Merkle Patricia Trie', () => {
 
 // A little confusing
 describe('Node normalizing', () => {
-  const key = Key.bufferToKey(Buffer.from('cat'))
-  const value = new Value('foo')
-  let store: HashStore<Node<Value>>
-  beforeEach(() => {
-    store = new HashStore<Node<Value>>()
-  })
-  describe('Null', () => {
-    it('construct null', () => {
-      expect(Null.construct()).toBeInstanceOf(Null)
-    })
-  })
-  describe('Leaf', () => {
-    it('construct leaf', () => {
-      const constructed = Leaf.construct(key, value)
-      expect(constructed).toBeInstanceOf(Leaf)
-      expect((constructed as Leaf<Value>).key).toEqual(key)
-      expect((constructed as Leaf<Value>).value.message).toBe(value.message)
-    })
+  const key = Key.bufferToKey(Buffer.from('foo'))
+  const value = Buffer.from('bar')
+  let store: NodeStore
+  let nullNode: Node
+  let leafNode: Leaf
+  let branchNode: Branch
+  let extensionNode: Extension
+  beforeEach(async () => {
+    store = new InMemoryNodeStore()
+    nullNode = new Null()
+    leafNode = new Leaf(key, value)
+    const branch = await Branch.construct(store, new Array(16).fill(NodeRef.ofNode(leafNode)), Optional.none())
+    if (branch instanceof Branch) { branchNode = branch }
+    const extension = await Extension.construct(store, key, NodeRef.ofNode(branchNode))
+    if (extension instanceof Extension) { extensionNode = extension }
   })
   describe('Extension', () => {
-    it('construct null if ref to null', () => {
-      expect(Extension.construct(store, key, Null.construct())).toBeInstanceOf(Null)
+    it('construct null if ref to null', async () => {
+      const constructed = await Extension.construct(store, key, NodeRef.ofNode(nullNode))
+      expect(constructed).toBeInstanceOf(Null)
     })
-    it('construct concatenated leaf if ref to leaf', () => {
-      const leaf = Leaf.construct(key, value)
-      expect(leaf).toBeInstanceOf(Leaf)
-      const constructed = Extension.construct(store, key, leaf)
+    it('construct concatenated leaf if ref to leaf', async () => {
+      const constructed = await Extension.construct(store, key, NodeRef.ofNode(leafNode))
       expect(constructed).toBeInstanceOf(Leaf)
-      expect((constructed as Leaf<Value>).key).toEqual([...key, ...key])
+      expect((constructed as Leaf).key).toEqual([...key, ...leafNode.key])
     })
-    it('construct extension if ref to branch', () => {
-      const branch = Branch.construct(store, new Array(16).fill(Leaf.construct(key, value)), Optional.none())
-      expect(branch).toBeInstanceOf(Branch)
-      const constructed = Extension.construct(store, key, branch)
+    it('construct extension if ref to branch', async () => {
+      const constructed = await Extension.construct(store, key, NodeRef.ofNode(branchNode))
       expect(constructed).toBeInstanceOf(Extension)
-      expect(NodeRef.dereference(store, (constructed as Extension<Value>).ref)).toEqual(branch)
+      expect(await (constructed as Extension).ref.dereference(store)).toEqual(branchNode)
     })
-    it('construct concatenated extension if ref to extension', () => {
-      const extension = Extension.construct(store, key, Branch.construct(store, new Array(16).fill(Leaf.construct(key, value)), Optional.none()))
-      expect(extension).toBeInstanceOf(Extension)
-      const constructed = Extension.construct(store, key, extension)
+    it('construct concatenated extension if ref to extension', async () => {
+      const constructed = await Extension.construct(store, key, NodeRef.ofNode(extensionNode))
       expect(constructed).toBeInstanceOf(Extension)
-      expect((constructed as Extension<Value>).key).toEqual([...key, ...key])
+      expect((constructed as Extension).key).toEqual([...key, ...extensionNode.key])
     })
   })
   describe('Branch', () => {
-    it('construct null if no branch and no value', () => {
-      const constructed = Branch.construct(store, new Array(16).fill(Null.construct()), Optional.none())
+    it('construct null if no branch and no value', async () => {
+      const constructed = await Branch.construct(store, new Array(16).fill(NodeRef.ofNode(nullNode)), Optional.none())
       expect(constructed).toBeInstanceOf(Null)
     })
-    it('construct leaf if no branch and has value', () => {
-      const constructed = Branch.construct(store, new Array(16).fill(Null.construct()), Optional.some(value))
+    it('construct leaf if no branch and has value', async () => {
+      const constructed = await Branch.construct(store, new Array(16).fill(NodeRef.ofNode(nullNode)), Optional.some(value))
       expect(constructed).toBeInstanceOf(Leaf)
-      expect((constructed as Leaf<Value>).key).toEqual([])
-      expect((constructed as Leaf<Value>).value.message).toBe(value.message)
+      expect((constructed as Leaf).key).toEqual([])
+      expect((constructed as Leaf).value.equals(value)).toBeTruthy()
     })
-    it('construct extension if one branch and no value', () => {
-      const ref = Branch.construct(store, new Array(16).fill(Leaf.construct(key, value)), Optional.none())
-      const extension = Extension.construct(store, key, ref)
-      const constructed = Branch.construct(store, new Array(15).fill(Null.construct()).concat(extension), Optional.none())
+    it('construct extension if one branch and no value', async () => {
+      const constructed = await Branch.construct(store, new Array(15).fill(nullNode).concat(extensionNode).map(NodeRef.ofNode), Optional.none())
       expect(constructed).toBeInstanceOf(Extension)
-      expect((constructed as Extension<Value>).key).toEqual(['f', ...key])
-      expect(NodeRef.dereference(store, (constructed as Extension<Value>).ref)).toEqual(ref)
+      expect((constructed as Extension).key).toEqual(['f', ...extensionNode.key])
+      expect((constructed as Extension).ref).toEqual(extensionNode.ref)
     })
-    it('construct branch when other case', () => {
-      const branch = Branch.construct(store, new Array(15).fill(Null.construct()).concat(Leaf.construct(key, value)), Optional.some(value))
-      expect(branch).toBeInstanceOf(Branch)
+    it('construct branch when other case', async () => {
+      const constructed = await Branch.construct(store, new Array(15).fill(nullNode).concat(leafNode).map(NodeRef.ofNode), Optional.some(value))
+      expect(constructed).toBeInstanceOf(Branch)
     })
   })
 })

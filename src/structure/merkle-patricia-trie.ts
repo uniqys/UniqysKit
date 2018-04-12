@@ -1,74 +1,62 @@
 import { Hash, Hashable } from './cryptography'
-import { HashStore } from './hash-store'
-import { Serializable } from './serializable'
-import { Node, Key } from './merkle-patricia-trie-node/common'
+import { Node, Key, NodeStore } from './merkle-patricia-trie-node/common'
 import { Null } from './merkle-patricia-trie-node/null'
+import { Optional } from './optional'
 
 // Merkle Patricia trie implementation.
-export class MerklePatriciaTrie<T extends Serializable> implements Map<Buffer, T>, Hashable {
-  [Symbol.toStringTag]: 'Map'
-  private rootNode: Node<T>
-  get root (): Hash { return this.rootNode.hash }
-  get hash (): Hash { return this.rootNode.hash }
-  private _size: number
+export class MerklePatriciaTrie implements Hashable, AsyncIterable<[Buffer, Buffer]> {
+  get root (): Hash { return this._rootHash }
+  get hash (): Hash { return this._rootHash }
   get size (): number { return this._size }
-
-  private readonly store: HashStore<Node<T>>
+  private _rootNode: Node = new Null()
+  private _rootHash: Hash = new Hash(new Buffer(32))
+  private _size: number = 0
 
   constructor (
-  ) {
-    this._size = 0
-    this.store = new HashStore()
-    this.rootNode = Null.construct()
-  }
+    private readonly store: NodeStore
+  ) { }
 
-  [Symbol.iterator] (): IterableIterator<[Buffer, T]> {
+  public init () { return this.clear() }
+
+  public [Symbol.asyncIterator] (): AsyncIterableIterator<[Buffer, Buffer]> {
     return this.entries()
   }
-  *entries (): IterableIterator<[Buffer, T]> {
-    for (const kv of this.rootNode.entries(this.store)) {
+  public async *entries (): AsyncIterableIterator<[Buffer, Buffer]> {
+    for await (const kv of this._rootNode.entries(this.store)) {
       yield [Key.keyToBuffer(kv['0']), kv['1']]
     }
   }
-  *keys (): IterableIterator<Buffer> {
-    for (const kv of this.entries()) {
+  public async *keys (): AsyncIterableIterator<Buffer> {
+    for await (const kv of this.entries()) {
       yield kv['0']
     }
   }
-  *values (): IterableIterator<T> {
-    for (const kv of this.entries()) {
+  public async *values (): AsyncIterableIterator<Buffer> {
+    for await (const kv of this.entries()) {
       yield kv['1']
     }
   }
-  clear (): void {
-    this._size = 0
-    this.store.clear()
-    this.rootNode = Null.construct()
+  public async get (key: Buffer): Promise<Optional<Buffer>> {
+    return this._rootNode.get(this.store, Key.bufferToKey(key))
   }
-  delete (key: Buffer): boolean {
-    const prev = this.rootNode.hash
-    this.rootNode = this.rootNode.delete(this.store, Key.bufferToKey(key))
-    this.store.set(this.rootNode)
-    const deleted = !prev.equals(this.rootNode.hash)
+  public async set (key: Buffer, value: Buffer): Promise<void> {
+    await this.delete(key)
+    this._rootNode = await this._rootNode.set(this.store, Key.bufferToKey(key), value)
+    this._rootHash = await this.store.set(this._rootNode)
+    this._size++
+    return
+  }
+  public async delete (key: Buffer): Promise<boolean> {
+    const prev = this.root
+    this._rootNode = await this._rootNode.delete(this.store, Key.bufferToKey(key))
+    this._rootHash = await this.store.set(this._rootNode)
+    const deleted = !prev.equals(this.root)
     if (deleted) { this._size-- }
     return deleted
   }
-  forEach (callbackfn: (value: T, key: Buffer, map: Map<Buffer, T>) => void, thisArg?: any): void {
-    for (const kv of this.entries()) {
-      callbackfn.call(thisArg, kv['1'], kv['0'], this)
-    }
-  }
-  get (key: Buffer): T | undefined {
-    return this.rootNode.get(this.store, Key.bufferToKey(key))
-  }
-  has (key: Buffer): boolean {
-    return this.get(key) !== undefined
-  }
-  set (key: Buffer, value: T): this {
-    this.delete(key)
-    this.rootNode = this.rootNode.set(this.store, Key.bufferToKey(key), value)
-    this.store.set(this.rootNode)
-    this._size++
-    return this
+  public async clear (): Promise<void> {
+    this._size = 0
+    this._rootNode = new Null()
+    this._rootHash = await this.store.set(this._rootNode)
   }
 }

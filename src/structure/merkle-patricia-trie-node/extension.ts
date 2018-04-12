@@ -1,93 +1,95 @@
-import { Hash } from '../cryptography'
-import { HashStore } from '../hash-store'
-import { Serializable } from '../serializable'
+import { Deserialized } from '../serializable'
 import { Optional } from '../optional'
 import { UInt32, UInt8 } from '../bytes'
-import { Node, NodeRef, Key } from './common'
+import { Node, NodeRef, Key, NodeStore } from './common'
 import { Null } from './null'
 import { Leaf } from './leaf'
 import { Branch } from './branch'
 
-export class Extension<T extends Serializable> implements Node<T> {
-  public get hash (): Hash { return Hash.fromData(this.serialize()) }
+export class Extension implements Node {
   private constructor (
     public readonly key: Key,
-    public readonly ref: NodeRef<T>
+    public readonly ref: NodeRef
   ) {}
-  public static construct<T extends Serializable> (store: HashStore<Node<T>>, key: Key, ref: NodeRef<T>): Node<T> {
-    const node = NodeRef.dereference(store, ref)
+  public static async construct (store: NodeStore, key: Key, ref: NodeRef): Promise<Node> {
+    const node = await ref.dereference(store)
     if (key.length === 0) {
       return node
     }
     if (node instanceof Null) {
-      return Null.construct()
+      return node
     }
     if (node instanceof Extension) {
-      const ext = node as Extension<T>
-      return new Extension(key.concat(ext.key), ext.ref)
+      return new Extension(key.concat(node.key), node.ref)
     }
     if (node instanceof Leaf) {
-      const leaf = node as Leaf<T>
-      return Leaf.construct(key.concat(leaf.key), leaf.value)
+      return new Leaf(key.concat(node.key), node.value)
     }
-    return new Extension(key, NodeRef.normalize(store, ref))
+    return new Extension(key, await ref.normalize(store))
   }
-  public *entries (store: HashStore<Node<T>>): IterableIterator<[Key, T]> {
-    const node = NodeRef.dereference(store, this.ref)
-    for (const [k, v] of node.entries(store)) {
-      yield [[...this.key, ...k], v]
-    }
-  }
-  public get (store: HashStore<Node<T>>, key: Key): T | undefined {
-    if (this.key.every((v,i) => v === key[i])) {
-      const node = NodeRef.dereference(store, this.ref)
-      return node.get(store, key.slice(this.key.length))
-    }
-    return undefined
-  }
-  public set (store: HashStore<Node<T>>, key: Key, value: T): Node<T> {
-    const matchResult = Key.match(this.key, key)
-    if (matchResult.remain1.length === 0) {
-      const node = NodeRef.dereference(store, this.ref)
-      return Extension.construct(store, matchResult.prefix, node.set(store, matchResult.remain2, value))
-    } else {
-      let refs = new Array(16).fill(Null.construct()) as NodeRef<T>[]
-      let val: Optional<T> = Optional.none()
-      refs[Key.alphabetToIndex(matchResult.remain1[0])] = Extension.construct(store, matchResult.remain1.slice(1), this.ref)
-      if (matchResult.remain2.length === 0) {
-        val = Optional.some(value)
-      } else {
-        refs[Key.alphabetToIndex(matchResult.remain2[0])] = Leaf.construct(matchResult.remain2.slice(1), value)
-      }
-
-      return Extension.construct(store, matchResult.prefix, Branch.construct(store, refs, val))
-    }
-  }
-  public delete (store: HashStore < Node < T >> , key: Key): Node<T> {
-    const matchResult = Key.match(this.key, key)
-    if (matchResult.remain1.length === 0) {
-      const node = NodeRef.dereference(store, this.ref)
-      return Extension.construct(store, matchResult.prefix, node.delete(store, matchResult.remain2))
-    }
-    return this
-  }
-  public reference (store: HashStore<Node<T>>): Hash | Node < T > {
-    // TODO: fix serialize protocol and don't save by hash of small node
-    store.set(this)
-    return this.hash
+  public static deserialize (buffer: Buffer): Deserialized<Extension> {
+    const keyLengthBuf = buffer.slice(1) // except label
+    const { rest: keyBuf, value: keyLength } = UInt32.deserialize(keyLengthBuf)
+    const isEven = keyLength.number % 2 === 0
+    const keyBufSize = (isEven ? keyLength.number : keyLength.number + 1) / 2
+    const evenKey = Key.bufferToKey(keyBuf.slice(0, keyBufSize))
+    const key = isEven ? evenKey : evenKey.slice(1)
+    const refBuf = keyBuf.slice(keyBufSize)
+    const { rest: rest, value: ref } = NodeRef.deserialize(refBuf)
+    return { rest: rest, value: new Extension(key, ref) }
   }
   public serialize (): Buffer {
     // TODO: more efficient encode like ethereum
     const isEven = this.key.length % 2 === 0
-    const evenKey = isEven ? this.key : ['0'].concat(this.key) // make even length
-    const buff = new Buffer(evenKey.length / 2)
-    for (let i = 0; i < buff.byteLength; i += 1) {
-      buff.write(evenKey[i * 2] + evenKey[i * 2 + 1], i, 1, 'hex')
-    }
+    const evenKey: Key = isEven ? this.key : ['0', ...this.key] // make even length
     return Buffer.concat([
       UInt8.fromNumber(3).serialize(), // identify the Extension
-      UInt32.fromNumber(this.key.length).serialize(), buff,
+      UInt32.fromNumber(this.key.length).serialize(),
+      Key.keyToBuffer(evenKey),
       this.ref.serialize()
     ])
+  }
+  public async *entries (store: NodeStore): AsyncIterableIterator<[Key, Buffer]> {
+    const node = await this.ref.dereference(store)
+    for await (const [k, v] of node.entries(store)) {
+      yield [[...this.key, ...k], v]
+    }
+  }
+  public async get (store: NodeStore, key: Key): Promise<Optional<Buffer>> {
+    if (this.key.every((v,i) => v === key[i])) {
+      const node = await this.ref.dereference(store)
+      return node.get(store, key.slice(this.key.length))
+    }
+    return Optional.none()
+  }
+  public async set (store: NodeStore, key: Key, value: Buffer): Promise<Node> {
+    const matchResult = Key.match(this.key, key)
+    if (matchResult.remain1.length === 0) {
+      const node = await this.ref.dereference(store)
+      return Extension.construct(store, matchResult.prefix, NodeRef.ofNode(await node.set(store, matchResult.remain2, value)))
+    } else {
+      let refs = new Array(16).fill(NodeRef.ofNode(new Null())) as NodeRef[]
+      let val: Optional<Buffer> = Optional.none()
+      refs[Key.alphabetToIndex(matchResult.remain1[0])] = NodeRef.ofNode(await Extension.construct(store, matchResult.remain1.slice(1), this.ref))
+      if (matchResult.remain2.length === 0) {
+        val = Optional.some(value)
+      } else {
+        refs[Key.alphabetToIndex(matchResult.remain2[0])] = NodeRef.ofNode(new Leaf(matchResult.remain2.slice(1), value))
+      }
+      return Extension.construct(store, matchResult.prefix, NodeRef.ofNode(await Branch.construct(store, refs, val)))
+    }
+  }
+  public async delete (store: NodeStore , key: Key): Promise<Node> {
+    const matchResult = Key.match(this.key, key)
+    if (matchResult.remain1.length === 0) {
+      const node = await this.ref.dereference(store)
+      return Extension.construct(store, matchResult.prefix, NodeRef.ofNode(await node.delete(store, matchResult.remain2)))
+    }
+    return this
+  }
+  public async reference (store: NodeStore): Promise<NodeRef> {
+    // TODO: fix serialize protocol and don't save by hash of small node
+    const hash = await store.set(this)
+    return NodeRef.ofHash(hash)
   }
 }

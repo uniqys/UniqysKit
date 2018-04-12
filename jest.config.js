@@ -11,10 +11,10 @@ module.exports = {
     'js',
   ],
   coverageThreshold: {
-    // This is branch in only compiled code
-    '**/structure/optional.ts': {
+    // That has branch in only compiled code
+    '**/structure/@(optional|either).ts': {
       statements: 90,
-      branches: 75,
+      branches: 80,
       functions: 95,
     },
     // this is too strict?
