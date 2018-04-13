@@ -69,6 +69,7 @@
     "typescript": "^2.7.2"
   },
   "dependencies": {
+    "abstract-leveldown": "^4.0.3",
     "ajv": "^6.2.1",
     "debug": "^3.1.0",
     "fs-extra": "^5.0.0",

@@ -3,13 +3,12 @@ import memdown from 'memdown'
 import semaphore from 'semaphore'
 import { Block } from '../structure/blockchain'
 import { Hash } from '../structure/cryptography'
+import { Batch } from 'abstract-leveldown'
 
-interface BlockDatabasePayload {
+// TODO: correct?
+type BlockDatabasePayload = Batch & {
   db: string,
-  type: string,
-  key: string,
   keyEncoding?: string,
-  value: string,
   valueEncoding?: string
 }
 
@@ -20,7 +19,7 @@ export interface ChainHead {
 
 export class Database {
   private semaphore: semaphore.Semaphore
-  private blockDatabase: any
+  private blockDatabase: levelup.LevelUp
   private blockDatabaseOps: Array<BlockDatabasePayload>
 
   constructor () {

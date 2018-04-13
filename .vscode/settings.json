@@ -24,6 +24,7 @@
         "grpc",
         "hashable",
         "keccak",
+        "leveldown",
         "memdown",
         "merkle",
         "prebuild",
