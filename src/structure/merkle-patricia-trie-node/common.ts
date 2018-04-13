@@ -95,5 +95,3 @@ export interface NodeStore {
   get (key: Hash): Promise<Node>
   set (value: Node): Promise <Hash>
 }
-
-// for experiment and test

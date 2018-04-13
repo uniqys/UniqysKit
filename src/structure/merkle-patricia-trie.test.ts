@@ -17,10 +17,6 @@ class InMemoryNodeStore implements NodeStore {
       return Promise.reject(new Error('NotFound'))
     }
   }
-  public delete (key: Hash): Promise<void> {
-    this.store.delete(key.serialize().toString('hex'))
-    return Promise.resolve()
-  }
   public set (value: Node): Promise<Hash> {
     const buff = value.serialize()
     const key = Hash.fromData(buff)
