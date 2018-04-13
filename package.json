@@ -6,6 +6,7 @@
   "scripts": {
     "ts-node": "node --harmony -r ts-node/register",
     "chain-init": "yarn ts-node src/app/init.ts",
+    "merkleized-db": "yarn ts-node src/app/merkleized-db-server.ts",
     "sample": "yarn ts-node src/app/sample/in-process.ts",
     "sample:core": "yarn ts-node src/app/sample/grpc-core.ts",
     "sample:dapp": "yarn ts-node src/app/sample/grpc-dapp.ts",
@@ -51,6 +52,7 @@
     "@types/node": "^9.4.6",
     "@types/protobufjs": "^6.0.0",
     "@types/semaphore": "^1.1.0",
+    "@types/split": "^0.3.28",
     "@types/tmp": "^0.0.33",
     "@types/yargs": "^11.0.0",
     "glob": "^7.1.2",
@@ -60,6 +62,7 @@
     "json-schema-to-typescript": "^5.4.0",
     "nodemon": "^1.13.0",
     "npm-run-all": "^4.1.2",
+    "split": "^1.0.1",
     "tmp": "^0.0.33",
     "ts-jest": "^22.0.4",
     "ts-node": "^5.0.0",

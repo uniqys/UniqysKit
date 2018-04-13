@@ -27,6 +27,7 @@
         "leveldown",
         "memdown",
         "merkle",
+        "merkleized",
         "prebuild",
         "protobuf",
         "protoc",
