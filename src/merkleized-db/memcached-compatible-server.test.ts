@@ -1,4 +1,4 @@
-import { MerkleizedDbServer } from './memcached-compatible'
+import { MerkleizedDbServer } from './memcached-compatible-server'
 import memdown from 'memdown'
 import net from 'net'
 import split from 'split'
@@ -450,13 +450,21 @@ describe('Test memcached compatibility', () => {
         expect(await readLine(client)).toMatch(errorRegex)
         await assertNoMoreResponse(client)
       }, timeout)
-      it('returns root hash value', async () => {
+      it('returns root hash value in hex', async () => {
+        client.socket.write('root hex\r\n')
+        const [key, [, value]] = await readKeyValue(client)
+        expect(key).toEqual('')
+        expect(value.length).toEqual(32 * 2)
+        expect(await readLine(client)).toMatch(/END/)
+      }, timeout)
+      it('returns root hash value in raw byte', async () => {
         client.socket.write('root\r\n')
         const result = /VALUE {2}(\S+) (\S+)/.exec(await readLine(client))
         expect(result).not.toBeNull()
         if (isNull(result)) { throw new Error() }
         expect(result[1]).toBe('0')
         expect(result[2]).toBe('32')
+        // TODO: Test properly (give attention to that value can contain line breaks)
         client.socket.end()
         return new Promise((resolve) => client.socket.once('close', resolve))
       }, timeout)
@@ -542,14 +550,14 @@ async function assertNotExists (client: Client, key: string): Promise<void> {
   expect(await readLine(client)).toMatch(/END/)
 }
 async function readKeyValue (client: Client): Promise<[string, [number, string]]> {
-  const result = /VALUE (\S+) (\S+) (\S+)/.exec(await readLine(client))
+  const result = /VALUE (.*) (\S+) (\S+)/.exec(await readLine(client))
   expect(result).not.toBeNull()
   if (isNull(result)) { throw new Error() }
   const value = await readLine(client)
   return [result[1], [parseInt(result[2], 10), value]]
 }
 async function readKeyValueCas (client: Client): Promise<[string, [number, string], number]> {
-  const result = /VALUE (\S+) (\S+) (\S+) (\S+)/.exec(await readLine(client))
+  const result = /VALUE (.*) (\S+) (\S+) (\S+)/.exec(await readLine(client))
   expect(result).not.toBeNull()
   if (isNull(result)) { throw new Error() }
   const value = await readLine(client)

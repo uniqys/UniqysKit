@@ -1,7 +1,7 @@
 
 import memdown from 'memdown'
 import debug from 'debug'
-import { Options, MerkleizedDbServer } from '../merkleized-db/memcached-compatible'
+import { Options, MerkleizedDbServer } from '../merkleized-db/memcached-compatible-server'
 
 // set logger enable
 debug.enable('state-db*')
