@@ -3,12 +3,17 @@ import { GrpcCore } from '../../interface/rpc/grpc'
 import { REPLServer } from 'repl'
 import * as cli from '../cli'
 import debug from 'debug'
+import { MerkleizedDbServer } from '../../merkleized-db/memcached-compatible-server'
+import MemDown from 'memdown'
 
 // set logger enable
 debug.enable('sample,grpc')
 
 async function startSampleOverRpc (address: string, listen: string) {
-  const dapp = new Sample()
+  const db = new MerkleizedDbServer(MemDown())
+  const port = 56010
+  db.listen(port)
+  const dapp = new Sample(`localhost:${port}`)
   const grpc = new GrpcCore(address)
   // serve dapp
   const server = grpc.serve(dapp, listen)
