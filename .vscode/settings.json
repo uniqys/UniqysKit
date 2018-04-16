@@ -7,8 +7,33 @@
     "typescript.referencesCodeLens.enabled": true,
     "tslint.ignoreDefinitionFiles": false,
     "tslint.autoFixOnSave": true,
-    "tslint.exclude": "**/node_modules/**/*",
+    "tslint.exclude": [
+        "**/node_modules/**/*",
+        "**/*.d.ts"
+    ],
     "cSpell.words": [
-        "blockchain"
+        "blockchain",
+        "dapi",
+        "dapp",
+        "dapps",
+        "deserializable",
+        "deserialize",
+        "deserialized",
+        "deserializer",
+        "ethereum",
+        "grpc",
+        "hashable",
+        "keccak",
+        "leveldown",
+        "memdown",
+        "merkle",
+        "merkleized",
+        "prebuild",
+        "protobuf",
+        "protoc",
+        "secp",
+        "serializable",
+        "truthy",
+        "validators"
     ]
 }
