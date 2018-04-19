@@ -5,11 +5,11 @@
   "private": true,
   "scripts": {
     "ts-node": "node --harmony -r ts-node/register",
-    "chain-init": "yarn ts-node src/app/init.ts",
-    "merkleized-db": "yarn ts-node src/app/merkleized-db-server.ts",
-    "sample": "yarn ts-node src/app/sample/in-process.ts",
-    "sample:core": "yarn ts-node src/app/sample/grpc-core.ts",
-    "sample:dapp": "yarn ts-node src/app/sample/grpc-dapp.ts",
+    "chain-init": "npm run ts-node src/app/init.ts",
+    "merkleized-db": "npm run ts-node src/app/merkleized-db-server.ts",
+    "sample": "npm run ts-node src/app/sample/in-process.ts",
+    "sample:core": "npm run ts-node src/app/sample/grpc-core.ts",
+    "sample:dapp": "npm run ts-node src/app/sample/grpc-dapp.ts",
     "prebuild": "run-p prebuild:*",
     "prebuild:config": "ts-node dev-script/generate-config-type-definition.ts",
     "prebuild:protoc": "ts-node dev-script/protoc.ts",
@@ -22,13 +22,13 @@
     "//watch:app": "nodemon dist/app.js",
     "test": "run-s test:build test:lint test:jest",
     "test:build": "tsc -p tsconfig.json --noEmit",
-    "test:lint": "yarn lint",
+    "test:lint": "npm run lint",
     "test:jest": "node --harmony ./node_modules/.bin/jest --forceExit --coverage --verbose"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "run-s build lint",
-      "pre-push": "yarn test"
+      "pre-commit": "run-s test:build test:lint",
+      "pre-push": "npm run test"
     }
   },
   "repository": {
@@ -51,7 +51,6 @@
     "@types/jest": "^22.2.0",
     "@types/memcached": "^2.2.5",
     "@types/node": "^9.4.6",
-    "@types/protobufjs": "^6.0.0",
     "@types/semaphore": "^1.1.0",
     "@types/split": "^0.3.28",
     "@types/tmp": "^0.0.33",
@@ -63,6 +62,7 @@
     "json-schema-to-typescript": "^5.4.0",
     "nodemon": "^1.13.0",
     "npm-run-all": "^4.1.2",
+    "protobufjs": "^6.8.6",
     "split": "^1.0.1",
     "tmp": "^0.0.33",
     "ts-jest": "^22.0.4",
