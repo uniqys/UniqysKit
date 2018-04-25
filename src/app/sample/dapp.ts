@@ -41,7 +41,7 @@ export class Sample implements Dapp {
 
   public makeTransaction (data: Buffer | string): Transaction {
     this.nonce++
-    const buffer = data instanceof Buffer ? data : new Buffer(data)
+    const buffer = data instanceof Buffer ? data : Buffer.from(data)
     const txd = new TransactionData(this.nonce, buffer)
     logger('make transaction: %s', buffer.toString('utf8'))
     return txd.sign(this.keyPair)

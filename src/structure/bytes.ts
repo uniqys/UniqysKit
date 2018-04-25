@@ -77,7 +77,7 @@ export class Bytes64 implements Serializable {
 
 export class UInt8 extends Byte {
   public static fromNumber (num: number): UInt8 {
-    const buf = new Buffer(1)
+    const buf = Buffer.alloc(1)
     buf.writeUInt8(num, 0)
     return new UInt8(buf)
   }
@@ -89,7 +89,7 @@ export class UInt8 extends Byte {
 
 export class UInt32 extends Bytes4 {
   public static fromNumber (num: number): UInt32 {
-    const buf = new Buffer(4)
+    const buf = Buffer.alloc(4)
     buf.writeUInt32BE(num, 0)
     return new UInt32(buf)
   }
@@ -101,7 +101,8 @@ export class UInt32 extends Bytes4 {
 
 export class UInt64 extends Bytes8 {
   public static fromNumber (num: number): UInt64 {
-    const buf = new Buffer(8)
+    if (num > 2 ** 48 - 1) { throw new RangeError('The number is out of 48bit range') }
+    const buf = Buffer.alloc(8)
     buf.writeUIntBE(num, 2, 6) // max safe integer byte
     return new UInt64(buf)
   }

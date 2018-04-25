@@ -14,7 +14,7 @@ export class MerkleTree<T extends Hashable> implements Iterable<T>, Hashable {
   }
 
   private static rootHash<T extends Hashable> (items: T[]): Hash {
-    if (items.length === 0) { return Hash.fromData(new Buffer(0)) }
+    if (items.length === 0) { return Hash.fromData(Buffer.alloc(0)) }
     if (items.length === 1) { return items[0].hash }
 
     const split = MerkleTree.splitPoint(items.length)

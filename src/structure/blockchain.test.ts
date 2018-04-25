@@ -7,22 +7,22 @@ import { MerkleTree } from './merkle-tree'
 describe('transaction', () => {
   const signer = new KeyPair()
   it('can create', () => {
-    const sign = new Signature(new Buffer(33))
-    expect(new Transaction(sign, new TransactionData(1234, new Buffer(32)))).toBeInstanceOf(Transaction)
+    const sign = new Signature(Buffer.alloc(33))
+    expect(new Transaction(sign, new TransactionData(1234, Buffer.alloc(32)))).toBeInstanceOf(Transaction)
   })
   it('can create by sign', () => {
-    const data = new TransactionData(1234, new Buffer(32))
+    const data = new TransactionData(1234, Buffer.alloc(32))
     expect(data.sign(signer)).toBeInstanceOf(Transaction)
   })
   it('can get signer', () => {
-    const data = new TransactionData(1234, new Buffer(32))
+    const data = new TransactionData(1234, Buffer.alloc(32))
     expect(data.sign(signer).signer.equals(signer.address)).toBeTruthy()
   })
   it('can set to map', () => {
-    const transaction = new TransactionData(1234, new Buffer('The quick brown fox jumps over the lazy dog')).sign(signer)
+    const transaction = new TransactionData(1234, Buffer.from('The quick brown fox jumps over the lazy dog')).sign(signer)
     const map = new Map<string, Transaction>()
     map.set(transaction.toString(), transaction)
-    const sameTransaction = new TransactionData(1234, new Buffer('The quick brown fox jumps over the lazy dog')).sign(signer)
+    const sameTransaction = new TransactionData(1234, Buffer.from('The quick brown fox jumps over the lazy dog')).sign(signer)
     expect(map.get(sameTransaction.toString())!.equals(sameTransaction)).toBeTruthy()
   })
 })
@@ -46,7 +46,7 @@ describe('consensus', () => {
     expect(() => { consensus.validate(hash, validatorSet) }).toThrow()
   })
   it('can not validate if it has invalid signature', () => {
-    const key = new KeyPair(new Bytes32(new Buffer('cbfde2698ab8d8d3f2ddfea748d972bcc9cd5b74f3152c13d51d9c576e0a15f5', 'hex')))
+    const key = new KeyPair(new Bytes32(Buffer.from('cbfde2698ab8d8d3f2ddfea748d972bcc9cd5b74f3152c13d51d9c576e0a15f5', 'hex')))
     const sign = key.sign(hash)
     sign.signature.buffer.write('modify')
     const consensus = new Consensus(0, new MerkleTree([sign, signer2.sign(hash), signer3.sign(hash)])) // 2/3 valid sign

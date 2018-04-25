@@ -4,7 +4,7 @@
   "description": "Blockchain Platform Project",
   "private": true,
   "scripts": {
-    "ts-node": "node --harmony -r ts-node/register",
+    "ts-node": "node -r ts-node/register",
     "chain-init": "npm run ts-node src/app/init.ts",
     "merkleized-db": "npm run ts-node src/app/merkleized-db-server.ts",
     "sample": "npm run ts-node src/app/sample/in-process.ts",
@@ -23,7 +23,7 @@
     "test": "run-s test:build test:lint test:jest",
     "test:build": "tsc -p tsconfig.json --noEmit",
     "test:lint": "npm run lint",
-    "test:jest": "node --harmony ./node_modules/.bin/jest --forceExit --coverage --verbose"
+    "test:jest": "node ./node_modules/.bin/jest --forceExit --coverage --verbose"
   },
   "husky": {
     "hooks": {

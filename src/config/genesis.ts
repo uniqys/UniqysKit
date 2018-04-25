@@ -22,7 +22,7 @@ export class GenesisConfig extends Config<Genesis> {
       data.transactions.root,
       data.lastBlockConsensus.hash,
       data.nextValidatorSet.root,
-      new Hash(new Buffer(32))
+      new Hash(Buffer.alloc(32))
     )
     return new Block(data, header)
   }

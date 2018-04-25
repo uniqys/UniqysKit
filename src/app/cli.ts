@@ -14,7 +14,7 @@ export function start<TCore extends Core, TDapp extends Dapp> (core: TCore, dapp
   replServer.defineCommand('sendMessageTx', {
     help: 'send transaction include message string',
     action (this: repl.REPLServer, message: string) {
-      const txd = new TransactionData(nonce, new Buffer(message))
+      const txd = new TransactionData(nonce, Buffer.from(message))
       nonce++
       core.sendTransaction(txd.sign(signer))
         .then(() => this.displayPrompt())

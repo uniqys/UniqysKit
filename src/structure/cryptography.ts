@@ -33,7 +33,7 @@ export class Signature implements Hashable {
 
   // Ethereum compatible
   public static sign (messageHash: Hash, privateKey: Bytes32): Signature {
-    const sig = secp256k1.sign(new Buffer(messageHash.buffer), new Buffer(privateKey.buffer))
+    const sig = secp256k1.sign(messageHash.buffer, privateKey.buffer)
 
     return new Signature(Buffer.concat([
       sig.signature,

@@ -75,7 +75,7 @@ describe('validator', () => {
     const epoch = 1520825696
     const header = new BlockHeader(1, epoch, lastBlockHash, data.transactions.root, data.lastBlockConsensus.hash, state, validator)
     genesis = new Block(data, header)
-    signer = { sign: (_: Hash) => { return new Signature(new Buffer(33)) } }
+    signer = { sign: (_: Hash) => { return new Signature(Buffer.alloc(33)) } }
   })
   it('can create', () => {
     expect(() => { new ValidatorNode(new MockDapp(), genesis) }).not.toThrow()
@@ -89,7 +89,7 @@ describe('validator', () => {
   })
   it('can add transaction', () => {
     const validator = new ValidatorNode(new MockDapp(), genesis, keyPair)
-    const transaction = new TransactionData(1234, new Buffer('The quick brown fox jumps over the lazy dog')).sign(signer)
+    const transaction = new TransactionData(1234, Buffer.from('The quick brown fox jumps over the lazy dog')).sign(signer)
     expect(Array.from(validator.transactionsInPool()).length).toBe(0)
     validator.addTransaction(transaction)
     expect(Array.from(validator.transactionsInPool()).length).toBe(1)
@@ -97,8 +97,8 @@ describe('validator', () => {
   })
   it('proceed consensus if need', async () => {
     const validator = new ValidatorNode(new MockDapp(), genesis, keyPair)
-    validator.addTransaction(new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer))
-    validator.addTransaction(new TransactionData(1235, new Buffer('Dapps transaction')).sign(signer))
+    validator.addTransaction(new TransactionData(1234, Buffer.from('Dapps transaction')).sign(signer))
+    validator.addTransaction(new TransactionData(1235, Buffer.from('Dapps transaction')).sign(signer))
     expect(validator.blockchain.height).toBe(1)
     expect(Array.from(validator.transactionsInPool()).length).toBe(2)
     await validator.proceedConsensusUntilSteady()
@@ -112,10 +112,10 @@ describe('validator', () => {
     const validator = new ValidatorNode(dapp, genesis, keyPair)
     const dapp2 = new MockDapp()
     const validator2 = new ValidatorNode(dapp2, genesis, keyPair) // same signer
-    validator.addTransaction(new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer))
-    validator.addTransaction(new TransactionData(1235, new Buffer('Dapps transaction')).sign(signer))
-    validator2.addTransaction(new TransactionData(1234, new Buffer('Dapps transaction')).sign(signer))
-    validator2.addTransaction(new TransactionData(1235, new Buffer('Dapps transaction')).sign(signer))
+    validator.addTransaction(new TransactionData(1234, Buffer.from('Dapps transaction')).sign(signer))
+    validator.addTransaction(new TransactionData(1235, Buffer.from('Dapps transaction')).sign(signer))
+    validator2.addTransaction(new TransactionData(1234, Buffer.from('Dapps transaction')).sign(signer))
+    validator2.addTransaction(new TransactionData(1235, Buffer.from('Dapps transaction')).sign(signer))
     // construct block include transactions
     await validator2.proceedConsensusUntilSteady()
     const block2 = validator2.blockchain.blockOf(2)

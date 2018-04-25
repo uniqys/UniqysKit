@@ -9,7 +9,7 @@ export class MerklePatriciaTrie implements Hashable, AsyncIterable<[Buffer, Buff
   get hash (): Hash { return this._rootHash }
   get size (): number { return this._size }
   private _rootNode: Node = new Null()
-  private _rootHash: Hash = new Hash(new Buffer(32))
+  private _rootHash: Hash = new Hash(Buffer.alloc(32))
   private _size: number = 0
 
   constructor (

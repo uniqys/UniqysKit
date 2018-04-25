@@ -3,82 +3,82 @@ import { Byte, Bytes4, Bytes8, Bytes32, Bytes64, UInt8, UInt32, UInt64 } from '.
 /* tslint:disable:no-unused-expression */
 describe('Byte', () => {
   it('can create from 1 byte buffer', () => {
-    expect(() => { new Byte(new Buffer(1)) }).not.toThrow()
+    expect(() => { new Byte(Buffer.alloc(1)) }).not.toThrow()
   })
   it('throw error when wrong size', () => {
-    expect(() => { new Byte(new Buffer(2)) }).toThrow()
+    expect(() => { new Byte(Buffer.alloc(2)) }).toThrow()
   })
   it('is equatable', () => {
-    expect(new Byte(new Buffer('a')).equals(new Byte(new Buffer('a')))).toBeTruthy()
+    expect(new Byte(Buffer.from('a')).equals(new Byte(Buffer.from('a')))).toBeTruthy()
   })
   it('is serializable', () => {
-    const object = new Byte(new Buffer('a'))
+    const object = new Byte(Buffer.from('a'))
     expect(Byte.deserialize(object.serialize()).value.equals(object)).toBeTruthy()
   })
 })
 
 describe('Bytes4', () => {
   it('can create from 4 byte buffer', () => {
-    expect(() => { new Bytes4(new Buffer(4)) }).not.toThrow()
+    expect(() => { new Bytes4(Buffer.alloc(4)) }).not.toThrow()
   })
   it('throw error when wrong size', () => {
-    expect(() => { new Bytes4(new Buffer(1)) }).toThrow()
+    expect(() => { new Bytes4(Buffer.alloc(1)) }).toThrow()
   })
   it('is equatable', () => {
-    expect(new Bytes4(new Buffer('buzz')).equals(new Bytes4(new Buffer('buzz')))).toBeTruthy()
+    expect(new Bytes4(Buffer.from('buzz')).equals(new Bytes4(Buffer.from('buzz')))).toBeTruthy()
   })
   it('is serializable', () => {
-    const object = new Bytes4(new Buffer('buzz'))
+    const object = new Bytes4(Buffer.from('buzz'))
     expect(Bytes4.deserialize(object.serialize()).value.equals(object)).toBeTruthy()
   })
 })
 
 describe('Bytes8', () => {
   it('can create from 8 byte buffer', () => {
-    expect(() => { new Bytes8(new Buffer(8)) }).not.toThrow()
+    expect(() => { new Bytes8(Buffer.alloc(8)) }).not.toThrow()
   })
   it('throw error when wrong size', () => {
-    expect(() => { new Bytes8(new Buffer(1)) }).toThrow()
+    expect(() => { new Bytes8(Buffer.alloc(1)) }).toThrow()
   })
   it('is equatable', () => {
-    expect(new Bytes8(new Buffer('fizzBuzz')).equals(new Bytes8(new Buffer('fizzBuzz')))).toBeTruthy()
+    expect(new Bytes8(Buffer.from('fizzBuzz')).equals(new Bytes8(Buffer.from('fizzBuzz')))).toBeTruthy()
   })
   it('is serializable', () => {
-    const object = new Bytes8(new Buffer('fizzBuzz'))
+    const object = new Bytes8(Buffer.from('fizzBuzz'))
     expect(Bytes8.deserialize(object.serialize()).value.equals(object)).toBeTruthy()
   })
 })
 
 describe('Bytes32', () => {
   it('can create from 32 byte buffer', () => {
-    expect(() => { new Bytes32(new Buffer(32)) }).not.toThrow()
+    expect(() => { new Bytes32(Buffer.alloc(32)) }).not.toThrow()
   })
   it('throw error when wrong size', () => {
-    expect(() => { new Bytes32(new Buffer(1)) }).toThrow()
+    expect(() => { new Bytes32(Buffer.alloc(1)) }).toThrow()
   })
   it('is equatable', () => {
-    expect(new Bytes32(new Buffer('This sentence has no meaning yet'))
-      .equals(new Bytes32(new Buffer('This sentence has no meaning yet')))).toBeTruthy()
+    expect(new Bytes32(Buffer.from('This sentence has no meaning yet'))
+      .equals(new Bytes32(Buffer.from('This sentence has no meaning yet')))).toBeTruthy()
   })
   it('is serializable', () => {
-    const object = new Bytes32(new Buffer('This sentence has no meaning yet'))
+    const object = new Bytes32(Buffer.from('This sentence has no meaning yet'))
     expect(Bytes32.deserialize(object.serialize()).value.equals(object)).toBeTruthy()
   })
 })
 
 describe('Bytes64', () => {
   it('can create from 32 byte buffer', () => {
-    expect(() => { new Bytes64(new Buffer(64)) }).not.toThrow()
+    expect(() => { new Bytes64(Buffer.alloc(64)) }).not.toThrow()
   })
   it('throw error when wrong size', () => {
-    expect(() => { new Bytes64(new Buffer(1)) }).toThrow()
+    expect(() => { new Bytes64(Buffer.alloc(1)) }).toThrow()
   })
   it('is equatable', () => {
-    expect(new Bytes64(new Buffer('This sentence had no meaning, this sentence still has no meaning'))
-      .equals(new Bytes64(new Buffer('This sentence had no meaning, this sentence still has no meaning')))).toBeTruthy()
+    expect(new Bytes64(Buffer.from('This sentence had no meaning, this sentence still has no meaning'))
+      .equals(new Bytes64(Buffer.from('This sentence had no meaning, this sentence still has no meaning')))).toBeTruthy()
   })
   it('is serializable', () => {
-    const object = new Bytes64(new Buffer('This sentence had no meaning, this sentence still has no meaning'))
+    const object = new Bytes64(Buffer.from('This sentence had no meaning, this sentence still has no meaning'))
     expect(Bytes64.deserialize(object.serialize()).value.equals(object)).toBeTruthy()
   })
 })
