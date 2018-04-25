@@ -21,6 +21,7 @@ describe('Test memcached compatibility', () => {
       port = server.address().port
       done()
     })
+    client.socket.setMaxListeners(100) // split handler
     client.socket.on('connect', () => { connected = true })
     client.socket.on('close', () => { connected = false })
   })
@@ -36,8 +37,6 @@ describe('Test memcached compatibility', () => {
     } else {
       client.socket.connect(port)
       client.socket.once('connect', () => {
-        client.socket.removeAllListeners('data')
-        client.socket.removeAllListeners('end')
         client.lines = client.socket.pipe(split())
         client.lines.pause()
         prepare()
@@ -79,6 +78,7 @@ describe('Test memcached compatibility', () => {
           expect(hadError).not.toBeTruthy()
           done()
         })
+        client.lines.resume()
       }, timeout)
     })
     describe('version', () => {
@@ -466,7 +466,9 @@ describe('Test memcached compatibility', () => {
         expect(result[2]).toBe('32')
         // TODO: Test properly (give attention to that value can contain line breaks)
         client.socket.end()
-        return new Promise((resolve) => client.socket.once('close', resolve))
+        const promise = new Promise((resolve) => client.socket.once('close', resolve))
+        client.lines.resume()
+        return promise
       }, timeout)
     })
   })
