@@ -13,7 +13,7 @@ export class Address {
   // string representation
   // TODO: checksum? base58?
   public static fromString (addressString: string): Address {
-    return new Address(new Buffer(addressString, 'hex'))
+    return new Address(Buffer.from(addressString, 'hex'))
   }
   public toString (): string {
     return this.buffer.toString('hex')
