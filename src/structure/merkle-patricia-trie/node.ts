@@ -38,6 +38,7 @@ export namespace Key {
 }
 
 export class Content implements Serializable {
+  private _serialized?: Buffer
   constructor (
     public readonly key: Buffer,
     public readonly value: Buffer
@@ -51,12 +52,15 @@ export class Content implements Serializable {
     return { rest: valueBuf.slice(valueLength.number), value: new Content(key, value) }
   }
   public serialize (): Buffer {
-    return Buffer.concat([
-      UInt32.fromNumber(this.key.byteLength).serialize(),
-      this.key,
-      UInt32.fromNumber(this.value.byteLength).serialize(),
-      this.value
-    ])
+    if (this._serialized === undefined) {
+      this._serialized = Buffer.concat([
+        UInt32.fromNumber(this.key.byteLength).serialize(),
+        this.key,
+        UInt32.fromNumber(this.value.byteLength).serialize(),
+        this.value
+      ])
+    }
+    return this._serialized
   }
 }
 
@@ -77,6 +81,8 @@ export namespace NodeRef {
 
 export class Node implements Serializable, Hashable {
   public static readonly branch: 16 = 16
+  public static readonly null = new Node([], Node.emptyBranch(), Optional.none())
+  private _hash?: Hash
   constructor (
     public readonly prefix: Key,
     public readonly children: Optional<NodeRef>[],
@@ -84,8 +90,9 @@ export class Node implements Serializable, Hashable {
   ) {
     if (children.length !== Node.branch) { throw new Error('invalid branch count') }
   }
-  public static emptyBranch = () => new Array<Optional<NodeRef>>(Node.branch).fill(Optional.none())
-  public static null = () => new Node([], Node.emptyBranch(), Optional.none())
+  public static emptyBranch () {
+    return new Array<Optional<NodeRef>>(Node.branch).fill(Optional.none())
+  }
   public static deserialize (buffer: Buffer): Deserialized<Node> {
     const { rest: keyBuf, value: keyLength } = UInt32.deserialize(buffer)
     const isEven = keyLength.number % 2 === 0
@@ -201,28 +208,31 @@ export class Node implements Serializable, Hashable {
     }
     return Optional.some(new Node(this.prefix, normalizedChildren, this.content))
   }
-  public async save (store: NodeStore): Promise<Hash> {
+  public async save (store: NodeStore): Promise<Node> {
     const children = await Promise.all(this.children.map(child => child.match(
-      async ref => Optional.some(NodeRef.ofHash(await ref.match(async hash => hash, async node => node.save(store)))),
+      async ref => Optional.some(NodeRef.ofHash(await ref.match(async hash => hash, async node => (await node.save(store)).hash))),
       async () => Optional.none<NodeRef>()
     )))
     const node = new Node(this.prefix, children, this.content)
     const hash = node.hash
     await store.set(hash, node)
-    return hash
+    return node
   }
   public get hash (): Hash {
-    const buf: Buffer[] = []
+    if (this._hash === undefined) {
+      const buf: Buffer[] = []
 
-    for (const child of this.children) {
-      if (child.isSome()) {
-        buf.push(child.value.match(hash => hash.serialize(), node => node.hash.serialize()))
+      for (const child of this.children) {
+        if (child.isSome()) {
+          buf.push(child.value.match(hash => hash.serialize(), node => node.hash.serialize()))
+        }
       }
+      if (this.content.isSome()) {
+        buf.push(this.content.value.serialize())
+      }
+      this._hash = Hash.fromData(Buffer.concat(buf))
     }
-    if (this.content.isSome()) {
-      buf.push(this.content.value.serialize())
-    }
-    return Hash.fromData(Buffer.concat(buf))
+    return this._hash
   }
   public async prove (store: NodeStore, key: Key): Promise<MerkleProof> {
     const matchResult = Key.match(this.prefix, key)

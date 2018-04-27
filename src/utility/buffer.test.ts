@@ -6,7 +6,7 @@ describe('Buffer <-> Uint8Array', () => {
     expect(uint8ArrayToBuffer(bufferToUint8Array(buffer)).equals(buffer)).toBeTruthy()
   })
   it('treats length', () => {
-    const arrayBuffer = Buffer.from('long-long-buffer').buffer
+    const arrayBuffer = Buffer.from('long-long-buffer').buffer as ArrayBuffer
     const buffer = Buffer.from(arrayBuffer, 0, 10)
 
     expect(uint8ArrayToBuffer(bufferToUint8Array(buffer)).equals(buffer)).toBeTruthy()

@@ -21,21 +21,20 @@ export class KeyValueProof {
 
 // Merkle Patricia trie implementation.
 export class MerklePatriciaTrie implements Hashable, AsyncIterable<[Buffer, Buffer]> {
-  get root (): Hash { return this._rootHash }
-  get hash (): Hash { return this._rootHash }
-  get size (): number { return this._size }
-  private _nullHash = Node.null().hash
-  private _rootHash = this._nullHash
-  private _size = 0
+  get root (): Hash { return this._rootNode.hash }
+  get hash (): Hash { return this._rootNode.hash }
+  private _rootNode = Node.null
   private _initialized = false
 
   constructor (
     private readonly store: NodeStore
   ) { }
   public async init (): Promise<void> {
-    await this.store.set(this._rootHash, Node.null())
-    this._size = 0
-    this._initialized = true
+    this._rootNode = Node.null
+    if (!this._initialized) {
+      await this.store.set(this._rootNode.hash, this._rootNode)
+      this._initialized = true
+    }
   }
   public [Symbol.asyncIterator] (): AsyncIterableIterator<[Buffer, Buffer]> {
     this.checkInit()
@@ -43,7 +42,7 @@ export class MerklePatriciaTrie implements Hashable, AsyncIterable<[Buffer, Buff
   }
   public async *entries (): AsyncIterableIterator<[Buffer, Buffer]> {
     this.checkInit()
-    for await (const content of (await this.rootNode()).contents(this.store)) {
+    for await (const content of this._rootNode.contents(this.store)) {
       yield [content.key, content.value]
     }
   }
@@ -61,48 +60,37 @@ export class MerklePatriciaTrie implements Hashable, AsyncIterable<[Buffer, Buff
   }
   public async get (key: Buffer): Promise<Optional<Buffer>> {
     this.checkInit()
-    return (await (await this.rootNode()).get(this.store, Key.bufferToKey(key))).match(
+    return (await this._rootNode.get(this.store, Key.bufferToKey(key))).match(
       c => Optional.some(c.value),
       () => Optional.none()
     )
   }
   public async set (key: Buffer, value: Buffer): Promise<void> {
     this.checkInit()
-    const root = await this.rootNode()
-    if ((await root.get(this.store, Key.bufferToKey(key))).isNone()) { this._size++ }
-    await this.save(await root.set(this.store, Key.bufferToKey(key), new Content(key, value)))
+    await this.save(await this._rootNode.set(this.store, Key.bufferToKey(key), new Content(key, value)))
   }
   public async delete (key: Buffer): Promise<boolean> {
     this.checkInit()
-    const root = await this.rootNode()
-    return (await root.get(this.store, Key.bufferToKey(key))).match(
-      async _ => {
-        await this.save(await root.delete(this.store, Key.bufferToKey(key)))
-        this._size--
-        return true
-      },
-      async () => false
-    )
+    const prev = this.root
+    await this.save(await this._rootNode.delete(this.store, Key.bufferToKey(key)))
+    const deleted = !this.root.equals(prev)
+    return deleted
   }
   public async clear (): Promise<void> {
     this.checkInit()
-    this._rootHash = this._nullHash
-    this._size = 0
+    this._rootNode = Node.null
   }
   public async prove (key: Buffer): Promise<KeyValueProof> {
     this.checkInit()
-    const proof = await (await this.rootNode()).prove(this.store, Key.bufferToKey(key))
+    const proof = await this._rootNode.prove(this.store, Key.bufferToKey(key))
     proof.optimize()
     return new KeyValueProof(proof)
-  }
-  private async rootNode (): Promise<Node> {
-    return this.store.get(this.root)
   }
   private async save (root: Node): Promise<void> {
     const normalized = await root.normalize(this.store)
     await normalized.match(
-      async node => { this._rootHash = await node.save(this.store) },
-      async () => { this._rootHash = this._nullHash }
+      async node => { this._rootNode = await node.save(this.store) },
+      async () => { this._rootNode = Node.null }
     )
   }
   private checkInit (): void {
