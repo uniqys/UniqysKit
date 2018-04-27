@@ -1,4 +1,4 @@
-import { Byte, Bytes4, Bytes8, Bytes32, Bytes64, UInt8, UInt32, UInt64 } from './bytes'
+import { Byte, Bytes4, Bytes8, Bytes32, Bytes64, UInt8, UInt32, UInt64, Int64 } from './bytes'
 
 /* tslint:disable:no-unused-expression */
 describe('Byte', () => {
@@ -128,5 +128,24 @@ describe('UInt64', () => {
   it('is serializable', () => {
     const object = UInt64.fromNumber(42)
     expect(UInt64.deserialize(object.serialize()).value.equals(object)).toBeTruthy()
+  })
+})
+
+describe('Int64', () => {
+  it('can create from number of 48bit signed integer for safe', () => {
+    expect(() => { Int64.fromNumber(140737488355327) }).not.toThrow()
+    expect(() => { Int64.fromNumber(-140737488355328) }).not.toThrow()
+  })
+  it('throw error when over 48bit signed integer', () => {
+    expect(() => { Int64.fromNumber(140737488355328) }).toThrow()
+    expect(() => { Int64.fromNumber(-140737488355329) }).toThrow()
+  })
+  it('can get number', () => {
+    expect(Int64.fromNumber(140737488355327).number).toBe(140737488355327)
+    expect(Int64.fromNumber(-140737488355328).number).toBe(-140737488355328)
+  })
+  it('is serializable', () => {
+    const object = Int64.fromNumber(-140737488355328)
+    expect(Int64.deserialize(object.serialize()).value.equals(object)).toBeTruthy()
   })
 })

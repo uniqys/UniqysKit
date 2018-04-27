@@ -2,36 +2,33 @@ import { Serializer, Deserializer } from './serializable'
 import { UInt8 } from './bytes'
 
 export abstract class Either<L,R> {
-  public abstract serialize (left: Serializer<L>, right: Serializer<R>): Buffer
   public abstract match<T> (left: (v: L) => T, right: (v: R) => T): T
+  public isLeft (): this is Left<L, R> { return this.match(_ => true, _ => false) }
+  public isRight (): this is Right<L, R> { return this.match(_ => false, _ => true) }
+  public serialize (left: Serializer<L>, right: Serializer<R>): Buffer {
+    return this.match(
+      v => Buffer.concat([
+        UInt8.fromNumber(0).serialize(),
+        left(v)
+      ]),
+      v => Buffer.concat([
+        UInt8.fromNumber(1).serialize(),
+        right(v)
+      ])
+    )
+  }
 }
 class Left<L, R> extends Either<L, R> {
   constructor (
     public readonly value: L
   ) { super() }
-  public serialize (left: Serializer<L>, _: Serializer<R>): Buffer {
-    return Buffer.concat([
-      UInt8.fromNumber(0).serialize(),
-      left(this.value)
-    ])
-  }
-  public match<T> (left: (v: L) => T, _: (v: R) => T): T {
-    return left(this.value)
-  }
+  public match<T> (left: (v: L) => T, _: (v: R) => T): T { return left(this.value) }
 }
 class Right<L, R> extends Either<L, R> {
   constructor (
     public readonly value: R
   ) { super() }
-  public serialize (_: Serializer<L>, right: Serializer<R>): Buffer {
-    return Buffer.concat([
-      UInt8.fromNumber(1).serialize(),
-      right(this.value)
-    ])
-  }
-  public match<T> (_: (v: L) => T, right: (v: R) => T): T {
-    return right(this.value)
-  }
+  public match<T> (_: (v: L) => T, right: (v: R) => T): T { return right(this.value) }
 }
 export namespace Either {
   export function left<L, R> (v: L): Either<L, R> { return new Left(v) }

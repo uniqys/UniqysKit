@@ -12,9 +12,11 @@ describe('Optional', () => {
     expect(Optional.some(42).match(v => v, () => 0)).toBe(42)
     expect(Optional.none().match(v => v, () => 0)).toBe(0)
   })
-  it('can be checked that it has a value', () => {
-    expect(Optional.some(42).hasValue).toBeTruthy()
-    expect(Optional.none().hasValue).not.toBeTruthy()
+  it('can check that it is', () => {
+    expect(Optional.some(42).isSome()).toBeTruthy()
+    expect(Optional.none().isSome()).not.toBeTruthy()
+    expect(Optional.some(42).isNone()).not.toBeTruthy()
+    expect(Optional.none().isNone()).toBeTruthy()
   })
   it('is serializable', () => {
     const deserializer = Optional.deserialize(UInt8.deserialize)
