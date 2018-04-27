@@ -1,23 +1,7 @@
-import { MerklePatriciaTrie, KeyValueProof, NodeStore, Node } from './merkle-patricia-trie'
+import { MerklePatriciaTrie, KeyValueProof, InMemoryNodeStore } from './merkle-patricia-trie'
 import { Hash } from './cryptography'
 import { Content } from './merkle-patricia-trie/node'
 import { Operation, MerkleProof } from './merkle-proof'
-
-class InMemoryNodeStore implements NodeStore {
-  private store = new Map<string, Buffer>()
-  public get (key: Hash): Promise<Node> {
-    const value = this.store.get(key.serialize().toString('hex'))
-    if (value) {
-      return Promise.resolve(Node.deserialize(value).value)
-    } else {
-      return Promise.reject(new Error('NotFound'))
-    }
-  }
-  public set (key: Hash, value: Node): Promise<void> {
-    this.store.set(key.serialize().toString('hex'), value.serialize())
-    return Promise.resolve()
-  }
-}
 
 async function collect<T> (iter: AsyncIterable<T>): Promise<T[]> {
   let collect = []

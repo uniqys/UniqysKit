@@ -109,3 +109,20 @@ export class MerklePatriciaTrie implements Hashable, AsyncIterable<[Buffer, Buff
     if (!this._initialized) { throw new Error('need initialize') }
   }
 }
+
+/* istanbul ignore next: it is for test and experiment  */
+export class InMemoryNodeStore implements NodeStore {
+  private store = new Map<string, Buffer>()
+  public get (key: Hash): Promise<Node> {
+    const value = this.store.get(key.serialize().toString('hex'))
+    if (value) {
+      return Promise.resolve(Node.deserialize(value).value)
+    } else {
+      return Promise.reject(new Error('NotFound'))
+    }
+  }
+  public set (key: Hash, value: Node): Promise<void> {
+    this.store.set(key.serialize().toString('hex'), value.serialize())
+    return Promise.resolve()
+  }
+}
