@@ -4,7 +4,7 @@ module.exports = {
   },
   testEnvironment: "node",
   testMatch: [
-    "**/?(*.)test.(ts|js)",
+    "<rootDir>/src/**/?(*.)test.(ts|js)",
   ],
   moduleFileExtensions: [
     'ts',
