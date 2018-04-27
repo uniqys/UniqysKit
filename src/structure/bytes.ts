@@ -111,3 +111,16 @@ export class UInt64 extends Bytes8 {
     return this.buffer.readUIntBE(2, 6) // max safe integer byte
   }
 }
+
+export class Int64 extends Bytes8 {
+  public static fromNumber (num: number): Int64 {
+    if (num > 2 ** 47 - 1 || num < - (2 ** 47)) { throw new RangeError('The number is out of 48bit range') }
+    const buf = Buffer.alloc(8, num < 0 ? 0xff : 0x00)
+    buf.writeIntBE(num, 2, 6) // max safe integer byte
+    return new Int64(buf)
+  }
+  public static deserialize (buffer: Buffer): Deserialized<Int64> { return { rest: buffer.slice(8), value: new Int64(buffer.slice(0, 8)) } }
+  public get number (): number {
+    return this.buffer.readIntBE(2, 6) // max safe integer byte
+  }
+}

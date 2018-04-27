@@ -10,6 +10,12 @@ describe('Either', () => {
     expect(Either.left(42).match(n => n, _ => 0)).toBe(42)
     expect(Either.right('foo').match(_ => '', s => s)).toBe('foo')
   })
+  it('can check that it is', () => {
+    expect(Either.left(42).isLeft()).toBeTruthy()
+    expect(Either.right('foo').isLeft()).not.toBeTruthy()
+    expect(Either.left(42).isRight()).not.toBeTruthy()
+    expect(Either.right('foo').isRight()).toBeTruthy()
+  })
   it('is serializable', () => {
     const deserializer = Either.deserialize(UInt8.deserialize, buff => { return { rest: Buffer.alloc(0), value: buff.toString() } })
     const left = Either.left<UInt8, string>(UInt8.fromNumber(42)).serialize(n => n.serialize(), s => Buffer.from(s))

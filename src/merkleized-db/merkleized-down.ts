@@ -1,7 +1,6 @@
 import { AbstractLevelDOWN } from 'abstract-leveldown'
 import { Hash } from '../structure/cryptography'
-import { MerklePatriciaTrie } from '../structure/merkle-patricia-trie'
-import { NodeStore, Node } from '../structure/merkle-patricia-trie-node/common'
+import { MerklePatriciaTrie, Node, NodeStore } from '../structure/merkle-patricia-trie'
 
 class LevelDownNodeStore implements NodeStore {
   constructor (
@@ -14,12 +13,10 @@ class LevelDownNodeStore implements NodeStore {
       if (err) { reject(err) } else { resolve(Node.deserialize(value).value) }
     }))
   }
-  public set (value: Node): Promise<Hash> {
-    const buf = value.serialize()
-    const key = Hash.fromData(buf)
-    return new Promise((resolve, reject) => this.db.put(key.serialize(), buf, (err) => {
+  public set (key: Hash, value: Node): Promise<void> {
+    return new Promise((resolve, reject) => this.db.put(key.serialize(), value.serialize(), (err) => {
       /* istanbul ignore if: it's back-end error */
-      if (err) { reject(err) } else { resolve(key) }
+      if (err) { reject(err) } else { resolve() }
     }))
   }
 }
