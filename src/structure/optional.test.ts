@@ -1,5 +1,5 @@
-import { UInt8 } from './bytes'
 import { Optional } from './optional'
+import { Serializer, Deserializer, serialize, deserialize, UInt8 } from './serializable'
 
 describe('Optional', () => {
   it('can be some value', () => {
@@ -18,17 +18,20 @@ describe('Optional', () => {
     expect(Optional.some(42).isNone()).not.toBeTruthy()
     expect(Optional.none().isNone()).toBeTruthy()
   })
-  it('is serializable', () => {
-    const deserializer = Optional.deserialize(UInt8.deserialize)
-    const some = Optional.some(UInt8.fromNumber(42)).serialize(n => n.serialize())
-    expect(deserializer(some).value.match(v => v, () => UInt8.fromNumber(0)).number).toBe(42)
-    const none = Optional.none<UInt8>().serialize(n => n.serialize())
-    expect(deserializer(none).value.match(v => v, () => UInt8.fromNumber(0)).number).toBe(0)
-  })
-  it('throw error when deserialize invalid buffer', () => {
-    const deserializer = Optional.deserialize(UInt8.deserialize)
-    const some = Optional.some(UInt8.fromNumber(42)).serialize(n => n.serialize())
-    some.writeUInt8(2, 0) // overwrite label byte
-    expect(() => { deserializer(some) }).toThrow()
+  describe('serialize', () => {
+    const serializer: Serializer<Optional<number>> = (o, w) => o.serialize(UInt8.serialize)(w)
+    const deserializer: Deserializer<Optional<number>> = Optional.deserialize(UInt8.deserialize)
+    it('is serializable', () => {
+      const some = Optional.some(42)
+      const none = Optional.none<number>()
+      expect(deserialize(serialize(some, serializer), deserializer).match(v => v, () => 0)).toBe(42)
+      expect(deserialize(serialize(none, serializer), deserializer).match(v => v, () => 0)).toBe(0)
+    })
+    it('throw error when deserialize invalid buffer', () => {
+      const some = Optional.some(42)
+      const buf = serialize(some, serializer)
+      buf.writeUInt8(2, 0) // overwrite label byte
+      expect(() => { deserialize(buf, deserializer) }).toThrow()
+    })
   })
 })

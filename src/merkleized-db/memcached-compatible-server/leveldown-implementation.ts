@@ -1,8 +1,8 @@
-import { UInt32, UInt64 } from '../../structure/bytes'
 import { AbstractLevelDOWN } from 'abstract-leveldown'
 import levelup from 'levelup'
 import semaphore from 'semaphore'
 import { MemcachedSubset, Response, Checker } from './handler'
+import { Serializer, Deserializer, serialize, deserialize, UInt32, UInt64 } from '../../structure/serializable'
 
 class Item {
   constructor (
@@ -10,28 +10,25 @@ class Item {
     public readonly casUniq: number,
     public readonly data: Buffer
   ) {}
-  public static deserialize (buffer: Buffer): Item {
-    const { rest: rest, value: casUniq } = UInt64.deserialize(buffer)
-    const { rest: data, value: flags } = UInt32.deserialize(rest)
-    return new Item(flags.number, casUniq.number, data)
+  public static deserialize: Deserializer<Item> = (reader) => {
+    const casUniq = UInt64.deserialize(reader)
+    const flags = UInt32.deserialize(reader)
+    return new Item(flags, casUniq, reader.buffer)
   }
-  public static noCasDeserialize (buffer: Buffer): Item {
-    const { rest: data, value: flags } = UInt32.deserialize(buffer)
-    return new Item(flags.number, 0, data)
+  public static noCasDeserialize: Deserializer<Item> = (reader) => {
+    const flags = UInt32.deserialize(reader)
+    return new Item(flags, 0, reader.buffer)
   }
 
-  public static serialize (item: Item): Buffer {
-    return Buffer.concat([
-      UInt64.fromNumber(item.casUniq).serialize(),
-      UInt32.fromNumber(item.flags).serialize(),
-      item.data
-    ])
+  public static serialize: Serializer<Item> = (item, writer) => {
+    UInt64.serialize(item.casUniq, writer)
+    UInt32.serialize(item.flags, writer)
+    writer.append(item.data)
   }
-  public static noCasSerialize (item: Item): Buffer {
-    return Buffer.concat([
-      UInt32.fromNumber(item.flags).serialize(),
-      item.data
-    ])
+  public static noCasSerialize: Serializer<Item> = (item, writer) => {
+    // skip cas
+    UInt32.serialize(item.flags, writer)
+    writer.append(item.data)
   }
 }
 
@@ -43,8 +40,8 @@ export class LevelDownMemcachedSubset implements MemcachedSubset {
   private readonly levelup: levelup.LevelUp<Buffer, Buffer>
   private readonly useCas: boolean
   private readonly semaphore: semaphore.Semaphore
-  private readonly itemSerializer: (item: Item) => Buffer
-  private readonly itemDeserializer: (buffer: Buffer) => Item
+  private readonly itemSerializer: Serializer<Item>
+  private readonly itemDeserializer: Deserializer<Item>
   constructor (
     db: AbstractLevelDOWN<Buffer, Buffer>,
     options: Options = {}
@@ -68,12 +65,12 @@ export class LevelDownMemcachedSubset implements MemcachedSubset {
         // skip get if disable use of Cas
         if (this.useCas) {
           try {
-            casUniq = this.itemDeserializer(await this.levelup.get(key)).casUniq
+            casUniq = deserialize(await this.levelup.get(key), this.itemDeserializer).casUniq
           } catch (err) {
             if (!(err instanceof levelup.errors.NotFoundError)) { throw err }
           }
         }
-        await this.levelup.put(key, this.itemSerializer(new Item(flags, casUniq + 1, data)))
+        await this.levelup.put(key, serialize(new Item(flags, casUniq + 1, data), this.itemSerializer))
         resolve(Response.Stored)
       } catch (err) {
         reject(err)
@@ -85,7 +82,7 @@ export class LevelDownMemcachedSubset implements MemcachedSubset {
   public add (keyString: string, flags: number, data: Buffer): Promise<Response.Stored | Response.NotStored> {
     return this.getAndAct(keyString, async (key, item) => {
       if (item === undefined) {
-        await this.levelup.put(key, this.itemSerializer(new Item(flags, 1, data)))
+        await this.levelup.put(key, serialize(new Item(flags, 1, data), this.itemSerializer))
         return Response.Stored
       } else {
         return Response.NotStored
@@ -95,7 +92,7 @@ export class LevelDownMemcachedSubset implements MemcachedSubset {
   public replace (keyString: string, flags: number, data: Buffer): Promise<Response.Stored | Response.NotStored> {
     return this.getAndAct(keyString, async (key, item) => {
       if (item !== undefined) {
-        await this.levelup.put(key, this.itemSerializer(new Item(flags, item.casUniq + 1, data)))
+        await this.levelup.put(key, serialize(new Item(flags, item.casUniq + 1, data), this.itemSerializer))
         return Response.Stored
       } else {
         return Response.NotStored
@@ -105,7 +102,7 @@ export class LevelDownMemcachedSubset implements MemcachedSubset {
   public append (keyString: string, data: Buffer): Promise<Response.Stored | Response.NotStored> {
     return this.getAndAct(keyString, async (key, item) => {
       if (item !== undefined) {
-        await this.levelup.put(key, this.itemSerializer(new Item(item.flags, item.casUniq + 1, Buffer.concat([item.data, data]))))
+        await this.levelup.put(key, serialize(new Item(item.flags, item.casUniq + 1, Buffer.concat([item.data, data])), this.itemSerializer))
         return Response.Stored
       } else {
         return Response.NotStored
@@ -115,7 +112,7 @@ export class LevelDownMemcachedSubset implements MemcachedSubset {
   public prepend (keyString: string, data: Buffer): Promise<Response.Stored | Response.NotStored> {
     return this.getAndAct(keyString, async (key, item) => {
       if (item !== undefined) {
-        await this.levelup.put(key, this.itemSerializer(new Item(item.flags, item.casUniq + 1, Buffer.concat([data, item.data]))))
+        await this.levelup.put(key, serialize(new Item(item.flags, item.casUniq + 1, Buffer.concat([data, item.data])), this.itemSerializer))
         return Response.Stored
       } else {
         return Response.NotStored
@@ -126,7 +123,7 @@ export class LevelDownMemcachedSubset implements MemcachedSubset {
     return this.getAndAct(keyString, async (key, item) => {
       if (item !== undefined) {
         if (item.casUniq === casUniq) {
-          await this.levelup.put(key, this.itemSerializer(new Item(flags, item.casUniq + 1, data)))
+          await this.levelup.put(key, serialize(new Item(flags, item.casUniq + 1, data), this.itemSerializer))
           return Response.Stored
         } else {
           return Response.Exists
@@ -146,7 +143,7 @@ export class LevelDownMemcachedSubset implements MemcachedSubset {
       const key = Buffer.from(keyString, 'utf8')
       let item: Item | undefined
       try {
-        item = this.itemDeserializer(await this.levelup.get(key))
+        item = deserialize(await this.levelup.get(key), this.itemDeserializer)
       } catch (err) {
         if (!(err instanceof levelup.errors.NotFoundError)) { throw err }
       }
@@ -172,7 +169,7 @@ export class LevelDownMemcachedSubset implements MemcachedSubset {
         // On real memcached, count saturate to max 64bit uint (2^64 - 1).
         // But on this implementation, it is MAX_SAFE_INTEGER (2^53 - 1) in javascript
         const newCount = Math.min(count + value, Number.MAX_SAFE_INTEGER)
-        await this.levelup.put(key, this.itemSerializer(new Item(item.flags, item.casUniq + 1, Buffer.from(newCount.toString(10)))))
+        await this.levelup.put(key, serialize(new Item(item.flags, item.casUniq + 1, Buffer.from(newCount.toString(10))), this.itemSerializer))
         return newCount
       } else {
         return Response.NotFound
@@ -184,7 +181,7 @@ export class LevelDownMemcachedSubset implements MemcachedSubset {
       if (item !== undefined) {
         const count = parseInt(item.data.toString(), 10)
         const newCount = Math.max(count - value, 0)
-        await this.levelup.put(key, this.itemSerializer(new Item(item.flags, item.casUniq + 1, Buffer.from(newCount.toString(10)))))
+        await this.levelup.put(key, serialize(new Item(item.flags, item.casUniq + 1, Buffer.from(newCount.toString(10))), this.itemSerializer))
         return newCount
       } else {
         return Response.NotFound
@@ -215,7 +212,7 @@ export class LevelDownMemcachedSubset implements MemcachedSubset {
       try {
         let item: Item | undefined
         try {
-          item = this.itemDeserializer(await this.levelup.get(key))
+          item = deserialize(await this.levelup.get(key), this.itemDeserializer)
         } catch (err) {
           if (!(err instanceof levelup.errors.NotFoundError)) { throw err }
         }

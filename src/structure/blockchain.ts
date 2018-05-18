@@ -1,7 +1,7 @@
 import { Hash, Hashable, Signature, Signer } from './cryptography'
 import { Address } from './address'
 import { MerkleTree } from './merkle-tree'
-import { UInt64 } from './bytes'
+import { UInt64, serialize } from './serializable'
 
 export class Blockchain {
   public readonly blocks: Block[] = []
@@ -82,8 +82,8 @@ export class BlockHeader implements Hashable {
     public readonly appStateHash: Hash
   ) {
     this.hash = Hash.fromData(Buffer.concat([
-      UInt64.fromNumber(height).buffer,
-      UInt64.fromNumber(timestamp).buffer,
+      serialize(height, UInt64.serialize),
+      serialize(timestamp, UInt64.serialize),
       lastBlockHash.buffer,
       transactionRoot.buffer,
       lastBlockConsensusHash.buffer,
@@ -109,7 +109,7 @@ export class Consensus implements Hashable {
     public readonly signatures: MerkleTree<Signature>
   ) {
     this.hash = Hash.fromData(Buffer.concat([
-      UInt64.fromNumber(round).buffer,
+      serialize(round, UInt64.serialize),
       signatures.root.buffer
     ]))
   }
@@ -164,7 +164,7 @@ export class TransactionData implements Hashable {
 
   ) {
     this.buffer = Buffer.concat([
-      UInt64.fromNumber(nonce).buffer,
+      serialize(nonce, UInt64.serialize),
       data
     ])
     this.hash = Hash.fromData(this.buffer)
@@ -186,7 +186,7 @@ export class Validator implements Hashable {
   ) {
     this.hash = Hash.fromData(Buffer.concat([
       address.buffer,
-      UInt64.fromNumber(power).buffer
+      serialize(power, UInt64.serialize)
     ]))
   }
 }

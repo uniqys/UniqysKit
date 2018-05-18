@@ -1,12 +1,15 @@
 import { Hash } from './cryptography'
-import { Bytes32, Int64 } from './bytes'
+import { Bytes32 } from './bytes'
+import { Int64, serialize } from './serializable'
 
 export namespace Operation {
   class Data {
     constructor (
       public readonly data: Buffer
     ) {}
-    public toBinary (): Buffer { return Buffer.concat([ Int64.fromNumber(this.data.byteLength).serialize(), this.data ]) }
+    public toBinary (): Buffer {
+      return Buffer.concat([ serialize(this.data.byteLength, Int64.serialize), this.data ])
+    }
   }
   export class Load extends Data { }
   export class Value extends Data { }
@@ -14,7 +17,7 @@ export namespace Operation {
     constructor (
       public readonly consume: number
     ) {}
-    public toBinary (): Buffer { return Int64.fromNumber(-this.consume).serialize() }
+    public toBinary (): Buffer { return serialize(-this.consume, Int64.serialize) }
   }
 }
 export type Operation = Operation.Load | Operation.Value | Operation.Hash
@@ -84,7 +87,7 @@ export class MerkleProof {
   }
 
   public verify (expect: Bytes32): boolean {
-    return this.calculate().equals(expect.serialize())
+    return this.calculate().equals(expect.buffer)
   }
 
   private resultSize (): number {
@@ -106,7 +109,7 @@ export class MerkleProof {
       if (op instanceof Operation.Hash) {
         const start = stack.byteLength - op.consume
         const hash = Hash.fromData(stack.slice(start, stack.byteLength))
-        stack = Buffer.concat([stack.slice(0, start), hash.serialize()])
+        stack = Buffer.concat([stack.slice(0, start), hash.buffer])
       }
     }
     return stack

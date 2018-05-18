@@ -1,8 +1,9 @@
 import createKeccakHash from 'keccak'
 import secp256k1 from 'secp256k1'
 import { randomBytes } from 'crypto'
-import { Bytes32, Bytes64, UInt8 } from './bytes'
+import { Bytes32, Bytes64 } from './bytes'
 import { Address } from './address'
+import { UInt8, serialize } from './serializable'
 
 export class Hash extends Bytes32 {
   public static fromData (data: string | Buffer | DataView) {
@@ -37,7 +38,7 @@ export class Signature implements Hashable {
 
     return new Signature(Buffer.concat([
       sig.signature,
-      UInt8.fromNumber(sig.recovery).buffer
+      serialize(sig.recovery, UInt8.serialize)
     ]))
   }
 

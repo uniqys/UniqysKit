@@ -1,20 +1,21 @@
 import { AbstractLevelDOWN } from 'abstract-leveldown'
 import { Hash } from '../structure/cryptography'
 import { MerklePatriciaTrie, Node, NodeStore } from '../structure/merkle-patricia-trie'
+import { serialize, deserialize } from '../structure/serializable'
 
-class LevelDownNodeStore implements NodeStore {
+export class LevelDownNodeStore implements NodeStore {
   constructor (
     private readonly db: AbstractLevelDOWN<Buffer, Buffer>
   ) { }
 
   public get (key: Hash): Promise<Node> {
-    return new Promise((resolve, reject) => this.db.get(key.serialize(), (err, value) => {
+    return new Promise((resolve, reject) => this.db.get(key.buffer, (err, value) => {
       /* istanbul ignore if: it's back-end error */
-      if (err) { reject(err) } else { resolve(Node.deserialize(value).value) }
+      if (err) { reject(err) } else { resolve(deserialize(value, Node.deserialize)) }
     }))
   }
   public set (key: Hash, value: Node): Promise<void> {
-    return new Promise((resolve, reject) => this.db.put(key.serialize(), value.serialize(), (err) => {
+    return new Promise((resolve, reject) => this.db.put(key.buffer, serialize(value), (err) => {
       /* istanbul ignore if: it's back-end error */
       if (err) { reject(err) } else { resolve() }
     }))

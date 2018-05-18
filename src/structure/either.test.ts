@@ -1,5 +1,5 @@
-import { UInt8 } from './bytes'
 import { Either } from './either'
+import { deserialize, serialize, Serializer, Deserializer, UInt8 } from './serializable'
 
 describe('Either', () => {
   it('can be either value', () => {
@@ -16,17 +16,20 @@ describe('Either', () => {
     expect(Either.left(42).isRight()).not.toBeTruthy()
     expect(Either.right('foo').isRight()).toBeTruthy()
   })
-  it('is serializable', () => {
-    const deserializer = Either.deserialize(UInt8.deserialize, buff => { return { rest: Buffer.alloc(0), value: buff.toString() } })
-    const left = Either.left<UInt8, string>(UInt8.fromNumber(42)).serialize(n => n.serialize(), s => Buffer.from(s))
-    expect(deserializer(left).value.match(v => v, _ => UInt8.fromNumber(0)).number).toBe(42)
-    const right = Either.right<UInt8, string>('foo').serialize(n => n.serialize(), s => Buffer.from(s))
-    expect(deserializer(right).value.match(_ => '', s => s)).toBe('foo')
-  })
-  it('throw error when deserialize invalid buffer', () => {
-    const deserializer = Either.deserialize(UInt8.deserialize, buff => { return { rest: Buffer.alloc(0), value: buff.toString() } })
-    const left = Either.left<UInt8, string>(UInt8.fromNumber(42)).serialize(n => n.serialize(), s => Buffer.from(s))
-    left.writeUInt8(2, 0) // overwrite label byte
-    expect(() => { deserializer(left) }).toThrow()
+  describe('serialize', () => {
+    const serializer: Serializer<Either<number, string>> = (e, w) => e.serialize(UInt8.serialize, (s, w) => w.append(Buffer.from(s)))(w)
+    const deserializer: Deserializer<Either<number, string>> = Either.deserialize(UInt8.deserialize, r => r.buffer.toString())
+    it('is serializable', () => {
+      const left = Either.left<number, string>(42)
+      const right = Either.right<number, string>('foo')
+      expect(deserialize(serialize(left, serializer), deserializer).match(v => v, _ => 0)).toBe(42)
+      expect(deserialize(serialize(right, serializer), deserializer).match(_ => '', s => s)).toBe('foo')
+    })
+    it('throw error when deserialize invalid buffer', () => {
+      const left = Either.left<number, string>(42)
+      const buf = serialize(left, serializer)
+      buf.writeUInt8(2, 0) // overwrite label byte
+      expect(() => { deserialize(buf, deserializer) }).toThrow()
+    })
   })
 })
