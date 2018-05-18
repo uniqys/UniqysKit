@@ -2,6 +2,7 @@ import { MerklePatriciaTrie, KeyValueProof, InMemoryNodeStore } from './merkle-p
 import { Hash } from './cryptography'
 import { Content } from './merkle-patricia-trie/node'
 import { Operation, MerkleProof } from './merkle-proof'
+import { serialize } from './serializable'
 
 async function collect<T> (iter: AsyncIterable<T>): Promise<T[]> {
   let collect = []
@@ -33,8 +34,8 @@ describe('Merkle Patricia Trie', () => {
   it('can set and get values of key', async () => {
     await mpt.set(cat, meow)
     await mpt.set(catalyst, foo)
-    expect((await mpt.get(cat)).match(v => v.equals(meow), () => false)).toBeTruthy()
-    expect((await mpt.get(catalyst)).match(v => v.equals(foo), () => false)).toBeTruthy()
+    expect((await mpt.get(cat)).match(v => { console.log(v); return v.equals(meow) }, () => false)).toBeTruthy()
+    expect((await mpt.get(catalyst)).match(v => { console.log(v); return v.equals(foo) }, () => false)).toBeTruthy()
   })
   it('return optional when get value', async () => {
     await mpt.set(cat, meow)
@@ -85,7 +86,7 @@ describe('Merkle Patricia Trie', () => {
   })
   it('is hashable on root node', async () => {
     await mpt.set(cat, meow)
-    const root = Hash.fromData(new Content(cat, meow).serialize())
+    const root = Hash.fromData(serialize(new Content(cat, meow)))
 
     expect(mpt.root.equals(root)).toBeTruthy()
     expect(mpt.hash.equals(root)).toBeTruthy()
@@ -142,7 +143,7 @@ describe('Merkle Patricia Trie', () => {
     const ops = proof.proof.operations
     for (const i in ops) {
       if (ops[i] instanceof Operation.Value) {
-        ops[i] = new Operation.Value(new Content(catalog, foo).serialize())
+        ops[i] = new Operation.Value(serialize(new Content(catalog, foo)))
       }
     }
     const fake = new KeyValueProof(new MerkleProof(ops))

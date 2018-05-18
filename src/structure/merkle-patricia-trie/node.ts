@@ -1,6 +1,5 @@
-import { Serializable, Deserialized } from '../serializable'
+import { Serializable, Deserializer, BufferWriter, serialize, UInt32 } from '../serializable'
 import { Hash, Hashable } from '../cryptography'
-import { UInt32 } from '../bytes'
 import { Optional } from '../optional'
 import { Either } from '../either'
 import { MerkleProof } from '../merkle-proof'
@@ -44,23 +43,21 @@ export class Content implements Serializable {
     public readonly value: Buffer
   ) {}
 
-  public static deserialize (buffer: Buffer): Deserialized<Content> {
-    const { rest: keyBuf, value: keyLength } = UInt32.deserialize(buffer)
-    const key = keyBuf.slice(0, keyLength.number)
-    const { rest: valueBuf, value: valueLength } = UInt32.deserialize(keyBuf.slice(keyLength.number))
-    const value = valueBuf.slice(0, valueLength.number)
-    return { rest: valueBuf.slice(valueLength.number), value: new Content(key, value) }
+  public static deserialize: Deserializer<Content> = (reader) => {
+    const key = reader.consume(UInt32.deserialize(reader))
+    const value = reader.consume(UInt32.deserialize(reader))
+    return new Content(key, value)
   }
-  public serialize (): Buffer {
+  public serialize (writer: BufferWriter) {
     if (this._serialized === undefined) {
-      this._serialized = Buffer.concat([
-        UInt32.fromNumber(this.key.byteLength).serialize(),
-        this.key,
-        UInt32.fromNumber(this.value.byteLength).serialize(),
-        this.value
-      ])
+      const w = new BufferWriter()
+      UInt32.serialize(this.key.byteLength, w)
+      w.append(this.key)
+      UInt32.serialize(this.value.byteLength, w)
+      w.append(this.value)
+      this._serialized = w.buffer
     }
-    return this._serialized
+    return writer.append(this._serialized)
   }
 }
 
@@ -93,34 +90,33 @@ export class Node implements Serializable, Hashable {
   public static emptyBranch () {
     return new Array<Optional<NodeRef>>(Node.branch).fill(Optional.none())
   }
-  public static deserialize (buffer: Buffer): Deserialized<Node> {
-    const { rest: keyBuf, value: keyLength } = UInt32.deserialize(buffer)
-    const isEven = keyLength.number % 2 === 0
-    const keyBufSize = (isEven ? keyLength.number : keyLength.number + 1) / 2
-    const evenKey = Key.bufferToKey(keyBuf.slice(0, keyBufSize))
+  public static deserialize: Deserializer<Node> = (reader) => {
+    const keyLength = UInt32.deserialize(reader)
+    const isEven = keyLength % 2 === 0
+    const keyBufSize = (isEven ? keyLength : keyLength + 1) / 2
+    const evenKey = Key.bufferToKey(reader.consume(keyBufSize))
     const key = isEven ? evenKey : evenKey.slice(1)
-    let childrenBuf = keyBuf.slice(keyBufSize)
     let children = []
     for (let i = 0; i < Node.branch; i++) {
-      const result = Optional.deserialize(Hash.deserialize)(childrenBuf)
-      childrenBuf = result.rest
-      children.push(result.value.match(hash => Optional.some(NodeRef.ofHash(hash)), () => Optional.none<NodeRef>()))
+      const child = Optional.deserialize(Hash.deserialize)(reader)
+      children.push(child.match(hash => Optional.some(NodeRef.ofHash(hash)), () => Optional.none<NodeRef>()))
     }
-    const { rest: rest, value: value } = Optional.deserialize(Content.deserialize)(childrenBuf)
-    return { rest: rest, value: new Node(key, children, value) }
+    const value = Optional.deserialize(Content.deserialize)(reader)
+    return new Node(key, children, value)
   }
-  public serialize (): Buffer {
+  public serialize (writer: BufferWriter) {
     // TODO: more efficient encode like ethereum
     const isEven = this.prefix.length % 2 === 0
     const evenKey: Key = isEven ? this.prefix : [0, ...this.prefix] // make even length
-    return Buffer.concat([
-      UInt32.fromNumber(this.prefix.length).serialize(),
-      Key.keyToBuffer(evenKey),
-      ...this.children.map(child => child.serialize(
-        ref => ref.match(hash => hash.serialize(), _ => { throw new Error('need store children before serialize') })
-      )),
-      this.content.serialize(kv => kv.serialize())
-    ])
+    UInt32.serialize(this.prefix.length, writer)
+    writer.append(Key.keyToBuffer(evenKey))
+    this.children.forEach(child => {
+      child.serialize(
+        (ref, w) => ref.match(hash => hash.serialize(w),
+        _ => { throw new Error('need store children before serialize') })
+      )(writer)
+    })
+    this.content.serialize((kv, w) => kv.serialize(w))(writer)
   }
   public async *contents (store: NodeStore): AsyncIterableIterator<Content> {
     if (this.content.isSome()) {
@@ -220,17 +216,17 @@ export class Node implements Serializable, Hashable {
   }
   public get hash (): Hash {
     if (this._hash === undefined) {
-      const buf: Buffer[] = []
+      const writer = new BufferWriter()
 
       for (const child of this.children) {
         if (child.isSome()) {
-          buf.push(child.value.match(hash => hash.serialize(), node => node.hash.serialize()))
+          child.value.match(hash => hash.serialize(writer), node => node.hash.serialize(writer))
         }
       }
       if (this.content.isSome()) {
-        buf.push(this.content.value.serialize())
+        this.content.value.serialize(writer)
       }
-      this._hash = Hash.fromData(Buffer.concat(buf))
+      this._hash = Hash.fromData(writer.buffer)
     }
     return this._hash
   }
@@ -242,10 +238,10 @@ export class Node implements Serializable, Hashable {
         const proof = new MerkleProof()
         for (const child of this.children) {
           if (child.isSome()) {
-            proof.load(child.value.match(hash => hash.serialize(), node => node.hash.serialize()))
+            proof.load(child.value.match(hash => hash.buffer, node => node.hash.buffer))
           }
         }
-        proof.value(this.content.value.serialize())
+        proof.value(serialize(this.content.value))
         proof.hash() // push calc hash operation
         return proof
       }
@@ -260,12 +256,12 @@ export class Node implements Serializable, Hashable {
             const childProof = await node.prove(store, matchResult.remain2.slice(1))
             proof.append(childProof)
           } else {
-            proof.load(child.value.match(hash => hash.serialize(), node => node.hash.serialize()))
+            proof.load(child.value.match(hash => hash.buffer, node => node.hash.buffer))
           }
         }
       }
       if (this.content.isSome()) {
-        proof.load(this.content.value.serialize())
+        proof.load(serialize(this.content.value))
       }
       proof.hash() // push calc hash operation
       return proof

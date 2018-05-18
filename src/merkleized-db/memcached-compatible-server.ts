@@ -17,7 +17,7 @@ export class MerkleizedMemcachedSubset extends LevelDownMemcachedSubset {
     return new Promise((resolve, reject) => this.merkleizedDb.root((err, hash) => {
       /* istanbul ignore next: it's back-end error */
       if (err || !hash) { return reject(err) }
-      return resolve({ key: '', flags: 0, data: hex ? Buffer.from(hash.serialize().toString('hex')) : hash.serialize() })
+      return resolve({ key: '', flags: 0, data: hex ? Buffer.from(hash.buffer.toString('hex')) : hash.buffer })
     }))
   }
   // shortcut implementation

@@ -2,6 +2,7 @@ import { Hash, Hashable } from '../cryptography'
 import { Optional } from '../optional'
 import { MerkleProof } from '../merkle-proof'
 import { Node, NodeStore, Content, Key } from './node'
+import { deserialize, serialize } from '../serializable'
 
 export { Node, NodeStore }
 
@@ -11,7 +12,7 @@ export class KeyValueProof {
   constructor (
     public readonly proof: MerkleProof
   ) {
-    const content = Content.deserialize(proof.values()[0]).value
+    const content = deserialize(proof.values()[0], Content.deserialize)
     this.key = content.key
     this.value = content.value
   }
@@ -102,15 +103,15 @@ export class MerklePatriciaTrie implements Hashable, AsyncIterable<[Buffer, Buff
 export class InMemoryNodeStore implements NodeStore {
   private store = new Map<string, Buffer>()
   public get (key: Hash): Promise<Node> {
-    const value = this.store.get(key.serialize().toString('hex'))
+    const value = this.store.get(key.buffer.toString('hex'))
     if (value) {
-      return Promise.resolve(Node.deserialize(value).value)
+      return Promise.resolve(deserialize(value, Node.deserialize))
     } else {
       return Promise.reject(new Error('NotFound'))
     }
   }
   public set (key: Hash, value: Node): Promise<void> {
-    this.store.set(key.serialize().toString('hex'), value.serialize())
+    this.store.set(key.buffer.toString('hex'), serialize(value))
     return Promise.resolve()
   }
 }

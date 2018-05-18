@@ -1,21 +1,11 @@
-import { Serializer, Deserializer } from './serializable'
-import { UInt8 } from './bytes'
+import { Serializer, Deserializer, BufferWriter, UInt8 } from './serializable'
 
 export abstract class Either<L,R> {
   public abstract match<T> (left: (v: L) => T, right: (v: R) => T): T
   public isLeft (): this is Left<L, R> { return this.match(_ => true, _ => false) }
   public isRight (): this is Right<L, R> { return this.match(_ => false, _ => true) }
-  public serialize (left: Serializer<L>, right: Serializer<R>): Buffer {
-    return this.match(
-      v => Buffer.concat([
-        UInt8.fromNumber(0).serialize(),
-        left(v)
-      ]),
-      v => Buffer.concat([
-        UInt8.fromNumber(1).serialize(),
-        right(v)
-      ])
-    )
+  public serialize (left: Serializer<L>, right: Serializer<R>) {
+    return (writer: BufferWriter) => Either.serialize(left, right)(this, writer)
   }
 }
 class Left<L, R> extends Either<L, R> {
@@ -33,19 +23,26 @@ class Right<L, R> extends Either<L, R> {
 export namespace Either {
   export function left<L, R> (v: L): Either<L, R> { return new Left(v) }
   export function right<L, R> (v: R): Either<L, R> { return new Right(v) }
+  export function serialize<L, R> (left: Serializer<L>, right: Serializer<R>): Serializer<Either<L, R>> {
+    return (e, writer) => {
+      e.match(
+        v => {
+          UInt8.serialize(0, writer)
+          left(v, writer)
+        },
+        v => {
+          UInt8.serialize(1, writer)
+          right(v, writer)
+        }
+      )
+    }
+  }
   export function deserialize<L, R> (left: Deserializer<L>, right: Deserializer<R>): Deserializer<Either<L, R>> {
-    return (buffer) => {
-      const label = buffer.readUInt8(0)
-      buffer = buffer.slice(1)
+    return (reader) => {
+      const label = UInt8.deserialize(reader)
       switch (label) {
-        case 0: {
-          const result = left(buffer)
-          return { rest: result.rest, value: new Left(result.value) }
-        }
-        case 1: {
-          const result = right(buffer)
-          return { rest: result.rest, value: new Right(result.value) }
-        }
+        case 0: return new Left(left(reader))
+        case 1: return new Right(right(reader))
         default: throw new Error()
       }
     }
