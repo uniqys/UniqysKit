@@ -33,6 +33,7 @@ async function startSampleOverRpc (address: string, listen: string) {
   // exit
   replServer.on('exit', () => {
     server.forceShutdown()
+    db.close()
   })
 }
 

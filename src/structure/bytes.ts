@@ -45,6 +45,21 @@ export class Bytes8 implements Serializable {
   }
 }
 
+export class Bytes20 implements Serializable {
+  public static readonly serializedLength: 20 = 20
+  private readonly length = Bytes20.serializedLength // for distinguish object types
+  constructor (
+    public readonly buffer: Buffer
+  ) {
+    if (buffer.length !== this.length) { throw TypeError() }
+  }
+  public static deserialize: Deserializer<Bytes20> = reader => new Bytes20(reader.consume(20))
+  public serialize (writer: BufferWriter) { writer.append(this.buffer) }
+  public equals (other: Bytes20): boolean {
+    return this.buffer.equals(other.buffer)
+  }
+}
+
 export class Bytes32 implements Serializable {
   public static readonly serializedLength: 32 = 32
   private readonly length = Bytes32.serializedLength // for distinguish object types

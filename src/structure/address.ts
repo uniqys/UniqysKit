@@ -1,13 +1,13 @@
-import { Bytes64 } from './bytes'
+import { Bytes20, Bytes64 } from './bytes'
+import { Hash } from './cryptography'
+import { BufferReader } from './serializable'
 
-export class Address {
-  constructor (
-    public readonly buffer: Buffer
-  ) { }
-
+export class Address extends Bytes20 {
+  public static deserialize (reader: BufferReader): Address {
+    return new Address(Bytes20.deserialize(reader).buffer)
+  }
   public static fromPublicKey (publicKey: Bytes64): Address {
-    // TODO: something conversion
-    return new Address(publicKey.buffer)
+    return new Address(Hash.fromData(publicKey.buffer).buffer.slice(12, 32))
   }
 
   // string representation
@@ -17,9 +17,5 @@ export class Address {
   }
   public toString (): string {
     return this.buffer.toString('hex')
-  }
-
-  public equals (other: Address): boolean {
-    return this.buffer.equals(other.buffer)
   }
 }
