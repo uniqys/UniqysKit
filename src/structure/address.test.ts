@@ -1,5 +1,6 @@
 import { Address } from './address'
 import { KeyPair } from './cryptography'
+import { serialize, deserialize } from './serializable'
 
 describe('Address', () => {
   it('can be made from public key', () => {
@@ -13,5 +14,9 @@ describe('Address', () => {
     const address = new KeyPair().address
     const stringRepresentation = address.toString()
     expect(Address.fromString(stringRepresentation).equals(address)).toBeTruthy()
+  })
+  it('is serializable', () => {
+    const address = Address.fromPublicKey(new KeyPair().publicKey)
+    expect(deserialize(serialize(address), Address.deserialize).equals(address)).toBeTruthy()
   })
 })

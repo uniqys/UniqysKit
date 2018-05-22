@@ -1,6 +1,6 @@
 import { Dapp, AppState } from '../../interface/dapi'
 import { KeyPair, Hash } from '../../structure/cryptography'
-import { Transaction, TransactionData } from '../../structure/blockchain'
+import { Transaction, TransactionData } from '../../structure/blockchain/transaction'
 import debug from 'debug'
 import { MerkleizedMemcached } from '../../merkleized-db/memcached-compatible-client'
 const logger = debug('sample')
@@ -44,7 +44,7 @@ export class Sample implements Dapp {
     const buffer = data instanceof Buffer ? data : Buffer.from(data)
     const txd = new TransactionData(this.nonce, buffer)
     logger('make transaction: %s', buffer.toString('utf8'))
-    return txd.sign(this.keyPair)
+    return Transaction.sign(this.keyPair, txd)
   }
 
   private async appState (): Promise<AppState> {

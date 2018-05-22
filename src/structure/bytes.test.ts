@@ -1,4 +1,4 @@
-import { Byte, Bytes4, Bytes8, Bytes32, Bytes64 } from './bytes'
+import { Byte, Bytes4, Bytes8, Bytes20, Bytes32, Bytes64 } from './bytes'
 import { serialize, deserialize } from './serializable'
 
 /* tslint:disable:no-unused-expression */
@@ -47,6 +47,23 @@ describe('Bytes8', () => {
   it('is serializable', () => {
     const object = new Bytes8(Buffer.from('fizzBuzz'))
     expect(deserialize(serialize(object), Bytes8.deserialize).equals(object)).toBeTruthy()
+  })
+})
+
+describe('Bytes20', () => {
+  it('can create from 20 byte buffer', () => {
+    expect(() => { new Bytes20(Buffer.alloc(20)) }).not.toThrow()
+  })
+  it('throw error when wrong size', () => {
+    expect(() => { new Bytes20(Buffer.alloc(1)) }).toThrow()
+  })
+  it('is equatable', () => {
+    expect(new Bytes20(Buffer.from('This has no meaning.'))
+      .equals(new Bytes20(Buffer.from('This has no meaning.')))).toBeTruthy()
+  })
+  it('is serializable', () => {
+    const object = new Bytes20(Buffer.from('This has no meaning.'))
+    expect(deserialize(serialize(object), Bytes20.deserialize).equals(object)).toBeTruthy()
   })
 })
 

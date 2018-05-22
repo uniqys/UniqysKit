@@ -1,4 +1,5 @@
-import { MerklePatriciaTrie, KeyValueProof, InMemoryNodeStore } from './merkle-patricia-trie'
+import { MerklePatriciaTrie, KeyValueProof } from './merkle-patricia-trie'
+import { InMemoryNodeStore } from '../store/merkle-patricia-trie-node'
 import { Hash } from './cryptography'
 import { Content } from './merkle-patricia-trie/node'
 import { Operation, MerkleProof } from './merkle-proof'

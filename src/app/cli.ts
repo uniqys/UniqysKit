@@ -1,5 +1,5 @@
 import { KeyPair } from '../structure/cryptography'
-import { TransactionData } from '../structure/blockchain'
+import { TransactionData, Transaction } from '../structure/blockchain/transaction'
 import repl from 'repl'
 import { Dapp, Core } from '../interface/dapi'
 
@@ -16,7 +16,7 @@ export function start<TCore extends Core, TDapp extends Dapp> (core: TCore, dapp
     action (this: repl.REPLServer, message: string) {
       const txd = new TransactionData(nonce, Buffer.from(message))
       nonce++
-      core.sendTransaction(txd.sign(signer))
+      core.sendTransaction(Transaction.sign(signer, txd))
         .then(() => this.displayPrompt())
         .catch(err => { setImmediate(() => { throw err }) })
     }

@@ -3,9 +3,12 @@ import secp256k1 from 'secp256k1'
 import { randomBytes } from 'crypto'
 import { Bytes32, Bytes64 } from './bytes'
 import { Address } from './address'
-import { UInt8, serialize } from './serializable'
+import { UInt8, serialize, Serializable, BufferReader, BufferWriter } from './serializable'
 
 export class Hash extends Bytes32 {
+  public static deserialize (reader: BufferReader): Hash {
+    return new Hash(Bytes32.deserialize(reader).buffer)
+  }
   public static fromData (data: string | Buffer | DataView) {
     return new Hash(createKeccakHash('keccak256').update(data).digest())
   }
@@ -15,21 +18,14 @@ export interface Hashable {
   hash: Hash
 }
 
-export class Signature implements Hashable {
+export class Signature implements Hashable, Serializable {
   public readonly hash: Hash
-
+  public get signature (): Bytes64 { return new Bytes64(this.buffer.slice(0, 64)) }
+  public get recovery (): number { return this.buffer.readUInt8(64) }
   constructor (
     public readonly buffer: Buffer
   ) {
     this.hash = Hash.fromData(this.buffer)
-  }
-
-  public get signature (): Bytes64 {
-    return new Bytes64(this.buffer.slice(0, 64))
-  }
-
-  public get recovery (): number {
-    return this.buffer.readUInt8(64)
   }
 
   // Ethereum compatible
@@ -42,6 +38,15 @@ export class Signature implements Hashable {
     ]))
   }
 
+  public static deserialize (reader: BufferReader): Signature {
+    return new Signature(reader.consume(65)) // sign: 64 + recovery: 1
+  }
+  public serialize (writer: BufferWriter) {
+    writer.append(this.buffer)
+  }
+  public equals (other: Signature): boolean {
+    return this.buffer.equals(other.buffer)
+  }
   public recover (messageHash: Hash): Bytes64 {
     try {
       return new Bytes64(secp256k1.recover(messageHash.buffer, this.signature.buffer, this.recovery, false).slice(1))

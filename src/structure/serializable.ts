@@ -94,3 +94,24 @@ export namespace Int64 {
     writer.ensure(8).fill(n < 0 ? 0xff : 0x00).writeIntBE(n, 2, 6)
   }
 }
+
+export namespace List {
+  export function deserialize<T> (deserializer: Deserializer<T>): Deserializer<T[]> {
+    return (reader) => {
+      const length = UInt32.deserialize(reader)
+      const list: T[] = []
+      for (let i = 0; i < length; i++) {
+        list.push(deserializer(reader))
+      }
+      return list
+    }
+  }
+  export function serialize<T> (serializer: Serializer<T>): Serializer<T[]> {
+    return (list, writer) => {
+      UInt32.serialize(list.length, writer)
+      for (const item of list) {
+        serializer(item, writer)
+      }
+    }
+  }
+}
