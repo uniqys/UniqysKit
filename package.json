@@ -45,9 +45,11 @@
   "devDependencies": {
     "@types/ajv": "^1.0.0",
     "@types/debug": "^0.0.30",
+    "@types/ejs": "^2.5.0",
     "@types/fs-extra": "^5.0.1",
     "@types/glob": "^5.0.35",
     "@types/google-protobuf": "^3.2.7",
+    "@types/internal-ip": "^2.0.0",
     "@types/jest": "^22.2.0",
     "@types/memcached": "^2.2.5",
     "@types/node": "^9.4.6",
@@ -75,15 +77,21 @@
   "dependencies": {
     "abstract-leveldown": "^4.0.3",
     "ajv": "^6.2.1",
+    "axios": "^0.18.0",
     "debug": "^3.1.0",
+    "ejs": "^2.5.8",
     "fs-extra": "^5.0.0",
     "grpc": "^1.10.0",
+    "internal-ip": "^3.0.1",
+    "jayson": "^2.0.5",
     "keccak": "^1.4.0",
     "levelup": "^2.0.2",
     "memcached": "^2.2.2",
     "memdown": "^2.0.0",
+    "node-ssdp": "^3.2.5",
     "secp256k1": "^3.5.0",
     "semaphore": "^1.1.0",
+    "xml-js": "^1.6.2",
     "yargs": "^11.0.0"
   }
 }

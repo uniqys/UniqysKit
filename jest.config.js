@@ -22,5 +22,8 @@ module.exports = {
       branches: 85,
       functions: 90,
     }
-  }
+  },
+  coveragePathIgnorePatterns: [
+    'network/nat-traversal/index.ts'
+  ]
 };
