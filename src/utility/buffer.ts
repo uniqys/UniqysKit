@@ -7,5 +7,5 @@ export function bufferToUint8Array (buffer: Buffer): Uint8Array {
 }
 
 export function uint8ArrayToBuffer (uint8Array: Uint8Array): Buffer {
-  return Buffer.from(uint8Array.buffer, uint8Array.byteOffset, uint8Array.byteLength)
+  return Buffer.from(uint8Array.buffer as ArrayBuffer, uint8Array.byteOffset, uint8Array.byteLength)
 }

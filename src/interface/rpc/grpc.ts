@@ -2,7 +2,7 @@ import service from './protobuf/dapi_grpc_pb'
 import message from './protobuf/dapi_pb'
 import grpc from 'grpc'
 import { Dapp, Core, AppState } from '../dapi'
-import { Transaction, TransactionData } from '../../structure/blockchain'
+import { Transaction, TransactionData } from '../../structure/blockchain/transaction'
 import { Hash, Signature } from '../../structure/cryptography'
 import { uint8ArrayToBuffer, bufferToUint8Array } from '../../utility/buffer'
 import debug from 'debug'
@@ -73,16 +73,18 @@ export class GrpcDapp implements Dapp {
     })
   }
 
-  public execute (transactions: Transaction[]): Promise < AppState > {
+  public execute (transactions: Iterable<Transaction>): Promise < AppState > {
     return new Promise<AppState>((resolve, reject) => {
       const pb = new message.ExecuteRequest()
-      pb.setTransactionsList(transactions.map(tx => {
+      const txs: message.Transaction[] = []
+      for (const tx of transactions) {
         const pb = new message.Transaction()
         pb.setSign(bufferToUint8Array(tx.sign.buffer))
         pb.setNonce(tx.data.nonce)
         pb.setData(bufferToUint8Array(tx.data.data))
-        return pb
-      }))
+        txs.push(pb)
+      }
+      pb.setTransactionsList(txs)
       this.client.execute(pb, (err, res) => {
         if (err) { return reject(err) }
         logger('executed')

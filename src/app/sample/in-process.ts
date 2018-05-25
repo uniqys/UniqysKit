@@ -5,16 +5,24 @@ import { ValidatorNode } from '../../chain-core/validator'
 import { Sample } from './dapp'
 import * as cli from '../cli'
 import debug from 'debug'
+import { MerkleizedDbServer } from '../../merkleized-db/memcached-compatible-server'
+import MemDown from 'memdown'
+import { Blockchain } from '../../structure/blockchain'
+import { InMemoryBlockStore } from '../../store/block'
 
 // set logger enable
-debug.enable('validator,sample')
+debug.enable('validator,sample,state-db*')
 
 async function main () {
+  // init dapp
+  const db = new MerkleizedDbServer(MemDown())
+  const port = 56010
+  db.listen(port)
+  const dapp = new Sample(`localhost:${port}`)
   // load config
   const genesis = await new GenesisConfig().loadAsBlock('./config/genesis.json')
   const keyPair = await new KeyConfig().loadAsKeyPair('./config/validatorKey.json')
-  const dapp = new Sample()
-  const validator = new ValidatorNode(dapp, genesis, keyPair)
+  const validator = new ValidatorNode(dapp, new Blockchain(new InMemoryBlockStore(), genesis), keyPair)
 
   // start
   const replServer = cli.start(validator, dapp)
@@ -31,13 +39,13 @@ async function main () {
   })
   replServer.defineCommand('readMessageTx', {
     help: 'reed messages in transactions of height',
-    action (this: REPLServer, heightString: string) {
+    async action (this: REPLServer, heightString: string) {
       let height = parseInt(heightString, 10)
       if (Number.isNaN(height)) {
         console.log('unrecognized block height. show latest block transactions.')
-        height = validator.blockchain.height
+        height = await validator.blockchain.height
       }
-      console.log(validator.blockchain.blockOf(height).data.transactions.items.map(tx => tx.data.data.toString()))
+      console.log((await validator.blockchain.blockOf(height)).body.transactionList.transactions.map(tx => tx.data.data.toString()))
       this.displayPrompt()
     }
   })
@@ -45,6 +53,7 @@ async function main () {
   // exit
   replServer.on('exit', () => {
     validator.stop()
+    db.close()
   })
 }
 

@@ -8,6 +8,6 @@ export class KeyConfig extends Config<Key> {
 
   public async loadAsKeyPair (configFile: string): Promise<KeyPair> {
     const config = await this.load(configFile)
-    return new KeyPair(new Bytes32(new Buffer(config.privateKey, 'hex')))
+    return new KeyPair(new Bytes32(Buffer.from(config.privateKey, 'hex')))
   }
 }

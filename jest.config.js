@@ -4,18 +4,23 @@ module.exports = {
   },
   testEnvironment: "node",
   testMatch: [
-    "**/?(*.)test.(ts|js)",
+    "<rootDir>/src/**/?(*.)test.(ts|js)",
   ],
   moduleFileExtensions: [
     'ts',
     'js',
   ],
   coverageThreshold: {
-    // this is too strict?
+    // That has branch in only compiled code
+    '**/structure/@(optional|either).ts': {
+      statements: 90,
+      branches: 80,
+      functions: 95,
+    },
     '**/*.ts': {
       statements: 90,
-      branches: 90,
-      functions: 95,
+      branches: 85,
+      functions: 90,
     }
   },
   coveragePathIgnorePatterns: [

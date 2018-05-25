@@ -16,14 +16,14 @@ const concatHash = (a: Hash, b: Hash): Hash => Hash.fromData(Buffer.concat([a.bu
 describe('MerkleTree', () => {
   it('root is H(a) if items are [a]', () => {
     const a = new MockHashable('The quick brown fox jumps over the lazy dog')
-    const tree = new MerkleTree([a])
-    expect(tree.root.equals(a.hash)).toBeTruthy()
+    const root = MerkleTree.root([a])
+    expect(root.equals(a.hash)).toBeTruthy()
   })
   it('root is H(H(a);H(b)) if items are [a, b]', () => {
     const a = new MockHashable('a')
     const b = new MockHashable('b')
-    const tree = new MerkleTree([a, b])
-    expect(tree.root.equals(concatHash(a.hash, b.hash))).toBeTruthy()
+    const root = MerkleTree.root([a, b])
+    expect(root.equals(concatHash(a.hash, b.hash))).toBeTruthy()
   })
   /*
   expect:
@@ -36,8 +36,8 @@ describe('MerkleTree', () => {
     const a = new MockHashable('a')
     const b = new MockHashable('b')
     const c = new MockHashable('c')
-    const tree = new MerkleTree([a, b, c])
-    expect(tree.root.equals(concatHash(concatHash(a.hash, b.hash), c.hash))).toBeTruthy()
+    const root = MerkleTree.root([a, b, c])
+    expect(root.equals(concatHash(concatHash(a.hash, b.hash), c.hash))).toBeTruthy()
   })
   /*
   expect:
@@ -60,8 +60,8 @@ describe('MerkleTree', () => {
     const c = new MockHashable('c')
     const d = new MockHashable('d')
     const e = new MockHashable('e')
-    const tree = new MerkleTree([a, b, c, d, e])
-    expect(tree.root.equals(
+    const root = MerkleTree.root([a, b, c, d, e])
+    expect(root.equals(
       concatHash(
         concatHash(
           concatHash(a.hash, b.hash),

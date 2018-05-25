@@ -1,6 +1,9 @@
-import { Block, BlockHeader, BlockData, Consensus, Blockchain, ValidatorSet, Validator } from './structure/blockchain'
+import { Blockchain } from './structure/blockchain'
+import { InMemoryBlockStore } from './store/block'
+import { Block } from './structure/blockchain/block'
+import { TransactionList } from './structure/blockchain/transaction'
+import { Consensus, ValidatorSet, Validator } from './structure/blockchain/consensus'
 import { Hash, KeyPair } from './structure/cryptography'
-import { MerkleTree } from './structure/merkle-tree'
 
 // Blockchainの使いまわし方が見えたら Blockchain.tsと合体するかも
 export class BlockchainDefault {
@@ -9,14 +12,11 @@ export class BlockchainDefault {
 
   public static get instance (): Blockchain {
     if (!this._instance) {
-      // FIXME ちゃんとしたgenesisBlockを作る
-      const signer = new KeyPair()
-      const validatorSet = new ValidatorSet([ new Validator(signer.address, 100) ])
-      const genesisData = new BlockData(new MerkleTree([]), new Consensus(0, new MerkleTree([])), validatorSet)
-      const genesisHeader = new BlockHeader(1, 100, Hash.fromData('genesis'),
-        genesisData.transactions.root, genesisData.lastBlockConsensus.hash, genesisData.nextValidatorSet.root, Hash.fromData('state'))
-      let genesisBlock = new Block(genesisData, genesisHeader)
-      this._instance = new Blockchain(genesisBlock)
+      let signer = new KeyPair()
+      let validatorSet = new ValidatorSet([ new Validator(signer.address, 100) ])
+      let genesis = Block.construct(1, 100, Hash.fromData('genesis'), Hash.fromData('state'),
+      new TransactionList([]), new Consensus([]), validatorSet)
+      this._instance = new Blockchain(new InMemoryBlockStore(), genesis)
     }
 
     return this._instance

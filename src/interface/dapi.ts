@@ -1,4 +1,4 @@
-import { Transaction } from '../structure/blockchain'
+import { Transaction } from '../structure/blockchain/transaction'
 import { Hash } from '../structure/cryptography'
 
 export class AppState {
@@ -14,5 +14,5 @@ export interface Core {
 
 export interface Dapp {
   connect (): Promise<AppState>
-  execute (transactions: Transaction[]): Promise<AppState>
+  execute (transactions: Iterable<Transaction>): Promise<AppState>
 }

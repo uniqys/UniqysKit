@@ -1,10 +1,14 @@
 import createKeccakHash from 'keccak'
 import secp256k1 from 'secp256k1'
 import { randomBytes } from 'crypto'
-import { Bytes32, Bytes64, UInt8 } from './bytes'
+import { Bytes32, Bytes64 } from './bytes'
 import { Address } from './address'
+import { UInt8, serialize, Serializable, BufferReader, BufferWriter } from './serializable'
 
 export class Hash extends Bytes32 {
+  public static deserialize (reader: BufferReader): Hash {
+    return new Hash(Bytes32.deserialize(reader).buffer)
+  }
   public static fromData (data: string | Buffer | DataView) {
     return new Hash(createKeccakHash('keccak256').update(data).digest())
   }
@@ -14,33 +18,35 @@ export interface Hashable {
   hash: Hash
 }
 
-export class Signature implements Hashable {
+export class Signature implements Hashable, Serializable {
   public readonly hash: Hash
-
+  public get signature (): Bytes64 { return new Bytes64(this.buffer.slice(0, 64)) }
+  public get recovery (): number { return this.buffer.readUInt8(64) }
   constructor (
     public readonly buffer: Buffer
   ) {
     this.hash = Hash.fromData(this.buffer)
   }
 
-  public get signature (): Bytes64 {
-    return new Bytes64(this.buffer.slice(0, 64))
-  }
-
-  public get recovery (): number {
-    return this.buffer.readUInt8(64)
-  }
-
   // Ethereum compatible
   public static sign (messageHash: Hash, privateKey: Bytes32): Signature {
-    const sig = secp256k1.sign(new Buffer(messageHash.buffer), new Buffer(privateKey.buffer))
+    const sig = secp256k1.sign(messageHash.buffer, privateKey.buffer)
 
     return new Signature(Buffer.concat([
       sig.signature,
-      UInt8.fromNumber(sig.recovery).buffer
+      serialize(sig.recovery, UInt8.serialize)
     ]))
   }
 
+  public static deserialize (reader: BufferReader): Signature {
+    return new Signature(reader.consume(65)) // sign: 64 + recovery: 1
+  }
+  public serialize (writer: BufferWriter) {
+    writer.append(this.buffer)
+  }
+  public equals (other: Signature): boolean {
+    return this.buffer.equals(other.buffer)
+  }
   public recover (messageHash: Hash): Bytes64 {
     try {
       return new Bytes64(secp256k1.recover(messageHash.buffer, this.signature.buffer, this.recovery, false).slice(1))
