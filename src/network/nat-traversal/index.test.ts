@@ -1,4 +1,4 @@
-import { NatTraversal } from './nat-traversal'
+import { NatTraversal } from './'
 
 describe('Nat Traversal', () => {
   let location: string

@@ -63,7 +63,7 @@ export namespace NatTraversal {
   }
 
   export async function getExternalIpAsync (url: string): Promise<any> {
-    let template = await renderEjsAsync(__dirname + '/template/get-external-ip.ejs')
+    let template = await renderEjsAsync(__dirname + '/templates/get-external-ip.ejs')
     return axios.post(url, template, {
       headers: {
         SOAPACTION: 'urn:schemas-upnp-org:service:WANIPConnection:1#GetExternalIPAddress'
@@ -73,7 +73,7 @@ export namespace NatTraversal {
 
   export async function addPortMappingAsync (url: string): Promise<any> {
     let internalIpAddress = await ip.v4()
-    let template = await renderEjsAsync(__dirname + '/template/add-port-mapping.ejs', {
+    let template = await renderEjsAsync(__dirname + '/templates/add-port-mapping.ejs', {
       port: 55962,
       protocol: 'TCP',
       localAddress: internalIpAddress,
@@ -87,7 +87,7 @@ export namespace NatTraversal {
   }
 
   export async function deletePortMappingAsync (url: string): Promise<any> {
-    let template = await renderEjsAsync(__dirname + '/template/delete-port-mapping.ejs', {
+    let template = await renderEjsAsync(__dirname + '/templates/delete-port-mapping.ejs', {
       port: 55962,
       protocol: 'TCP'
     })

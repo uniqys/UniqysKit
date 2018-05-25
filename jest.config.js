@@ -19,6 +19,6 @@ module.exports = {
     }
   },
   coveragePathIgnorePatterns: [
-    'network/nat-traversal.ts'
+    'network/nat-traversal/index.ts'
   ]
 };
