@@ -22,9 +22,10 @@ export function start<TCore extends Core, TDapp extends Dapp> (core: TCore, dapp
     }
   })
 
-  // context objects
-  replServer.context.core = core
-  replServer.context.dapp = dapp
+  replServer.context = {
+    core: core,
+    dapp: dapp
+  }
 
   return replServer
 }

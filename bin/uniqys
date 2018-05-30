@@ -1,0 +1,60 @@
+#!/usr/bin/env node
+
+const fs = require('fs')
+const meow = require('meow')
+
+const cli = meow(`
+    Usage
+      $ uniqys <command> [options]
+
+    Commands
+      init      Initialize genesis block
+      start     Start uniqys node
+      version   Show version
+      license   Show license
+      help      Show this help
+
+    Options
+      --port, -p       Number of port
+      --help, -h       Show this help
+`, {
+    flags: {
+        port: {
+            type: 'number',
+            alias: 'p'
+        },
+        // Duplicated with the command. But specified for accessibility.
+        help: {
+            type: 'boolean',
+            alias: 'h'
+        }
+    }
+})
+
+start(cli.input[0], cli.flags)
+
+function start (command, flags) {
+  if (flags.help) {
+    return cli.showHelp()
+  }
+
+  if (flags.port) {
+
+  }
+
+  switch (command) {
+    case 'help':
+      cli.showHelp()
+      break
+    case 'start':
+      // TODO: Start
+      break
+    case 'version':
+      console.log(require('../package').version)
+      break
+    case 'license':
+      console.log(fs.readFileSync(__dirname + '/../LICENSE').toString())
+    case 'init':
+      // TODO: Init Genesis blocks
+  }
+}
