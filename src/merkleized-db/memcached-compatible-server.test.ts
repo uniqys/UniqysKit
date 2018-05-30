@@ -1,6 +1,6 @@
 import { MerkleizedDbServer } from './memcached-compatible-server'
 import memdown from 'memdown'
-import net, { AddressInfo } from 'net'
+import net from 'net'
 import split from 'split'
 import { isNull } from 'util'
 
@@ -18,7 +18,7 @@ describe('Test memcached compatibility', () => {
   beforeAll(done => {
     server.listen()
     server.once('listening', () => {
-      port = (server.address() as AddressInfo).port
+      port = server.address().port
       done()
     })
     client.socket.setMaxListeners(100) // split handler
@@ -485,7 +485,7 @@ describe('Test no cas mode', () => {
   beforeAll(done => {
     server.listen()
     server.once('listening', () => {
-      port = (server.address() as AddressInfo).port
+      port = server.address().port
       client.socket.connect(port)
       client.socket.once('connect', () => {
         client.lines = client.socket.pipe(split())

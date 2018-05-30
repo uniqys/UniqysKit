@@ -1,7 +1,7 @@
 import fs from 'fs'
 import ejs from 'ejs'
 import xmlConverter from 'xml-js'
-import axios from 'axios'
+import axios, { AxiosResponse } from 'axios'
 import ip from 'internal-ip'
 import { Client } from 'node-ssdp'
 
@@ -32,6 +32,7 @@ export namespace NatTraversal {
       })
   }
 
+  // ルータから帰ってくる情報は法則があるかどうか未検証
   export function findServicesFromDeviceInfo (info: any): object | undefined {
     let isInternetGatewayDevice = false
     let deviceTypes = findKeyRecursive(info, 'deviceType')
@@ -62,7 +63,7 @@ export namespace NatTraversal {
     return undefined
   }
 
-  export async function getExternalIpAsync (url: string): Promise<any> {
+  export async function getExternalIpAsync (url: string): Promise<AxiosResponse> {
     let template = await renderEjsAsync(__dirname + '/templates/get-external-ip.ejs')
     return axios.post(url, template, {
       headers: {
@@ -71,7 +72,7 @@ export namespace NatTraversal {
     })
   }
 
-  export async function addPortMappingAsync (url: string): Promise<any> {
+  export async function addPortMappingAsync (url: string): Promise<AxiosResponse> {
     let internalIpAddress = await ip.v4()
     let template = await renderEjsAsync(__dirname + '/templates/add-port-mapping.ejs', {
       port: 55962,
@@ -86,7 +87,7 @@ export namespace NatTraversal {
     })
   }
 
-  export async function deletePortMappingAsync (url: string): Promise<any> {
+  export async function deletePortMappingAsync (url: string): Promise<AxiosResponse> {
     let template = await renderEjsAsync(__dirname + '/templates/delete-port-mapping.ejs', {
       port: 55962,
       protocol: 'TCP'
