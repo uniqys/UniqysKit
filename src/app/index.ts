@@ -18,7 +18,8 @@ const cli = meow(`
       --help, -h       Show this help
 
     Start options
-      --port, -p       Number of port
+      --port, -p       Number of port (Default: 56010)
+      --config         Config Directory (Default: ./config)
 
     Initialize options
       --unique <value>     String to make chain unique
@@ -27,14 +28,18 @@ const cli = meow(`
       --power <value>      Vote power of validator
 `, {
   flags: {
-    port: {
-      type: 'string',
-      alias: 'p'
-    },
     // Duplicated with the command. But specified for accessibility.
     help: {
       type: 'boolean',
       alias: 'h'
+    },
+    // Start Options
+    port: {
+      type: 'string',
+      alias: 'p'
+    },
+    config: {
+      type: 'string'
     },
     // Initialize options
     unique: {
@@ -62,7 +67,7 @@ export function run (): void {
       cli.showHelp()
       break
     case 'start':
-      main().catch(err => { setImmediate(() => { throw err }) })
+      main(cli.flags).catch(err => { setImmediate(() => { throw err }) })
       break
     case 'version':
       console.log(require('../package').version)
