@@ -15,11 +15,11 @@ const cli = meow(`
       help      Show this help
 
     Options
-      --help, -h       Show this help
+      --help, -h           Show this help
 
     Start options
-      --port, -p       Number of port (Default: 56010)
-      --config         Config Directory (Default: ./config)
+      --port, -p <value>   Number of port (Default: 56010)
+      --config <value>     Config Directory (Default: ./config)
 
     Initialize options
       --unique <value>     String to make chain unique
