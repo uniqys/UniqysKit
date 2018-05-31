@@ -1,0 +1,5 @@
+#!./node_modules/.bin/ts-node
+
+const cli = require('../src/app')
+
+cli.run()

@@ -5,7 +5,6 @@
   "private": true,
   "bin": "bin/uniqys",
   "scripts": {
-    "start": "./bin/uniqys",
     "ts-node": "node -r ts-node/register",
     "chain-init": "npm run ts-node src/app/init.ts",
     "merkleized-db": "npm run ts-node src/app/merkleized-db-server.ts",
@@ -54,6 +53,7 @@
     "@types/internal-ip": "^2.0.0",
     "@types/jest": "^22.2.0",
     "@types/memcached": "^2.2.5",
+    "@types/meow": "^4.0.1",
     "@types/node": "^9.4.6",
     "@types/semaphore": "^1.1.0",
     "@types/split": "^0.3.28",
