@@ -9,11 +9,13 @@
 (Required: `npm run build` before run)
 
 ```
+cd [project root]
 ./bin/uniqys
 ```
 
 ## Development command
 
 ```
+cd [project root]
 ./bin/uniqys-dev
 ```

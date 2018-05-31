@@ -1,6 +1,7 @@
 import fs from 'fs'
 import meow from 'meow'
 import { initialize } from './init'
+import { main } from './sample/in-process'
 
 const cli = meow(`
     Usage
@@ -8,14 +9,16 @@ const cli = meow(`
 
     Commands
       init      Initialize genesis block
-      start     Start uniqys node
+      start     Start Uniqys
       version   Show version
       license   Show license
       help      Show this help
 
     Options
-      --port, -p       Number of port
       --help, -h       Show this help
+
+    Start options
+      --port, -p       Number of port
 
     Initialize options
       --unique <value>     String to make chain unique
@@ -54,16 +57,12 @@ export function run (): void {
     return cli.showHelp()
   }
 
-  if (cli.flags.port) {
-    // TODO: 書く
-  }
-
   switch (cli.input[0]) {
     case 'help':
       cli.showHelp()
       break
     case 'start':
-      // TODO: Start
+      main().catch(err => { setImmediate(() => { throw err }) })
       break
     case 'version':
       console.log(require('../package').version)

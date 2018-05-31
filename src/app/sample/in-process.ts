@@ -13,7 +13,7 @@ import { InMemoryBlockStore } from '../../store/block'
 // set logger enable
 debug.enable('validator,sample,state-db*')
 
-async function main () {
+export async function main () {
   // init dapp
   const db = new MerkleizedDbServer(MemDown())
   const port = 56010
@@ -56,5 +56,3 @@ async function main () {
     db.close()
   })
 }
-
-main().catch(err => { setImmediate(() => { throw err }) })
