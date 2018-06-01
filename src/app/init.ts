@@ -11,13 +11,16 @@ export function initialize (flags: buildOptions.Options): void {
   let address = flags.address as string
 
   if (!address) {
-    const privateKey = KeyPair.generatePrivateKey()
-    const keyPair = new KeyPair(privateKey)
+    let privateKey = KeyPair.generatePrivateKey()
+    let keyPair = new KeyPair(privateKey)
     address = keyPair.address.toString()
-    const key: Key = {
+    let key: Key = {
       privateKey: privateKey.buffer.toString('hex')
     }
-    fs.writeFileSync(path.join(CONFIG, 'validatorKey.json'), JSON.stringify(key, null, 2))
+    let filePath = path.join(CONFIG, 'validatorKey.json')
+    console.log(`Write validator key into ${filePath}`)
+    fs.writeFileSync(filePath, JSON.stringify(key, null, 2))
+
   }
 
   const genesis: Genesis = {
@@ -31,5 +34,8 @@ export function initialize (flags: buildOptions.Options): void {
     ]
   }
 
-  fs.writeFileSync(path.join(CONFIG, 'genesis.json'), JSON.stringify(genesis, null, 2))
+  let filePath = path.join(CONFIG, 'genesis.json')
+
+  console.log(`Write genesis into ${filePath}`)
+  fs.writeFileSync(filePath, JSON.stringify(genesis, null, 2))
 }
