@@ -7,7 +7,7 @@ import { Client } from 'node-ssdp'
 
 /* istanbul ignore next */
 export namespace NatTraversal {
-  export async function discoverRootDeviceAsync (): Promise<any> {
+  export function discoverRootDeviceAsync (): Promise<any> {
     let client = new Client()
 
     return new Promise((resolve, reject) => {
@@ -21,11 +21,11 @@ export namespace NatTraversal {
       // client.search('urn:schemas-upnp-org:service:WANIPConnection:1')
 
       // ref: NEO's UPnP code
-      setTimeout(reject, 3000)
+      setTimeout(reject, 4000)
     })
   }
 
-  export async function getRootDeviceInfoAsync (url: string): Promise<any> {
+  export function getRootDeviceInfoAsync (url: string): Promise<any> {
     return axios.get(url)
       .then((res) => {
         return xmlConverter.xml2js(res.data, { compact: true })
