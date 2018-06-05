@@ -4,17 +4,23 @@
 
 ## Get started
 
-### setup for [ndenv](https://github.com/riywo/ndenv)
+### Setup for [ndenv](https://github.com/riywo/ndenv)
 
 ```
 $ ndenv install v10.1.0
 ```
 
-### installation
+### Installation
 
 ```
 $ cd BPP
 $ npm install
+```
+
+### Build
+
+```
+$ npm run build
 ```
 
 ### Launch for development
@@ -36,7 +42,7 @@ $ npm run sample:dapp
 When `sample:dapp` starts, execute `sample:core`
 
 ```shell:core
-(iinuma@mfpc360)$ npm run sample:core                                                                                                                                                                                                            [branch:master][~/project/BPP]
+$ npm run sample:core
 
 > bpp-project@0.0.1 sample:core /Users/iinuma/project/BPP
 > npm run ts-node src/app/sample/grpc-core.ts
@@ -56,4 +62,11 @@ When `sample:dapp` starts, execute `sample:core`
   validator add block(2): 0c8063e11c922de9d2366e25585cfae01b95cc48861f220ed612c5d2046c57df +1ms
   validator execute transaction in block(2) +0ms
   grpc executed +7ms
-```  
+```
+
+### Tests
+
+```
+$ npm test
+$ open coverage/lcov-report/index.html
+```
