@@ -7,7 +7,7 @@ jobs:
 
     steps:
       - checkout
-      - restore_cace:
+      - restore_cache:
           key: project-name-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - run:
           name: System information
