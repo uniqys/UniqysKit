@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: ~/workspace
     docker:
-      - image: node:10.1.0-alpine
+      - image: node:10.1.0
 
     steps:
       - checkout
