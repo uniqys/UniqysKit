@@ -6,7 +6,7 @@ jobs:
       - image: node:10.1.0-alpine
 
     steps:
-      - checkiout
+      - checkout
       - restore_cace:
           key: project-name-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - run:
