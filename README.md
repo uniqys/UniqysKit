@@ -1,5 +1,7 @@
 # Blockchain Platform Project
 
+[![CircleCI](https://circleci.com/gh/mfac/BPP/tree/master.svg?style=svg)](https://circleci.com/gh/mfac/BPP/tree/master)
+
 :link: :link: :link:
 
 ## Get started
