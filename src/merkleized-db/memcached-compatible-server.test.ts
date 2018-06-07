@@ -526,7 +526,6 @@ describe('Test no cas mode', () => {
     })
     describe('cas', () => {
       it('sets value of key if cas unique matched', async () => {
-        client.socket.on('data', (chunk) => console.log('receive', chunk.toString()))
         client.socket.write('gets test_exists\r\n')
         const [, , cas] = await readKeyValueCas(client)
         expect(await readLine(client)).toMatch(/END/)
