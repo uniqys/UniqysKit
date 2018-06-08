@@ -27,8 +27,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "run-s test:build test:lint",
-      "pre-push": "npm run test"
+      "pre-commit": "run-s test:build test:lint"
     }
   },
   "repository": {
