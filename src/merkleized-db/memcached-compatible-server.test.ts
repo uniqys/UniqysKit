@@ -8,13 +8,14 @@ import { isNull } from 'util'
 const errorRegex = /^(ERROR|SERVER_ERROR .*|CLIENT_ERROR .*)$/
 
 describe('Test memcached compatibility', () => {
-  const timeout = 100
+  const timeout = 500
   const server = new MerkleizedDbServer(memdown(), { useCas: true })
   const _socket = new net.Socket()
   const _lines: NodeJS.ReadableStream = _socket.pipe(split())
   const client = { socket: _socket, lines: _lines }
   let connected = false
   let port: number
+
   beforeAll(done => {
     server.listen()
     server.once('listening', () => {
@@ -476,7 +477,7 @@ describe('Test memcached compatibility', () => {
 
 // Not defined by protocol.
 describe('Test no cas mode', () => {
-  const timeout = 100
+  const timeout = 500
   const server = new MerkleizedDbServer(memdown(), { useCas: false })
   const _socket = new net.Socket()
   const _lines: NodeJS.ReadableStream = _socket.pipe(split())
