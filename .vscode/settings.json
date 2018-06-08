@@ -11,6 +11,17 @@
         "**/node_modules/**/*",
         "**/*.d.ts"
     ],
+    "cSpell.enabledLanguageIds": [
+        "html",
+        "javascript",
+        "json",
+        "markdown",
+        "plaintext",
+        "properties",
+        "proto",
+        "typescript",
+        "yaml"
+    ],
     "cSpell.words": [
         "blockchain",
         "dapi",
