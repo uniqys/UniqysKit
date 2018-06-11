@@ -1,5 +1,5 @@
 #!./node_modules/.bin/ts-node
 
-const cli = require('../src/app')
+const app = require('../src/app')
 
-cli.run()
+app.run()

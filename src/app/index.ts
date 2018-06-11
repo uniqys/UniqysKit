@@ -1,7 +1,7 @@
 import fs from 'fs'
 import meow from 'meow'
 import { initialize } from './init'
-import { main } from './sample/in-process'
+import * as node from './node'
 
 const cli = meow(`
     Usage
@@ -9,7 +9,7 @@ const cli = meow(`
 
     Commands
       init      Initialize genesis block
-      start     Start Uniqys
+      start     Start Uniqys Node
       version   Show version
       license   Show license
       help      Show this help
@@ -67,7 +67,7 @@ export function run (): void {
       cli.showHelp()
       break
     case 'start':
-      main(cli.flags).catch(err => { setImmediate(() => { throw err }) })
+      node.start(cli.flags)
       break
     case 'version':
       console.log(require('../package').version)
@@ -77,5 +77,8 @@ export function run (): void {
       break
     case 'init':
       initialize(cli.flags)
+      break
+    default:
+      cli.showHelp()
   }
 }

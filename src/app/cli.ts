@@ -13,7 +13,7 @@ export function start<TCore extends Core, TDapp extends Dapp> (core: TCore, dapp
   // define generic commands
   replServer.defineCommand('sendMessageTx', {
     help: 'send transaction include message string',
-    action (this: repl.REPLServer, message: string) {
+    action: function (this: repl.REPLServer, message: string) {
       const txd = new TransactionData(nonce, Buffer.from(message))
       nonce++
       core.sendTransaction(Transaction.sign(signer, txd))
@@ -22,10 +22,8 @@ export function start<TCore extends Core, TDapp extends Dapp> (core: TCore, dapp
     }
   })
 
-  replServer.context = {
-    core: core,
-    dapp: dapp
-  }
+  replServer.context.core = core
+  replServer.context.dapp = dapp
 
   return replServer
 }

@@ -1,11 +1,9 @@
-import path from 'path'
 import { REPLServer } from 'repl'
 import { GenesisConfig } from '../../config/genesis'
 import { KeyConfig } from '../../config/key'
 import { ValidatorNode } from '../../chain-core/validator'
 import { Sample } from './dapp'
 import * as cli from '../cli'
-import { Options } from 'minimist-options'
 import debug from 'debug'
 import { MerkleizedDbServer } from '../../merkleized-db/memcached-compatible-server'
 import MemDown from 'memdown'
@@ -15,16 +13,15 @@ import { InMemoryBlockStore } from '../../store/block'
 // set logger enable
 debug.enable('validator,sample,state-db*')
 
-export async function main (options: Options) {
+async function main () {
   // init dapp
   const db = new MerkleizedDbServer(MemDown())
-  const port = options.port || 56010
-  const configDir = options.config as string || './config'
+  const port = 56010
   db.listen(port)
   const dapp = new Sample(`localhost:${port}`)
   // load config
-  const genesis = await new GenesisConfig().loadAsBlock(path.join(configDir, 'genesis.json'))
-  const keyPair = await new KeyConfig().loadAsKeyPair(path.join(configDir, 'validatorKey.json'))
+  const genesis = await new GenesisConfig().loadAsBlock('./config/genesis.json')
+  const keyPair = await new KeyConfig().loadAsKeyPair('./config/validatorKey.json')
   const validator = new ValidatorNode(dapp, new Blockchain(new InMemoryBlockStore(), genesis), keyPair)
 
   // start
@@ -59,3 +56,5 @@ export async function main (options: Options) {
     db.close()
   })
 }
+
+main().catch(err => { setImmediate(() => { throw err }) })
