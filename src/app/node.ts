@@ -2,6 +2,7 @@
 
 import debug from 'debug'
 import repl from 'repl'
+import vm from 'vm'
 import { Options } from 'minimist-options'
 import { Address } from '../structure/address'
 import { MerkleizedDbServer } from '../merkleized-db/memcached-compatible-server'
@@ -17,9 +18,11 @@ process.env.DEBUG_HIDE_DATE = 'true'
 const logger = debug('UNIQYS')
 
 // set logger enable
-debug.enable('UNIQYS')
+debug.enable('UNIQYS,validator,sample,state-db*')
 
 /**
+ * command: uniqys start
+ *
  * @export start command
  * @param {Options} options
  * Options = {
@@ -28,11 +31,11 @@ debug.enable('UNIQYS')
  * }
  */
 export function start (options: Options) {
-  logger('Welcome to Uniqys Console.')
+  logger('Uniqys is starting...')
 
   startConsole(options)
     .then(() => {
-      logger('Uniqys console is ready.')
+      logger('Welcome to Uniqys Console.')
     })
     .catch((err) => {
       logger(err)
@@ -53,20 +56,27 @@ async function startConsole (options: Options): Promise<void> {
 
   validator.start()
 
+  // REPL内で利用できるコンテキスト
+  const uniqysContext = {
+    uniqys: validator,
+    dapp: dapp,
+    address: Address
+  }
+
   // start console
   const replServer = repl.start({
     prompt: '> ',
     input: process.stdin,
     output: process.stdout,
     ignoreUndefined: true,
-    eval: (cmd: string, callback: any) => {
-      callback(null, cmd)
+    eval: (code: string, context: any, file: any, callback: Function) => {
+      let script = new vm.Script(code)
+      let vmContext = vm.createContext(uniqysContext)
+      let result = script.runInContext(vmContext)
+      let err = null // TODO: handlingしたかったらする
+      callback(err, result)
     }
   })
-
-  replServer.context.uniqys = validator
-  replServer.context.dapp = dapp
-  replServer.context.address = Address
 
   // exit
   replServer.on('exit', () => {
