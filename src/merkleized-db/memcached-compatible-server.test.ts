@@ -1,6 +1,6 @@
 import { MerkleizedDbServer } from './memcached-compatible-server'
 import memdown from 'memdown'
-import net from 'net'
+import net, { AddressInfo } from 'net'
 import split from 'split'
 import { isNull } from 'util'
 
@@ -8,17 +8,18 @@ import { isNull } from 'util'
 const errorRegex = /^(ERROR|SERVER_ERROR .*|CLIENT_ERROR .*)$/
 
 describe('Test memcached compatibility', () => {
-  const timeout = 100
+  const timeout = 500
   const server = new MerkleizedDbServer(memdown(), { useCas: true })
   const _socket = new net.Socket()
   const _lines: NodeJS.ReadableStream = _socket.pipe(split())
   const client = { socket: _socket, lines: _lines }
   let connected = false
   let port: number
+
   beforeAll(done => {
     server.listen()
     server.once('listening', () => {
-      port = server.address().port
+      port = (server.address() as AddressInfo).port
       done()
     })
     client.socket.setMaxListeners(100) // split handler
@@ -476,7 +477,7 @@ describe('Test memcached compatibility', () => {
 
 // Not defined by protocol.
 describe('Test no cas mode', () => {
-  const timeout = 100
+  const timeout = 500
   const server = new MerkleizedDbServer(memdown(), { useCas: false })
   const _socket = new net.Socket()
   const _lines: NodeJS.ReadableStream = _socket.pipe(split())
@@ -485,7 +486,7 @@ describe('Test no cas mode', () => {
   beforeAll(done => {
     server.listen()
     server.once('listening', () => {
-      port = server.address().port
+      port = (server.address() as AddressInfo).port
       client.socket.connect(port)
       client.socket.once('connect', () => {
         client.lines = client.socket.pipe(split())
