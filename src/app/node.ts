@@ -2,8 +2,9 @@
 
 import debug from 'debug'
 import repl from 'repl'
+import path from 'path'
 import vm from 'vm'
-import { Options } from 'minimist-options'
+// import { Options } from 'minimist-options'
 import { Address } from '../structure/address'
 import { MerkleizedDbServer } from '../merkleized-db/memcached-compatible-server'
 import { GenesisConfig } from '../config/genesis'
@@ -19,6 +20,11 @@ const logger = debug('UNIQYS')
 
 // set logger enable
 debug.enable('UNIQYS,validator,sample,state-db*')
+
+export interface Options {
+  port: number,
+  config: string
+}
 
 /**
  * command: uniqys start
@@ -46,12 +52,13 @@ async function startConsole (options: Options): Promise<void> {
   console.log(options)
    // init dapp
   const db = new MerkleizedDbServer(MemDown())
-  const port = 56010
+  const port = options.port || 56010
+  const configDir = options.config || './'
   db.listen(port)
   const dapp = new Sample(`localhost:${port}`)
    // load config
-  const genesis = await new GenesisConfig().loadAsBlock('./config/genesis.json')
-  const keyPair = await new KeyConfig().loadAsKeyPair('./config/validatorKey.json')
+  const genesis = await new GenesisConfig().loadAsBlock(path.join(configDir, './config/genesis.json'))
+  const keyPair = await new KeyConfig().loadAsKeyPair(path.join(configDir, './config/validatorKey.json'))
   const validator = new ValidatorNode(dapp, new Blockchain(new InMemoryBlockStore(), genesis), keyPair)
 
   validator.start()
@@ -69,7 +76,8 @@ async function startConsole (options: Options): Promise<void> {
     input: process.stdin,
     output: process.stdout,
     ignoreUndefined: true,
-    eval: (code: string, context: any, file: any, callback: Function) => {
+    eval: (code: string, _1: any, _2: any, callback: Function) => {
+      // TODO: Promiseを直接呼び出したらそのまま実行できるようにしたい
       let script = new vm.Script(code)
       let vmContext = vm.createContext(uniqysContext)
       let result = script.runInContext(vmContext)

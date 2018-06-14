@@ -67,7 +67,7 @@ export function run (): void {
       cli.showHelp()
       break
     case 'start':
-      node.start(cli.flags)
+      node.start((cli.flags) as node.Options)
       break
     case 'version':
       console.log(require('../package').version)
