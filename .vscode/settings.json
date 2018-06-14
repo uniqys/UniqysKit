@@ -45,6 +45,7 @@
         "secp",
         "serializable",
         "truthy",
+        "uniqys",
         "validators"
     ]
 }

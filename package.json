@@ -1,8 +1,9 @@
 {
-  "name": "bpp-project",
+  "name": "uniqys",
   "version": "0.0.1",
-  "description": "Blockchain Platform Project",
+  "description": "Uniqys - Blockchain Platform Network",
   "private": true,
+  "bin": "bin/uniqys",
   "scripts": {
     "ts-node": "node -r ts-node/register",
     "chain-init": "npm run ts-node src/app/init.ts",
@@ -36,7 +37,7 @@
   },
   "keywords": [],
   "author": "Mobile Factory",
-  "license": "MIT",
+  "license": "NONE",
   "bugs": {
     "url": "https://github.com/mfac/BPP/issues"
   },
@@ -51,6 +52,7 @@
     "@types/internal-ip": "^2.0.0",
     "@types/jest": "^22.2.0",
     "@types/memcached": "^2.2.5",
+    "@types/meow": "^4.0.1",
     "@types/node": "^9.4.6",
     "@types/semaphore": "^1.1.0",
     "@types/split": "^0.3.28",
@@ -87,6 +89,7 @@
     "levelup": "^2.0.2",
     "memcached": "^2.2.2",
     "memdown": "^2.0.0",
+    "meow": "^5.0.0",
     "node-ssdp": "^3.2.5",
     "secp256k1": "^3.5.0",
     "semaphore": "^1.1.0",
