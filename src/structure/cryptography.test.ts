@@ -7,6 +7,10 @@ describe('Hash', () => {
     expect(Hash.fromData('The quick brown fox jumps over the lazy dog').buffer.toString('hex'))
       .toBe('4d741b6f1eb29cb2a9b9911c82f56fa8d73b04959d3d9d222895df6c0b28aa15')
   })
+  it('can convert to hex string', () => {
+    const hash = Hash.fromData('The quick brown fox jumps over the lazy dog')
+    expect(hash.toHexString()).toBe(hash.buffer.toString('hex'))
+  })
 })
 
 describe('KeyPair', () => {

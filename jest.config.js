@@ -24,6 +24,11 @@ module.exports = {
     }
   },
   coveragePathIgnorePatterns: [
-    'network/nat-traversal/index.ts'
+    'network/nat-traversal/index.ts',
+    'network/libp2p-bundle.ts',
+    // TODO: I will test it after the protocol settle.
+    'chain-core/node.ts',
+    'chain-core/validator.ts',
+    'chain-core/synchronizer.ts'
   ]
 };

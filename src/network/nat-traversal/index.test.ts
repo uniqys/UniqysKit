@@ -5,20 +5,26 @@ describe('Nat Traversal', () => {
   let service: any
   let hasGreatWall = false
 
-  it('can get root device', async () => {
+  beforeAll(async () => {
     try {
-      let headers = await NatTraversal.discoverRootDeviceAsync()
-      location = headers.LOCATION
+      await Promise.race([
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000)),
+        (async () => {
+          const headers = await NatTraversal.discoverRootDeviceAsync()
+          await NatTraversal.getRootDeviceInfoAsync(headers.location)
+        })()
+      ])
     } catch (e) {
       console.log('@_@; Network Root Device is undefined. Skip Nat Traversal tests.')
       hasGreatWall = true
     }
   })
 
-  // if (hasGreatWall) {
-  //   console.log('Exit from Nat traversal test.')
-  //   return
-  // }
+  it('can get root device', async () => {
+    if (hasGreatWall) return
+    let headers = await NatTraversal.discoverRootDeviceAsync()
+    expect(headers.LOCATION).toBeDefined()
+  })
 
   it('can get device info', async () => {
     if (hasGreatWall) return

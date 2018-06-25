@@ -22,6 +22,10 @@
         "typescript",
         "yaml"
     ],
+    "cSpell.ignoreRegExpList": [
+        // checker split this to 'libp' and 'p'
+        "libp2p"
+    ],
     "cSpell.words": [
         "blockchain",
         "dapi",
@@ -36,10 +40,14 @@
         "hashable",
         "keccak",
         "leveldown",
+        "mdns",
         "memdown",
         "merkle",
         "merkleized",
+        "multiaddr",
+        "multiaddrs",
         "prebuild",
+        "promisify",
         "protobuf",
         "protoc",
         "secp",

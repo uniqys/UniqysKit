@@ -14,5 +14,7 @@ export interface Core {
 
 export interface Dapp {
   connect (): Promise<AppState>
-  execute (transactions: Iterable<Transaction>): Promise<AppState>
+  validateTransaction (transaction: Transaction): Promise<boolean>
+  selectTransactions (transactions: Transaction[]): Promise<Transaction[]>
+  executeTransactions (transactions: Transaction[]): Promise<AppState>
 }

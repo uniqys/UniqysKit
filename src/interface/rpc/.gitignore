@@ -1,5 +1,0 @@
-# auto generated files
-/protobuf/*
-
-# it isn't auto generated yet
-!/protobuf/dapi_grpc_pb.d.ts

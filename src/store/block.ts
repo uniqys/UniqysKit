@@ -1,17 +1,28 @@
 import { BlockStore } from '../structure/blockchain'
-import { Block } from '../structure/blockchain/block'
+import { BlockHeader, BlockBody } from '../structure/blockchain/block'
 import { AbstractLevelDOWN } from 'abstract-leveldown'
 import { serialize, deserialize, UInt64 } from '../structure/serializable'
 import semaphore from 'semaphore'
+import * as semaphoreUtil from '../utility/semaphore'
 import levelup from 'levelup'
+import { Consensus } from '../structure/blockchain/consensus'
 
 namespace Key {
-  const BLOCK_PREFIX = 'b'
-  const HEIGHT_KEY = 'h'
+  const HEADER_PREFIX = 'h'
+  const BODY_PREFIX = 'b'
+  const HEIGHT_KEY = 'n'
+  const CONSENSUS_KEY = 'c'
   export const height = Buffer.from(HEIGHT_KEY)
-  export function block (height: number): Buffer {
+  export const consensus = Buffer.from(CONSENSUS_KEY)
+  export function header (height: number): Buffer {
     return serialize(height, (h, w) => {
-      w.ensure(1).write(BLOCK_PREFIX, 0, 1)
+      w.ensure(1).write(HEADER_PREFIX, 0, 1)
+      UInt64.serialize(h, w)
+    })
+  }
+  export function body (height: number): Buffer {
+    return serialize(height, (h, w) => {
+      w.ensure(1).write(BODY_PREFIX, 0, 1)
       UInt64.serialize(h, w)
     })
   }
@@ -27,12 +38,11 @@ export class LevelDownBlockStore implements BlockStore {
     this.semaphore = semaphore(1)
   }
 
-  public async get (height: number): Promise<Block> {
-    const max = await this.height()
-    if (max < height) { throw new Error('height is out of range.') }
-    return deserialize(await this.levelup.get(Key.block(height)), Block.deserialize)
+  public lock<T> (task: () => Promise<T>): Promise<T> {
+    return semaphoreUtil.takeAsync(this.semaphore, task)
   }
-  public async height (): Promise<number> {
+
+  public async getHeight (): Promise<number> {
     if (this._height) { return Promise.resolve(this._height) }
     try {
       return deserialize(await this.levelup.get(Key.height), UInt64.deserialize)
@@ -45,36 +55,69 @@ export class LevelDownBlockStore implements BlockStore {
       }
     }
   }
-  public push (block: Block): Promise<void> {
-    return new Promise((resolve, reject) => this.semaphore.take(async () => {
-      try {
-        const height = await this.height()
-        const newHeight = height + 1
-        await this.levelup.put(Key.block(newHeight), serialize(block))
-        await this.levelup.put(Key.height, serialize(newHeight, UInt64.serialize))
-        this._height = newHeight
-        resolve()
-      } catch (err) {
-        reject(err)
-      } finally {
-        this.semaphore.leave()
-      }
-    }))
+  public async getLastConsensus (): Promise<Consensus> {
+    return deserialize(await this.levelup.get(Key.consensus), Consensus.deserialize)
+  }
+  public async getHeader (height: number): Promise<BlockHeader> {
+    return deserialize(await this.levelup.get(Key.header(height)), BlockHeader.deserialize)
+  }
+  public async getBody (height: number): Promise<BlockBody> {
+    return deserialize(await this.levelup.get(Key.body(height)), BlockBody.deserialize)
+  }
+
+  public async setHeight (height: number): Promise<void> {
+    await this.levelup.put(Key.height, serialize(height, UInt64.serialize))
+    this._height = height
+  }
+  public async setLastConsensus (consensus: Consensus): Promise<void> {
+    await this.levelup.put(Key.consensus, serialize(consensus))
+  }
+  public async setHeader (height: number, header: BlockHeader): Promise<void> {
+    await this.levelup.put(Key.header(height), serialize(header))
+  }
+  public async setBody (height: number, body: BlockBody): Promise<void> {
+    await this.levelup.put(Key.body(height), serialize(body))
   }
 }
 
-/* istanbul ignore next: it is for test and experiment  */
 export class InMemoryBlockStore implements BlockStore {
-  private store: Block[] = []
-  public async get (height: number): Promise<Block> {
-    if (this.store.length < height) { throw new Error('height is out of range.') }
-    return Promise.resolve(this.store[height - 1])
+  private readonly semaphore = semaphore(1)
+  private height = 0
+  private consensus?: Consensus
+  private headers: BlockHeader[] = []
+  private bodies: BlockBody[] = []
+
+  public lock<T> (task: () => Promise<T>): Promise<T> {
+    return semaphoreUtil.takeAsync(this.semaphore, task)
   }
-  public async height (): Promise<number> {
-    return Promise.resolve(this.store.length)
+
+  public getHeight (): Promise<number> {
+    return Promise.resolve(this.height)
   }
-  public async push (block: Block): Promise<void> {
-    this.store.push(block)
+  public getLastConsensus (): Promise<Consensus> {
+    return this.consensus ? Promise.resolve(this.consensus) : Promise.reject(new Error('not found'))
+  }
+  public getHeader (height: number): Promise<BlockHeader> {
+    return this.headers[height] ? Promise.resolve(this.headers[height]) : Promise.reject(new Error('not found'))
+  }
+  public getBody (height: number): Promise<BlockBody> {
+    return this.bodies[height] ? Promise.resolve(this.bodies[height]) : Promise.reject(new Error('not found'))
+  }
+
+  public setHeight (height: number): Promise<void> {
+    this.height = height
+    return Promise.resolve()
+  }
+  public setLastConsensus (consensus: Consensus): Promise<void> {
+    this.consensus = consensus
+    return Promise.resolve()
+  }
+  public setHeader (height: number, header: BlockHeader): Promise<void> {
+    this.headers[height] = header
+    return Promise.resolve()
+  }
+  public setBody (height: number, body: BlockBody): Promise<void> {
+    this.bodies[height] = body
     return Promise.resolve()
   }
 }

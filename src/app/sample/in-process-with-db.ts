@@ -2,13 +2,17 @@ import { REPLServer } from 'repl'
 import { GenesisConfig } from '../../config/genesis'
 import { KeyConfig } from '../../config/key'
 import { ValidatorNode } from '../../chain-core/validator'
-import { Sample } from './dapp'
+import { Sample } from './dapp-with-db-server'
 import * as cli from '../cli'
 import debug from 'debug'
 import { MerkleizedDbServer } from '../../merkleized-db/memcached-compatible-server'
 import MemDown from 'memdown'
 import { Blockchain } from '../../structure/blockchain'
 import { InMemoryBlockStore } from '../../store/block'
+import { promisify } from 'util'
+import PeerInfo from 'peer-info'
+import { KeyPair } from '../../structure/cryptography'
+import { TransactionData, Transaction } from '../../structure/blockchain/transaction'
 
 // set logger enable
 debug.enable('validator,sample,state-db*')
@@ -22,17 +26,23 @@ async function main () {
   // load config
   const genesis = await new GenesisConfig().loadAsBlock('./config/genesis.json')
   const keyPair = await new KeyConfig().loadAsKeyPair('./config/validatorKey.json')
-  const validator = new ValidatorNode(dapp, new Blockchain(new InMemoryBlockStore(), genesis), keyPair)
+  const peerInfo = await promisify(PeerInfo.create)()
+  peerInfo.multiaddrs.add('/ip4/0.0.0.0/tcp/0')
+  const validator = new ValidatorNode(dapp, new Blockchain(new InMemoryBlockStore(), genesis), peerInfo, keyPair)
 
   // start
   const replServer = cli.start(validator, dapp)
-  validator.start()
+  await validator.start()
 
   // commands
-  replServer.defineCommand('makeMessageTx', {
-    help: 'make transaction include message string',
+  const signer = new KeyPair()
+  let nonce = 0
+  replServer.defineCommand('sendMessageTx', {
+    help: 'send transaction include message string',
     action (this: REPLServer, message: string) {
-      validator.sendTransaction(dapp.makeTransaction(message))
+      nonce++
+      const txd = new TransactionData(nonce, Buffer.from(message))
+      validator.sendTransaction(Transaction.sign(signer, txd))
         .then(() => this.displayPrompt())
         .catch(err => { setImmediate(() => { throw err }) })
     }
@@ -51,10 +61,11 @@ async function main () {
   })
 
   // exit
-  replServer.on('exit', () => {
-    validator.stop()
+  replServer.on('exit', async () => {
+    await validator.stop()
     db.close()
   })
 }
 
-main().catch(err => { setImmediate(() => { throw err }) })
+// main().catch(err => { setImmediate(() => { throw err }) })
+main().catch(err => { throw err })

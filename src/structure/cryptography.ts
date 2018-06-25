@@ -12,6 +12,9 @@ export class Hash extends Bytes32 {
   public static fromData (data: string | Buffer | DataView) {
     return new Hash(createKeccakHash('keccak256').update(data).digest())
   }
+  public toHexString (): string {
+    return this.buffer.toString('hex')
+  }
 }
 
 export interface Hashable {

@@ -4,64 +4,53 @@ import { ValidatorSet, Consensus } from '../structure/blockchain/consensus'
 import { LevelDownBlockStore, InMemoryBlockStore } from './block'
 import MemDown from 'memdown'
 import { Hash } from '../structure/cryptography'
+import { BlockStore } from '../structure/blockchain'
+import { promisify } from 'util'
 
-describe('block store', () => {
-  let block1: Block
-  let block2: Block
+describe.each([
+  ['in memory implementation', () => new InMemoryBlockStore()],
+  ['leveldown implementation', () => new LevelDownBlockStore(new MemDown())]
+])('block store of %s', (_, ctor) => {
+  let block: Block
+  let store: BlockStore
   beforeAll(() => {
-    block1 = Block.construct(1, 100, Hash.fromData('genesis'), Hash.fromData('state'),
-        new TransactionList([]), new Consensus([]), new ValidatorSet([]))
-    block2 = Block.construct(2, 110, Hash.fromData('block1'), Hash.fromData('state'),
+    block = Block.construct(1, 100, Hash.fromData('genesis'), Hash.fromData('state'),
         new TransactionList([]), new Consensus([]), new ValidatorSet([]))
   })
-  describe('in memory implementation', () => {
-    it('initial height is 0', async () => {
-      const store = new InMemoryBlockStore()
-      expect(await store.height()).toBe(0)
-    })
-    it('push block and update height', async () => {
-      const store = new InMemoryBlockStore()
-      await store.push(block1)
-      expect(await store.height()).toBe(1)
-      await store.push(block2)
-      expect(await store.height()).toBe(2)
-    })
-    it('can get pushed block by height', async () => {
-      const store = new InMemoryBlockStore()
-      await store.push(block1)
-      await store.push(block2)
-      expect((await store.get(1)).hash.equals(block1.hash)).toBeTruthy()
-      expect((await store.get(2)).hash.equals(block2.hash)).toBeTruthy()
-    })
-    it('throw if height out of range', async () => {
-      const store = new InMemoryBlockStore()
-      await store.push(block1)
-      await expect(store.get(2)).rejects.toThrow()
-    })
+  beforeEach(() => {
+    store = ctor()
   })
-  describe('leveldown implementation', () => {
-    it('initial height is 0', async () => {
-      const store = new LevelDownBlockStore(new MemDown())
-      expect(await store.height()).toBe(0)
-    })
-    it('push block and update height', async () => {
-      const store = new LevelDownBlockStore(new MemDown())
-      await store.push(block1)
-      expect(await store.height()).toBe(1)
-      await store.push(block2)
-      expect(await store.height()).toBe(2)
-    })
-    it('can get pushed block by height', async () => {
-      const store = new LevelDownBlockStore(new MemDown())
-      await store.push(block1)
-      await store.push(block2)
-      expect((await store.get(1)).hash.equals(block1.hash)).toBeTruthy()
-      expect((await store.get(2)).hash.equals(block2.hash)).toBeTruthy()
-    })
-    it('throw if height out of range', async () => {
-      const store = new LevelDownBlockStore(new MemDown())
-      await store.push(block1)
-      await expect(store.get(2)).rejects.toThrow()
-    })
+  it('initial height is 0', async () => {
+    expect(await store.getHeight()).toBe(0)
+  })
+  it('set and get height', async () => {
+    await store.setHeight(10)
+    expect(await store.getHeight()).toBe(10)
+  })
+  it('set and get last consensus', async () => {
+    await store.setLastConsensus(block.body.lastBlockConsensus)
+    expect(await store.getLastConsensus()).toEqual(block.body.lastBlockConsensus)
+  })
+  it('set and get header of height', async () => {
+    await store.setHeader(2, block.header)
+    expect(await store.getHeader(2)).toEqual(block.header)
+  })
+  it('set and get body of height', async () => {
+    await store.setBody(2, block.body)
+    expect(await store.getBody(2)).toEqual(block.body)
+  })
+  it('throw if not stored', async () => {
+    await expect(store.getHeader(1)).rejects.toThrow()
+    await expect(store.getBody(1)).rejects.toThrow()
+  })
+  it('can lock for concurrent access', async () => {
+    const increment = async () => {
+      const height = await store.getHeight()
+      await promisify(setTimeout)(50)
+      await store.setHeight(height + 1)
+    }
+    await Promise.all([store.lock(increment), store.lock(increment)])
+    expect(await store.getHeight()).toBe(2)
+
   })
 })

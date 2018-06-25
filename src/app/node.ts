@@ -4,7 +4,7 @@ import debug from 'debug'
 import repl from 'repl'
 import path from 'path'
 import vm from 'vm'
-// import { Options } from 'minimist-options'
+import { promisify } from 'util'
 import { Address } from '../structure/address'
 import { MerkleizedDbServer } from '../merkleized-db/memcached-compatible-server'
 import { GenesisConfig } from '../config/genesis'
@@ -12,14 +12,15 @@ import { KeyConfig } from '../config/key'
 import { ValidatorNode } from '../chain-core/validator'
 import { Blockchain } from '../structure/blockchain'
 import { InMemoryBlockStore } from '../store/block'
-import { Sample } from './sample/dapp'
+import { Sample } from './sample/dapp-with-db-server'
 import MemDown from 'memdown'
+import PeerInfo from 'peer-info'
 
 process.env.DEBUG_HIDE_DATE = 'true'
 const logger = debug('UNIQYS')
 
 // set logger enable
-debug.enable('UNIQYS,validator,sample,state-db*')
+debug.enable('UNIQYS,sample,state-db*,chain-core*')
 
 export interface Options {
   port: number,
@@ -59,9 +60,12 @@ async function startConsole (options: Options): Promise<void> {
    // load config
   const genesis = await new GenesisConfig().loadAsBlock(path.join(configDir, './config/genesis.json'))
   const keyPair = await new KeyConfig().loadAsKeyPair(path.join(configDir, './config/validatorKey.json'))
-  const validator = new ValidatorNode(dapp, new Blockchain(new InMemoryBlockStore(), genesis), keyPair)
+  // make node
+  const peerInfo = await promisify(PeerInfo.create)()
+  peerInfo.multiaddrs.add('/ip4/0.0.0.0/tcp/0')
+  const validator = new ValidatorNode(dapp, new Blockchain(new InMemoryBlockStore(), genesis), peerInfo, keyPair)
 
-  validator.start()
+  await validator.start()
 
   // REPL内で利用できるコンテキスト
   const uniqysContext = {

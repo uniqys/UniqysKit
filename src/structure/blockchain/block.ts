@@ -63,6 +63,11 @@ export class BlockBody implements Serializable {
     this.lastBlockConsensus.serialize(writer)
     this.nextValidatorSet.serialize(writer)
   }
+  public validate (header: BlockHeader) {
+    if (!header.transactionRoot.equals(this.transactionList.hash)) { throw new Error('invalid transactionRoot') }
+    if (!header.lastBlockConsensusRoot.equals(this.lastBlockConsensus.hash)) { throw new Error('invalid lastBlockConsensusHash') }
+    if (!header.nextValidatorSetRoot.equals(this.nextValidatorSet.hash)) { throw new Error('invalid nextValidatorSetRoot') }
+  }
 }
 
 export class Block implements Hashable, Serializable {
@@ -98,8 +103,6 @@ export class Block implements Hashable, Serializable {
   }
 
   public validate () {
-    if (!this.header.transactionRoot.equals(this.body.transactionList.hash)) { throw new Error('invalid transactionRoot') }
-    if (!this.header.lastBlockConsensusRoot.equals(this.body.lastBlockConsensus.hash)) { throw new Error('invalid lastBlockConsensusHash') }
-    if (!this.header.nextValidatorSetRoot.equals(this.body.nextValidatorSet.hash)) { throw new Error('invalid nextValidatorSetRoot') }
+    this.body.validate(this.header)
   }
 }
