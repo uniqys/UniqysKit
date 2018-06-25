@@ -5,6 +5,7 @@
   "private": true,
   "bin": "bin/uniqys",
   "scripts": {
+    "start": "./node_modules/.bin/ts-node src/app",
     "ts-node": "node -r ts-node/register",
     "chain-init": "npm run ts-node src/app/init.ts",
     "merkleized-db": "npm run ts-node src/app/merkleized-db-server.ts",

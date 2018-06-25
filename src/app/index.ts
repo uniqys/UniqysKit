@@ -43,42 +43,51 @@ const cli = meow(`
     },
     // Initialize options
     unique: {
-      type: 'string'
+      type: 'string',
+      default: ''
     },
     timestamp: {
-      type: 'string'
+      type: 'string',
+      default: Math.floor(Date.now() / 1000).toString()
     },
     address: {
       type: 'string'
     },
     power: {
-      type: 'string'
+      type: 'string',
+      default: '0'
     }
   }
 })
 
 export function run (): void {
   if (cli.flags.help) {
-    return cli.showHelp()
+    return cli.showHelp(0)
   }
 
   switch (cli.input[0]) {
     case 'help':
-      cli.showHelp()
+      cli.showHelp(0)
       break
     case 'start':
       node.start((cli.flags) as node.Options)
       break
     case 'version':
-      console.log(require('../package').version)
+      cli.showVersion()
       break
     case 'license':
-      console.log(fs.readFileSync(__dirname + '/../LICENSE').toString())
+      console.log(fs.readFileSync(__dirname + '/../../LICENSE').toString())
       break
     case 'init':
+      if (cli.flags.unique === '') {
+        console.log('error: unique option required')
+        break
+      }
       initialize(cli.flags)
       break
     default:
       cli.showHelp()
   }
 }
+
+run()

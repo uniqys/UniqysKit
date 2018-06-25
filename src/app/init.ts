@@ -8,6 +8,11 @@ import { Key } from '../config/schema-generated/key'
 export function initialize (flags: buildOptions.Options): void {
   const CONFIG = './config'
 
+  if (!fs.existsSync(CONFIG)) {
+    fs.mkdirSync(CONFIG)
+    console.log(`Create ${CONFIG}`)
+  }
+
   let address = flags.address as string
 
   if (!address) {
@@ -20,16 +25,15 @@ export function initialize (flags: buildOptions.Options): void {
     let filePath = path.join(CONFIG, 'validatorKey.json')
     console.log(`Write validator key into ${filePath}`)
     fs.writeFileSync(filePath, JSON.stringify(key, null, 2))
-
   }
 
   const genesis: Genesis = {
     unique: flags.unique as string,
-    timestamp: flags.timestamp as number,
+    timestamp: parseInt(flags.timestamp as string, 10),
     validatorSet: [
       {
         address: address,
-        power: flags.power as number
+        power: parseInt(flags.power as string, 10)
       }
     ]
   }

@@ -1,5 +1,0 @@
-#!./node_modules/.bin/ts-node
-
-const app = require('../src/app')
-
-app.run()
