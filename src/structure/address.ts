@@ -3,6 +3,7 @@ import { Hash } from './cryptography'
 import { BufferReader } from './serializable'
 
 export class Address extends Bytes20 {
+  public static zero = new Address(Buffer.alloc(20))
   public static deserialize (reader: BufferReader): Address {
     return new Address(Bytes20.deserialize(reader).buffer)
   }

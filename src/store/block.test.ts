@@ -1,16 +1,12 @@
 import { Block } from '../structure/blockchain/block'
 import { TransactionList } from '../structure/blockchain/transaction'
 import { ValidatorSet, Consensus } from '../structure/blockchain/consensus'
-import { LevelDownBlockStore, InMemoryBlockStore } from './block'
-import MemDown from 'memdown'
 import { Hash } from '../structure/cryptography'
-import { BlockStore } from '../structure/blockchain'
 import { promisify } from 'util'
+import { InMemoryStore } from './common'
+import { BlockStore } from './block'
 
-describe.each([
-  ['in memory implementation', () => new InMemoryBlockStore()],
-  ['leveldown implementation', () => new LevelDownBlockStore(new MemDown())]
-])('block store of %s', (_, ctor) => {
+describe('block store', () => {
   let block: Block
   let store: BlockStore
   beforeAll(() => {
@@ -18,7 +14,7 @@ describe.each([
         new TransactionList([]), new Consensus([]), new ValidatorSet([]))
   })
   beforeEach(() => {
-    store = ctor()
+    store = new BlockStore(new InMemoryStore())
   })
   it('initial height is 0', async () => {
     expect(await store.getHeight()).toBe(0)

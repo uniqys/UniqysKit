@@ -1,55 +1,23 @@
 
-import { Hash, Hashable, Signature, Signer } from '../cryptography'
-import { Address } from '../address'
+import { Hash, Hashable } from '../cryptography'
 import { MerkleTree } from '../merkle-tree'
-import { Serializable, UInt64, BufferWriter, serialize, BufferReader, UInt32, List } from '../serializable'
-
-export class TransactionData implements Hashable, Serializable {
-  public get hash () { return Hash.fromData(serialize(this)) }
-  constructor (
-    public readonly nonce: number,
-    public readonly data: Buffer
-  ) { }
-  public static deserialize (reader: BufferReader): TransactionData {
-    const nonce = UInt64.deserialize(reader)
-    const data = reader.consume(UInt32.deserialize(reader))
-    return new TransactionData(nonce, data)
-  }
-  public serialize (writer: BufferWriter) {
-    UInt64.serialize(this.nonce, writer)
-    UInt32.serialize(this.data.byteLength, writer)
-    writer.append(this.data)
-  }
-  public equals (other: TransactionData): boolean {
-    return this.nonce === other.nonce && this.data.equals(other.data)
-  }
-}
+import { Serializable, BufferWriter, BufferReader, SizedBuffer, List } from '../serializable'
 
 export class Transaction implements Hashable, Serializable {
   public readonly hash: Hash
   constructor (
-    public readonly sign: Signature,
-    public readonly data: TransactionData
+    public readonly data: Buffer
   ) {
-    this.hash = Hash.fromData(serialize(this))
-  }
-  public static sign (signer: Signer, data: TransactionData): Transaction {
-    return new Transaction(signer.sign(data.hash), data)
+    this.hash = Hash.fromData(this.data)
   }
   public static deserialize (reader: BufferReader): Transaction {
-    const sign = Signature.deserialize(reader)
-    const data = TransactionData.deserialize(reader)
-    return new Transaction(sign, data)
+    return new Transaction(SizedBuffer.deserialize(reader))
   }
   public serialize (writer: BufferWriter) {
-    this.sign.serialize(writer)
-    this.data.serialize(writer)
+    SizedBuffer.serialize(this.data, writer)
   }
   public equals (other: Transaction) {
-    return this.sign.equals(other.sign) && this.data.equals(other.data)
-  }
-  get signer (): Address {
-    return Address.fromPublicKey(this.sign.recover(this.data.hash))
+    return this.data.equals(other.data)
   }
 }
 

@@ -1,14 +1,12 @@
 import { TransactionPool } from './transaction-pool'
-import { KeyPair } from '../structure/cryptography'
-import { Transaction, TransactionData } from '../structure/blockchain/transaction'
+import { Transaction } from '../structure/blockchain/transaction'
 
 describe('transaction pool', () => {
   let tx1: Transaction
   let tx2: Transaction
   beforeAll(() => {
-    const signer = new KeyPair()
-    tx1 = Transaction.sign(signer, new TransactionData(1, Buffer.from('The quick brown fox jumps over the lazy dog')))
-    tx2 = Transaction.sign(signer, new TransactionData(2, Buffer.from('The quick brown fox jumps over the lazy dog')))
+    tx1 = new Transaction(Buffer.from('The quick brown fox jumps over the lazy dog'))
+    tx2 = new Transaction(Buffer.from('Jackdaws love my big sphinx of quartz'))
   })
   it('add transaction to pool and propagate it if valid', (done) => {
     const pool = new TransactionPool(

@@ -1,10 +1,10 @@
 import { Dapp, AppState } from '../../interface/dapi'
 import { Transaction } from '../../structure/blockchain/transaction'
 import { MerklePatriciaTrie } from '../../structure/merkle-patricia-trie'
-import { InMemoryNodeStore } from '../../store/merkle-patricia-trie-node'
+import { TrieStore } from '../../store/trie'
+import { InMemoryStore } from '../../store/common'
 import { UInt64, deserialize, serialize } from '../../structure/serializable'
 import debug from 'debug'
-import { Address } from '../../structure/address'
 const logger = debug('sample')
 
 export class Sample implements Dapp {
@@ -12,39 +12,29 @@ export class Sample implements Dapp {
   private db: MerklePatriciaTrie
   constructor (
   ) {
-    this.db = new MerklePatriciaTrie(new InMemoryNodeStore())
+    this.db = new MerklePatriciaTrie(new TrieStore(new InMemoryStore()))
     this.height = 0
   }
 
   public async connect (): Promise<AppState> {
-    await this.db.init()
+    await this.db.ready()
     const appState = await this.appState()
     logger('connected: %o', appState)
     return appState
   }
 
-  public async validateTransaction (transaction: Transaction): Promise<boolean> {
-    const txCount = await this.getTransactionCount(transaction.signer)
-    logger('validate nonce: state:%d , tx:%d', txCount, transaction.data.nonce)
-    return transaction.data.nonce > txCount
+  public async validateTransaction (_: Transaction): Promise<boolean> {
+    return true
   }
 
   public async selectTransactions (transactions: Transaction[]): Promise<Transaction[]> {
-    const selected: Transaction[] = []
-    for (const tx of transactions) {
-      if (tx.data.nonce === (await this.getTransactionCount(tx.signer)) + 1) {
-        selected.push(tx)
-      }
-    }
-    logger('selected %d transactions', selected.length)
-    return selected
+    return transactions
   }
 
   public async executeTransactions (transactions: Transaction[]): Promise<AppState> {
-    for (const tx of transactions) {
-      const address = tx.signer
-      const txCount = await this.getTransactionCount(address)
-      await this.setTransactionCount(address, txCount + 1)
+    for (const _ of transactions) {
+      const txCount = await this.getTransactionCount()
+      await this.setTransactionCount(txCount + 1)
     }
     this.height++
     const appState = await this.appState()
@@ -52,12 +42,12 @@ export class Sample implements Dapp {
     return appState
   }
 
-  private async getTransactionCount (address: Address) {
-    return (await this.db.get(address.buffer)).match(v => deserialize(v, UInt64.deserialize), () => 0)
+  private async getTransactionCount () {
+    return (await this.db.get(Buffer.from('transactions'))).match(v => deserialize(v, UInt64.deserialize), () => 0)
   }
 
-  private async setTransactionCount (address: Address, count: number) {
-    await this.db.set(address.buffer, serialize(count, UInt64.serialize))
+  private async setTransactionCount (count: number) {
+    await this.db.set(Buffer.from('transactions'), serialize(count, UInt64.serialize))
   }
 
   private async appState (): Promise<AppState> {

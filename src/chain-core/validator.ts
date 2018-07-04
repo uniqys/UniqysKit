@@ -22,6 +22,7 @@ export class ValidatorNode<T extends dapi.Dapp> extends Node<T> {
     options?: NodeOptions
   ) {
     super(dapp, blockchain, peerInfo, options)
+    this.consensusLoop.on('error', err => this.event.emit('error', err))
   }
 
   public async start () {

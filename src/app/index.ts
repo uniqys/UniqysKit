@@ -1,7 +1,6 @@
 import fs from 'fs'
 import meow from 'meow'
 import { initialize } from './init'
-import * as node from './node'
 
 const cli = meow(`
     Usage
@@ -9,7 +8,6 @@ const cli = meow(`
 
     Commands
       init      Initialize genesis block
-      start     Start Uniqys Node
       version   Show version
       license   Show license
       help      Show this help
@@ -69,9 +67,10 @@ export function run (): void {
     case 'help':
       cli.showHelp(0)
       break
-    case 'start':
-      node.start((cli.flags) as node.Options)
-      break
+// TODO:
+//    case 'start':
+//      node.start((cli.flags) as node.Options)
+//      break
     case 'version':
       cli.showVersion()
       break

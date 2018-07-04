@@ -1,4 +1,4 @@
-import { Hash, KeyPair } from './cryptography'
+import { Hash, KeyPair, Signature } from './cryptography'
 import { Bytes32 } from './bytes'
 
 /* tslint:disable:no-unused-expression */
@@ -9,7 +9,7 @@ describe('Hash', () => {
   })
   it('can convert to hex string', () => {
     const hash = Hash.fromData('The quick brown fox jumps over the lazy dog')
-    expect(hash.toHexString()).toBe(hash.buffer.toString('hex'))
+    expect(Hash.fromHexString(hash.toHexString())).toEqual(hash)
   })
 })
 
@@ -24,6 +24,19 @@ describe('KeyPair', () => {
 })
 
 describe('Signature', () => {
+  it('is equatable', () => {
+    const message1 = Hash.fromData('The quick brown fox jumps over the lazy dog')
+    const message2 = Hash.fromData('The quick brown fox jumps over the lazy dog.')
+    const key = new KeyPair()
+    const sig1 = key.sign(message1)
+    const sig2 = key.sign(message1)
+    const sig3 = key.sign(message2)
+    expect(sig1.equals(sig2)).toBeTruthy()
+    expect(sig1.equals(sig3)).not.toBeTruthy()
+  })
+  it('throw error when wrong size', () => {
+    expect(() => { new Signature(Buffer.alloc(64)) }).toThrow()
+  })
   it('sign message and recover', () => {
     const message = Hash.fromData('The quick brown fox jumps over the lazy dog')
     const key = new KeyPair()

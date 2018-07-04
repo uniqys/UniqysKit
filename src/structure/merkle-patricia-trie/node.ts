@@ -178,6 +178,21 @@ export class Node implements Serializable, Hashable {
       return this
     }
   }
+  public async clear (store: NodeStore , key: Key): Promise<Node> {
+    const matchResult = Key.match(this.prefix, key)
+    if (matchResult.remain2.length === 0) {
+      return Node.null
+    }
+    if (matchResult.remain1.length === 0) {
+      const children = this.children.slice()
+      children[matchResult.remain2[0]] = await this.children[matchResult.remain2[0]].match(
+        async ref => Optional.some(NodeRef.ofNode(await (await NodeRef.dereference(store, ref)).clear(store, matchResult.remain2.slice(1)))),
+        async () => Optional.none<NodeRef>()
+      )
+      return new Node(this.prefix, children, this.content)
+    }
+    return this
+  }
   public async normalize (store: NodeStore): Promise<Optional<Node>> {
     const normalizedChildren = await Promise.all(this.children.map(child => child.match(
       async ref => ref.match(

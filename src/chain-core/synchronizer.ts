@@ -4,7 +4,7 @@ import { Message } from '../network/sync-protocol'
 import { PriorityQueue } from '../structure/priority-queue'
 import { Block, BlockHeader } from '../structure/blockchain/block'
 import semaphore from 'semaphore'
-import * as semaphoreUtil from '../utility/semaphore'
+import { takeSemaphoreAsync } from '../utility/semaphore'
 import { Consensus, ValidatorSet } from '../structure/blockchain/consensus'
 import { RemoteNode, RemoteNodeSet } from './remote-node'
 import { AsyncLoop } from '../utility/async-loop'
@@ -55,6 +55,7 @@ export class Synchronizer {
     options?: Partial<SynchronizerOptions>
   ) {
     this.options = Object.assign({}, SynchronizerOptions.defaults, options)
+    this.chainingLoop.on('error', err => this.event.emit('error', err))
   }
 
   public start () {
@@ -142,7 +143,7 @@ export class Synchronizer {
   private catchUp (): void {
     // only one process at same time
     if (this.catchUpSemaphore.available) {
-      semaphoreUtil.takeAsync(this.catchUpSemaphore, () => this.catchUpAsync())
+      takeSemaphoreAsync(this.catchUpSemaphore, () => this.catchUpAsync())
         .catch(err => this.event.emit('error', err))
     }
     this.resetCatchUpTimer()

@@ -1,9 +1,10 @@
-import { MerklePatriciaTrie, KeyValueProof } from './merkle-patricia-trie'
-import { InMemoryNodeStore } from '../store/merkle-patricia-trie-node'
-import { Hash } from './cryptography'
-import { Content } from './merkle-patricia-trie/node'
-import { Operation, MerkleProof } from './merkle-proof'
-import { serialize } from './serializable'
+import { MerklePatriciaTrie, KeyValueProof } from '../merkle-patricia-trie'
+import { Hash } from '../cryptography'
+import { Content } from '../merkle-patricia-trie/node'
+import { Operation, MerkleProof } from '../merkle-proof'
+import { serialize } from '../serializable'
+import { TrieStore } from '../../store/trie'
+import { InMemoryStore } from '../../store/common'
 
 async function collect<T> (iter: AsyncIterable<T>): Promise<T[]> {
   let collect = []
@@ -23,20 +24,21 @@ describe('Merkle Patricia Trie', () => {
   const foo = Buffer.from('foo')
   const bar = Buffer.from('bar')
 
-  let mpt = new MerklePatriciaTrie(new InMemoryNodeStore())
+  let mpt = new MerklePatriciaTrie(new TrieStore(new InMemoryStore()))
   beforeEach(async () => {
-    await mpt.init()
+    await mpt.ready()
+    await mpt.clear()
   })
 
-  it('need initialize', async () => {
-    const mpt1 = new MerklePatriciaTrie(new InMemoryNodeStore())
-    await expect(mpt1.set(cat, meow)).rejects.toThrow('need initialize')
+  it('need to make ready', async () => {
+    const mpt1 = new MerklePatriciaTrie(new TrieStore(new InMemoryStore()))
+    await expect(mpt1.set(cat, meow)).rejects.toThrow('trie is not ready')
   })
   it('can set and get values of key', async () => {
     await mpt.set(cat, meow)
     await mpt.set(catalyst, foo)
-    expect((await mpt.get(cat)).match(v => { console.log(v); return v.equals(meow) }, () => false)).toBeTruthy()
-    expect((await mpt.get(catalyst)).match(v => { console.log(v); return v.equals(foo) }, () => false)).toBeTruthy()
+    expect((await mpt.get(cat)).match(v => v.equals(meow), () => false)).toBeTruthy()
+    expect((await mpt.get(catalyst)).match(v => v.equals(foo), () => false)).toBeTruthy()
   })
   it('return optional when get value', async () => {
     await mpt.set(cat, meow)
@@ -54,12 +56,33 @@ describe('Merkle Patricia Trie', () => {
     await mpt.set(cat, meow)
     expect((await mpt.get(cat)).match(v => v.equals(meow), () => false)).toBeTruthy()
   })
+  it('can rollback', async () => {
+    await mpt.set(cat, meow)
+    const root = mpt.root
+    await mpt.set(cat, bar)
+    await mpt.set(catalyst, foo)
+    expect((await mpt.get(cat)).match(v => v.equals(bar), () => false)).toBeTruthy()
+    expect((await mpt.get(catalyst)).match(v => v.equals(foo), () => false)).toBeTruthy()
+    await mpt.rollback(root)
+    expect((await mpt.get(cat)).match(v => v.equals(meow), () => false)).toBeTruthy()
+    expect((await mpt.get(catalyst)).isSome()).not.toBeTruthy()
+  })
   it('can clear values', async () => {
     await mpt.set(cat, meow)
     await mpt.set(catalyst, foo)
     await mpt.clear()
     expect((await mpt.get(cat)).isSome()).not.toBeTruthy()
     expect((await mpt.get(catalyst)).isSome()).not.toBeTruthy()
+  })
+  it('can clear values of prefix', async () => {
+    await mpt.set(cat, meow)
+    await mpt.set(catalyst, foo)
+    await mpt.set(catalog, bar)
+    // cSpell:ignore cata
+    await mpt.clear(Buffer.from('cata'))
+    expect((await mpt.get(cat)).isSome()).toBeTruthy()
+    expect((await mpt.get(catalyst)).isSome()).not.toBeTruthy()
+    expect((await mpt.get(catalog)).isSome()).not.toBeTruthy()
   })
   it('iterate empty', async () => {
     expect(await collect(mpt)).toEqual([])
@@ -93,14 +116,14 @@ describe('Merkle Patricia Trie', () => {
     expect(mpt.hash.equals(root)).toBeTruthy()
   })
   it('is deterministic', async () => {
-    const mpt1 = new MerklePatriciaTrie(new InMemoryNodeStore())
-    await mpt1.init()
+    const mpt1 = new MerklePatriciaTrie(new TrieStore(new InMemoryStore()))
+    await mpt1.ready()
     await mpt1.set(cat, meow)
     await mpt1.set(catalyst, foo)
     await mpt1.set(cattle, foo)
 
-    const mpt2 = new MerklePatriciaTrie(new InMemoryNodeStore())
-    await mpt2.init()
+    const mpt2 = new MerklePatriciaTrie(new TrieStore(new InMemoryStore()))
+    await mpt2.ready()
     await mpt2.set(catalyst, meow)
     await mpt2.set(catalog, bar)
     await mpt2.delete(catalog)

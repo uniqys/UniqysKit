@@ -4,7 +4,7 @@ import { MerkleProof } from '../merkle-proof'
 import { Node, NodeStore, Content, Key } from './node'
 import { deserialize } from '../serializable'
 
-export { Node, NodeStore }
+export { Node }
 
 export class KeyValueProof {
   public readonly key: Buffer
@@ -20,81 +20,101 @@ export class KeyValueProof {
   public verify (expect: Hash): boolean { return this.proof.verify(expect) }
 }
 
+export interface TrieStore extends NodeStore {
+  getRoot (): Promise<Hash | undefined>
+  setRoot (hash: Hash): Promise<void>
+}
+
 // Merkle Patricia trie implementation.
 export class MerklePatriciaTrie implements Hashable, AsyncIterable<[Buffer, Buffer]> {
-  get root (): Hash { return this._rootNode.hash }
-  get hash (): Hash { return this._rootNode.hash }
-  private _rootNode = Node.null
-  private _initialized = false
+  get root (): Hash { return this.rootHash }
+  get hash (): Hash { return this.rootHash }
+  private rootHash = Node.null.hash
+  private isReady = false
 
   constructor (
-    private readonly store: NodeStore
+    private readonly store: TrieStore
   ) { }
-  public async init (): Promise<void> {
-    this._rootNode = Node.null
-    if (!this._initialized) {
-      await this.store.set(this._rootNode.hash, this._rootNode)
-      this._initialized = true
+  public async ready (): Promise<void> {
+    if (this.isReady) { return Promise.resolve() }
+    const rootHash = await this.store.getRoot()
+    if (rootHash) {
+      this.rootHash = rootHash
+    } else {
+      const nullRoot = Node.null
+      await this.store.set(nullRoot.hash, nullRoot)
+      await this.store.setRoot(nullRoot.hash)
+      this.rootHash = nullRoot.hash
     }
+    this.isReady = true
   }
   public [Symbol.asyncIterator] (): AsyncIterableIterator<[Buffer, Buffer]> {
-    this.checkInit()
+    this.checkReady()
     return this.entries()
   }
   public async *entries (): AsyncIterableIterator<[Buffer, Buffer]> {
-    this.checkInit()
-    for await (const content of this._rootNode.contents(this.store)) {
+    this.checkReady()
+    const root = await this.store.get(this.rootHash)
+    for await (const content of root.contents(this.store)) {
       yield [content.key, content.value]
     }
   }
   public async *keys (): AsyncIterableIterator<Buffer> {
-    this.checkInit()
+    this.checkReady()
     for await (const kv of this.entries()) {
       yield kv['0']
     }
   }
   public async *values (): AsyncIterableIterator<Buffer> {
-    this.checkInit()
+    this.checkReady()
     for await (const kv of this.entries()) {
       yield kv['1']
     }
   }
   public async get (key: Buffer): Promise<Optional<Buffer>> {
-    this.checkInit()
-    return (await this._rootNode.get(this.store, Key.bufferToKey(key))).match(
+    this.checkReady()
+    const root = await this.store.get(this.rootHash)
+    return (await root.get(this.store, Key.bufferToKey(key))).match(
       c => Optional.some(c.value),
       () => Optional.none()
     )
   }
   public async set (key: Buffer, value: Buffer): Promise<void> {
-    this.checkInit()
-    await this.save(await this._rootNode.set(this.store, Key.bufferToKey(key), new Content(key, value)))
+    this.checkReady()
+    const root = await this.store.get(this.rootHash)
+    await this.save(await root.set(this.store, Key.bufferToKey(key), new Content(key, value)))
   }
-  public async delete (key: Buffer): Promise<boolean> {
-    this.checkInit()
-    const prev = this.root
-    await this.save(await this._rootNode.delete(this.store, Key.bufferToKey(key)))
-    const deleted = !this.root.equals(prev)
-    return deleted
+  public async delete (key: Buffer): Promise<void> {
+    this.checkReady()
+    const root = await this.store.get(this.rootHash)
+    await this.save(await root.delete(this.store, Key.bufferToKey(key)))
   }
-  public async clear (): Promise<void> {
-    this.checkInit()
-    this._rootNode = Node.null
+  public async clear (prefix?: Buffer): Promise<void> {
+    this.checkReady()
+    const root = await this.store.get(this.rootHash)
+    await this.save(await root.clear(this.store, prefix ? Key.bufferToKey(prefix) : []))
+  }
+  public async rollback (root: Hash) {
+    this.checkReady()
+    this.rootHash = root
   }
   public async prove (key: Buffer): Promise<KeyValueProof> {
-    this.checkInit()
-    const proof = await this._rootNode.prove(this.store, Key.bufferToKey(key))
+    this.checkReady()
+    const root = await this.store.get(this.rootHash)
+    const proof = await root.prove(this.store, Key.bufferToKey(key))
     proof.optimize()
     return new KeyValueProof(proof)
   }
   private async save (root: Node): Promise<void> {
     const normalized = await root.normalize(this.store)
-    await normalized.match(
-      async node => { this._rootNode = await node.save(this.store) },
-      async () => { this._rootNode = Node.null }
+    const newRoot = await normalized.match(
+      async node => node.save(this.store),
+      async () => Node.null
     )
+    await this.store.setRoot(newRoot.hash)
+    this.rootHash = newRoot.hash
   }
-  private checkInit (): void {
-    if (!this._initialized) { throw new Error('need initialize') }
+  private checkReady (): void {
+    if (!this.isReady) { throw new Error('trie is not ready') }
   }
 }

@@ -9,8 +9,11 @@ export class Hash extends Bytes32 {
   public static deserialize (reader: BufferReader): Hash {
     return new Hash(Bytes32.deserialize(reader).buffer)
   }
-  public static fromData (data: string | Buffer | DataView) {
+  public static fromData (data: string | Buffer | DataView): Hash {
     return new Hash(createKeccakHash('keccak256').update(data).digest())
+  }
+  public static fromHexString (str: string): Hash {
+    return new Hash(Buffer.from(str, 'hex'))
   }
   public toHexString (): string {
     return this.buffer.toString('hex')
@@ -28,6 +31,7 @@ export class Signature implements Hashable, Serializable {
   constructor (
     public readonly buffer: Buffer
   ) {
+    if (buffer.length !== 65) { throw TypeError() }
     this.hash = Hash.fromData(this.buffer)
   }
 

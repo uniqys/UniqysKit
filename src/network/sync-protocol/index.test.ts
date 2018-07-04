@@ -1,9 +1,9 @@
 import { SyncProtocolHandler, SyncProtocol, Message, SyncProtocolMeta } from '.'
 import { Source, Sink } from 'pull-stream'
 import { Channel } from '../message-channel'
-import { Hash, KeyPair } from '../../structure/cryptography'
+import { Hash } from '../../structure/cryptography'
 import { Block } from '../../structure/blockchain/block'
-import { TransactionList, Transaction, TransactionData } from '../../structure/blockchain/transaction'
+import { TransactionList, Transaction } from '../../structure/blockchain/transaction'
 import { Consensus, ValidatorSet } from '../../structure/blockchain/consensus'
 import PeerInfo from 'peer-info'
 
@@ -53,7 +53,7 @@ describe('sync protocol', () => {
     const stream2to1 = new ThroughDuplex<Buffer>()
     channel1 = new Channel({ source: stream2to1.source, sink: stream1to2.sink }, Message.deserialize, Message.serialize)
     channel2 = new Channel({ source: stream1to2.source, sink: stream2to1.sink }, Message.deserialize, Message.serialize)
-    transaction = Transaction.sign(new KeyPair(), new TransactionData(0, Buffer.alloc(0)))
+    transaction = new Transaction(Buffer.alloc(0))
     block = Block.construct(1, 100, Hash.fromData('genesis'), Hash.fromData('state'),
         new TransactionList([]), new Consensus([]), new ValidatorSet([]))
     consensus = new Consensus([])

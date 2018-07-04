@@ -1,8 +1,9 @@
 import { GenesisConfig } from '../../config/genesis'
 import { Blockchain } from '../../structure/blockchain'
-import { InMemoryBlockStore } from '../../store/block'
+import { BlockStore } from '../../store/block'
+import { InMemoryStore } from '../../store/common'
 import { KeyPair } from '../../structure/cryptography'
-import { Transaction, TransactionData } from '../../structure/blockchain/transaction'
+import { Transaction } from '../../structure/blockchain/transaction'
 import { Node } from '../../chain-core/node'
 import { promisify } from 'util'
 import PeerInfo from 'peer-info'
@@ -22,8 +23,8 @@ async function startNode (keyPair?: KeyPair) {
   const peerInfo = await promisify(PeerInfo.create)()
   peerInfo.multiaddrs.add('/ip4/0.0.0.0/tcp/0')
   const node = keyPair
-    ? new ValidatorNode(dapp, new Blockchain(new InMemoryBlockStore(), genesis), peerInfo, keyPair)
-    : new Node(dapp, new Blockchain(new InMemoryBlockStore(), genesis), peerInfo)
+    ? new ValidatorNode(dapp, new Blockchain(new BlockStore(new InMemoryStore()), genesis), peerInfo, keyPair)
+    : new Node(dapp, new Blockchain(new BlockStore(new InMemoryStore()), genesis), peerInfo)
   await node.start()
   return node
 }
@@ -39,14 +40,11 @@ async function main () {
   const validator = await startValidator()
   const replServer = repl.start()
 
-  const signer = new KeyPair()
-  let nonce = 0
   replServer.defineCommand('sendMessageTx', {
     help: 'send transaction include message string',
     action (this: repl.REPLServer, message: string) {
-      nonce++
-      const txd = new TransactionData(nonce, Buffer.from(message))
-      node.sendTransaction(Transaction.sign(signer, txd))
+      const tx = new Transaction(Buffer.from(message))
+      node.sendTransaction(tx)
         .then(() => this.displayPrompt())
         .catch(err => { setImmediate(() => { throw err }) })
     }

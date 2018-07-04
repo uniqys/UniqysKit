@@ -115,3 +115,19 @@ export namespace List {
     }
   }
 }
+
+export namespace SizedBuffer {
+  export const deserialize: Deserializer<Buffer> = reader => {
+    const byteLength = UInt32.deserialize(reader)
+    return reader.consume(byteLength)
+  }
+  export const serialize: Serializer<Buffer> = (buffer, writer) => {
+    UInt32.serialize(buffer.byteLength, writer)
+    writer.append(buffer)
+  }
+}
+
+export namespace String {
+  export const deserialize: Deserializer<string> = reader => SizedBuffer.deserialize(reader).toString('utf8')
+  export const serialize: Serializer<string> = (s, writer) => SizedBuffer.serialize(Buffer.from(s, 'utf8'), writer)
+}

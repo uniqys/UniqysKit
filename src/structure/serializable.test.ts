@@ -1,4 +1,4 @@
-import { serialize, deserialize, UInt8, UInt32, UInt64, Int64 } from './serializable'
+import { serialize, deserialize, UInt8, UInt32, UInt64, Int64, List, SizedBuffer, String } from './serializable'
 
 describe('UInt8', () => {
   it('serialize and deserialize from number of 8bit unsigned integer', () => {
@@ -35,5 +35,23 @@ describe('Int64', () => {
   it('throw error when over 48bit signed integer', () => {
     expect(() => { serialize(140737488355328, Int64.serialize) }).toThrow()
     expect(() => { serialize(-140737488355329, Int64.serialize) }).toThrow()
+  })
+})
+
+describe('List', () => {
+  it('serialize and deserialize list', () => {
+    expect(deserialize(serialize([23, 45], List.serialize(UInt32.serialize)), List.deserialize(UInt32.deserialize))).toEqual([23, 45])
+  })
+})
+
+describe('SizedBuffer', () => {
+  it('serialize and deserialize sized buffer', () => {
+    expect(deserialize(serialize(Buffer.from('foo bar'), SizedBuffer.serialize), SizedBuffer.deserialize)).toEqual(Buffer.from('foo bar'))
+  })
+})
+
+describe('String', () => {
+  it('serialize and deserialize string', () => {
+    expect(deserialize(serialize('foo bar', String.serialize), String.deserialize)).toEqual('foo bar')
   })
 })

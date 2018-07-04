@@ -1,5 +1,6 @@
 import { Blockchain } from './index'
-import { InMemoryBlockStore } from '../../store/block'
+import { BlockStore } from '../../store/block'
+import { InMemoryStore } from '../../store/common'
 import { Block } from './block'
 import { TransactionList } from './transaction'
 import { Consensus, ValidatorSet, Validator } from './consensus'
@@ -29,17 +30,17 @@ describe('blockchain', () => {
     genesisConsensus = new Consensus([signer.sign(genesis.hash)])
   })
   it('can create', () => {
-    expect(() => { new Blockchain(new InMemoryBlockStore(), genesis) }).not.toThrow()
+    expect(() => { new Blockchain(new BlockStore(new InMemoryStore()), genesis) }).not.toThrow()
   })
   it('need to make ready', async () => {
-    const blockchain = new Blockchain(new InMemoryBlockStore(), genesis)
+    const blockchain = new Blockchain(new BlockStore(new InMemoryStore()), genesis)
     await expect(blockchain.height).rejects.toThrow()
     await blockchain.ready()
     await expect(blockchain.height).resolves.toBe(0)
     await expect(blockchain.ready()).resolves.not.toThrow()
   })
   it('restore from block store', async () => {
-    const store = new InMemoryBlockStore()
+    const store = new BlockStore(new InMemoryStore())
     const blockchain = new Blockchain(store, genesis)
     await blockchain.ready()
     expect(await blockchain.height).toBe(0)
@@ -53,7 +54,7 @@ describe('blockchain', () => {
   it('throw if stored other chain', async () => {
     const otherGenesis = Block.construct(1, 100, Hash.fromData('foobar'), Hash.fromData('state'),
       new TransactionList([]), new Consensus([]), validatorSet)
-    const store = new InMemoryBlockStore()
+    const store = new BlockStore(new InMemoryStore())
     const otherChain = new Blockchain(store, otherGenesis)
     await otherChain.ready()
     await setBlock(otherChain, otherGenesis, new Consensus([signer.sign(otherGenesis.hash)]))
@@ -65,7 +66,7 @@ describe('blockchain', () => {
     let block2: Block
     let consensus2: Consensus
     beforeAll(async () => {
-      blockchain = new Blockchain(new InMemoryBlockStore(), genesis)
+      blockchain = new Blockchain(new BlockStore(new InMemoryStore()), genesis)
       await blockchain.ready()
       await setBlock(blockchain, genesis, genesisConsensus)
 

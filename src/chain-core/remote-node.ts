@@ -1,6 +1,6 @@
 import { SyncProtocol } from '../network/sync-protocol'
 import semaphore from 'semaphore'
-import * as semaphoreUtil from '../utility/semaphore'
+import { takeSemaphoreAsync } from '../utility/semaphore'
 
 export class RemoteNode {
   private readonly semaphore = semaphore(1)
@@ -15,7 +15,7 @@ export class RemoteNode {
   }
 
   public use<T> (task: () => Promise<T>): Promise<T> {
-    return semaphoreUtil.takeAsync(this.semaphore, task)
+    return takeSemaphoreAsync(this.semaphore, task)
   }
 }
 

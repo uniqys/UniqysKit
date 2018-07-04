@@ -1,4 +1,5 @@
 import { Transaction } from '../structure/blockchain/transaction'
+import { Hash } from '../structure/cryptography'
 import debug from 'debug'
 const logger = debug('chain-core:tx-pool')
 
@@ -21,6 +22,10 @@ export class TransactionPool {
     options?: Partial<TransactionPoolOptions>
   ) {
     this.options = Object.assign({}, TransactionPoolOptions.defaults, options)
+  }
+
+  public has (hash: Hash) {
+    return this.pool.has(hash.toHexString())
   }
 
   public async add (tx: Transaction): Promise<void> {

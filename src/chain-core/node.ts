@@ -28,7 +28,8 @@ export namespace NodeOptions {
 
 export class Node<T extends dapi.Dapp> implements dapi.Core {
   public readonly blockchain: Blockchain
-  protected readonly transactionPool: TransactionPool
+  public readonly transactionPool: TransactionPool
+  protected readonly event = new EventEmitter()
   protected lastAppState?: dapi.AppState
   private readonly dapp: T
   private readonly network: Network
@@ -36,7 +37,6 @@ export class Node<T extends dapi.Dapp> implements dapi.Core {
   private readonly options: NodeOptions
   private readonly executionLoop = new AsyncLoop(async () => { await this.executeBlockTransactions() })
   private readonly synchronizer: Synchronizer
-  private readonly event = new EventEmitter()
 
   constructor (
     dapp: T,
@@ -47,6 +47,8 @@ export class Node<T extends dapi.Dapp> implements dapi.Core {
     this.dapp = dapp
     this.blockchain = blockchain
     this.options = Object.assign({}, NodeOptions.defaults, options)
+
+    this.executionLoop.on('error', err => this.event.emit('error', err))
 
     this.network = new Network(peerInfo, this.options)
     this.network.onError(err => {
@@ -206,7 +208,12 @@ export class Node<T extends dapi.Dapp> implements dapi.Core {
     ])
 
     this.lastAppState = appState
-    if (this.lastAppState.height > height) { throw new Error('need reset app') }
+    if (this.lastAppState.height > height) throw new Error('need reset app')
+    // already know app state hash
+    if (this.lastAppState.height < height) {
+      const expect = (await this.blockchain.headerOf(this.lastAppState.height + 1)).appStateHash
+      if (!this.lastAppState.hash.equals(expect)) throw new Error('app hash mismatch')
+    }
     logger(`initialized at block(${this.lastAppState.height})`)
   }
 
@@ -214,11 +221,16 @@ export class Node<T extends dapi.Dapp> implements dapi.Core {
     if (this.lastAppState === undefined) { throw new Error('not initialized') }
     if ((await this.blockchain.height) !== this.lastAppState.height) {
       const height = this.lastAppState.height + 1
+      const knownHeight = await this.blockchain.height
       logger(`execute transaction in block(${height})`)
       const block = await this.blockchain.blockOf(height)
       const txs = block.body.transactionList.transactions
       const appState = await this.dapp.executeTransactions(txs)
-      if (appState.height !== height) { throw new Error('block height mismatch') }
+      if (appState.height !== height) throw new Error('block height mismatch')
+      if (appState.height < knownHeight) {
+        const expect = (await this.blockchain.headerOf(appState.height + 1)).appStateHash
+        if (!this.lastAppState.hash.equals(expect)) throw new Error('app hash mismatch')
+      }
       this.lastAppState = appState
       await this.transactionPool.update(txs)
       this.event.emit('executed', height)
