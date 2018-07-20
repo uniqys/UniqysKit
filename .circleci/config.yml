@@ -18,6 +18,9 @@ jobs:
           name: Install dependencies
           command: npm install
       - run:
+          name: Bootstrap packages
+          command: npm run bootstrap
+      - run:
           name: Build
           command: npm run build
       - run:
@@ -27,5 +30,3 @@ jobs:
           key: project-name-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
             - ~/workspace/node_modules
-
-

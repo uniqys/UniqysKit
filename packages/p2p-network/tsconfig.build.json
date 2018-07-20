@@ -1,0 +1,16 @@
+{
+  "extends": "../../config-base/tsconfig.build.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "typeRoots": [
+      "./node_modules/@uniqys/type-definitions/types",
+      "./node_modules/@types"
+    ]
+  },
+  "include": [
+    "./src/**/*.ts"
+  ],
+  "exclude": [
+    "./src/**/*.test.ts"
+  ]
+}
