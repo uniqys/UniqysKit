@@ -17,7 +17,6 @@
     "@uniqys/blockchain": "^0.0.1",
     "@uniqys/dapp-interface": "^0.0.1",
     "@uniqys/easy-types": "^0.0.1",
-    "@uniqys/chain-core": "^0.0.1",
     "@uniqys/merkle-patricia-trie": "^0.0.1",
     "@uniqys/serialize": "^0.0.1",
     "@uniqys/signature": "^0.0.1",

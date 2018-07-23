@@ -8,7 +8,7 @@
   "scripts": {
     "bootstrap": "lerna bootstrap",
     "clean": "lerna clean",
-    "build": "lerna run build",
+    "build": "lerna run build --concurrency 4",
     "test": "run-s test:build test:lint test:jest",
     "test:build": "lerna run test:build --concurrency 8",
     "test:lint": "lerna run test:lint --concurrency 8",

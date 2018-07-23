@@ -4,6 +4,7 @@ import { Block, TransactionList, Transaction, Consensus, ValidatorSet } from '@u
 import { Hash } from '@uniqys/signature'
 import { Source, Sink } from 'pull-stream'
 import PeerInfo from 'peer-info'
+import PeerId from 'peer-id'
 
 const noop: SyncProtocolHandler = {
   handshake: () => { /* noop */ },
@@ -228,16 +229,15 @@ describe('sync protocol meta', () => {
     expect(meta.protocol).toBe('uniqys/sync/v1')
   })
   it('handshake with protocol', (done) => {
-    PeerInfo.create((err, info) => {
-      if (err) done.fail(err)
-      const meta = new SyncProtocolMeta(makeHandler({
-        handshake: (protocol, incoming) => {
-          expect(protocol.peerId).toBe(info.id.toB58String())
-          expect(incoming).toBe(true)
-          done()
-        }
-      }))
-      meta.handshake(info, new ThroughDuplex(), true)
-    })
+    const id = PeerId.createFromB58String('QmaJ36YM18pckNBmqyXrUzAwQwwkLSeL11t6WPBzQjCYBF')
+    const info = new PeerInfo(id)
+    const meta = new SyncProtocolMeta(makeHandler({
+      handshake: (protocol, incoming) => {
+        expect(protocol.peerId).toBe(info.id.toB58String())
+        expect(incoming).toBe(true)
+        done()
+      }
+    }))
+    meta.handshake(info, new ThroughDuplex(), true)
   })
 })

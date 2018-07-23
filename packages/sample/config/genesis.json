@@ -1,9 +1,9 @@
 {
   "unique": "my first chain",
-  "timestamp": 1521193140,
+  "timestamp": 1532089083,
   "validatorSet": [
     {
-      "address": "be49dad2861ed6182fd94e7b11b350f51bc90986",
+      "address": "38e7a8d69e9bef96fdd27cfe642f43fa0c3fcaf8",
       "power": 1
     }
   ]

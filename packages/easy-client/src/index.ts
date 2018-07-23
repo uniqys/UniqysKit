@@ -16,8 +16,9 @@ export interface RequestConfig extends AxiosRequestConfig {
 export class EasyClient {
   public readonly app: AxiosInstance
   public readonly api: Api
+  public get address (): Address { return this.signer.address }
   constructor (
-    signer: Signer,
+    private readonly signer: Signer,
     config?: AxiosRequestConfig
   ) {
     config = config || {}

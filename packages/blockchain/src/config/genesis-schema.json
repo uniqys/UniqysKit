@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "genesis",
+  "title": "genesis schema",
   "type": "object",
   "required": ["unique", "timestamp", "validatorSet"],
   "properties": {

@@ -2,7 +2,6 @@ import { Signer, RequestConfig } from '.'
 import { HttpHeaders, HttpRequest, Transaction } from '@uniqys/easy-types'
 import { Api } from './api'
 import Axios, { AxiosPromise } from 'axios'
-import { URL, URLSearchParams } from 'url'
 
 export function adapter (signer: Signer, api: Api): (config: RequestConfig) => AxiosPromise {
   return async (config) => {
@@ -46,8 +45,12 @@ export function adapter (signer: Signer, api: Api): (config: RequestConfig) => A
       include = 'Content-Type'
       config.headers['Uniqys-Include-Headers'] = include
     }
+    // case insensitive
+    for (const key of ['Content-Type', 'content-type']) {
+      if (config.headers[key]) config.headers[key] = config.headers[key].toLowerCase()
+    }
     const normalized = (include as string).split(/\s*,\s*/).map(s => s.toLowerCase())
-    const headers = HttpHeaders.fromObject(config.headers, key => !(/^uniqys-.+/.test(key) || normalized.indexOf(key) === -1))
+    const headers = HttpHeaders.fromObject(config.headers, key => !(/^uniqys-.+/.test(key) || !normalized.includes(key)))
 
     // nonce
     const nonce = await api.nonce(signer.address.toString()) + 1
@@ -59,6 +62,7 @@ export function adapter (signer: Signer, api: Api): (config: RequestConfig) => A
     // set headers
     config.headers['Uniqys-Nonce'] = nonce
     config.headers['Uniqys-Sign'] = sign.buffer.toString('base64')
+    delete config.headers['Content-Length']
 
     // request
     let response = await Axios(config)

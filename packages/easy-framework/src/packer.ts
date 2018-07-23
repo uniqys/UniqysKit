@@ -5,10 +5,14 @@ import { URL } from 'url'
 
 export namespace Headers {
   export function pack (headers: http.IncomingHttpHeaders): HttpHeaders {
+    // case insensitive
+    for (const key of ['Content-Type', 'content-type']) {
+      if (headers[key]) headers[key] = (headers[key] as string).toLowerCase()
+    }
     // select headers
     const value = headers['uniqys-include-headers']
     const includes = (value && typeof value === 'string') ? value.split(/\s*,\s*/).map(s => s.toLowerCase()) : []
-    return HttpHeaders.fromObject(headers, key => !(/^uniqys-.+/.test(key) || includes.indexOf(key) === -1))
+    return HttpHeaders.fromObject(headers, key => !(/^uniqys-.+/.test(key) || !includes.includes(key)))
   }
   export function unpack (headers: HttpHeaders): http.IncomingHttpHeaders {
     return headers.toObject()

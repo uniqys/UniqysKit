@@ -3,7 +3,7 @@ import { OuterApi, InnerApi } from './api'
 import { MemcachedCompatibleServer } from './memcached-compatible-server'
 import { Controller } from './controller'
 import { State } from './state'
-import { Node } from '@uniqys/chain-core'
+import { Core } from '@uniqys/dapp-interface'
 import { Store } from '@uniqys/store'
 import Koa from 'koa'
 import Router from 'koa-router'
@@ -11,14 +11,19 @@ import { URL } from 'url'
 import net from 'net'
 import http from 'http'
 
+export interface Node extends Core {
+  start (): Promise<void>
+  stop (): Promise<void>
+}
+
 export class Easy {
-  public readonly node: Node<Controller>
+  public readonly node: Node
   public readonly controller: Controller
   private readonly state: State
   constructor (
     private readonly app: URL,
     store: Store<Buffer, Buffer>,
-    node: (dapp: Controller) => Node<Controller>
+    node: (dapp: Controller) => Node
   ) {
     this.state = new State(store)
     this.controller = new Controller(app, this.state)
