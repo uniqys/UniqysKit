@@ -8,7 +8,7 @@
     "lint": "tslint -c tslint.json -p tsconfig.json",
     "build": "tsc -p tsconfig.build.json",
     "init": "ts-node src/init.ts",
-    "serve": "DEBUG=chain-core*,easy*,app* ts-node src/serve.ts",
+    "start": "DEBUG=chain-core*,easy*,app* ts-node src/serve.ts",
     "client": "ts-node src/client.ts"
   },
   "dependencies": {
