@@ -13,12 +13,12 @@ Both are currently under development.
 For details, please visit [our website](https://uniqys.net/kit).
 
 # Current status
-This is a preview version of Uniqys Kit under development.
-It has many features not yet implemented, but you can try playing our sample DApp or creating your own DApp.
+This is a preview version of Uniqys Kit, and it is still under development.
+It has many features that are not implemented yet, but you can try playing our sample DApp or creating your own DApp.
 
 We would appreciate if you could give us your feedback via GitHub issue or [Twitter](https://twitter.com/uniqys).
-Then, we will discuss your feedback, and later release as an improved version of Uniqys Kit under an OSS license.
-We hope you'll be looking forward to it!
+Then, we will discuss your feedback, and later release an improved version of Uniqys Kit under an OSS license.
+We hope you will be looking forward to it!
 
 ## Chain Core
 Chain Core in this repository can be run only locally.
@@ -26,8 +26,8 @@ You can not synchronize blockchain via p2p network yet, but you can use it for D
 
 ## Easy Framework
 Easy Framework in this repository implements only minimal features for building DApps as with conventional web applications.
-It surly have no enough features yet; more convenient APIs and secure client implementation, etc.
-However, it is enough to experience building DApps on Uniqys Core easily.
+It surely does not have enough features yet; we will implement more convenient APIs, secure client, etc.
+However, current version is enough to experience building DApps on Uniqys Core.
 
 
 # Get started
