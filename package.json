@@ -6,7 +6,7 @@
   "private": true,
   "license": "SEE LICENSE IN LICENSE.md",
   "scripts": {
-    "bootstrap": "lerna bootstrap",
+    "bootstrap": "lerna bootstrap --hoist",
     "clean": "lerna clean",
     "build": "lerna run build --concurrency 4",
     "test": "run-s test:build test:lint test:jest",

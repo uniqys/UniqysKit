@@ -17,13 +17,13 @@
     "semaphore": "^1.1.0"
   },
   "devDependencies": {
-    "@types/jest": "^23.1.5",
+    "@types/jest": "^23.3.0",
     "@types/node": "^10.5.2",
     "@types/semaphore": "^1.1.0",
     "jest": "^23.3.0",
     "npm-run-all": "^4.1.3",
-    "ts-jest": "^23.0.0",
-    "tslint": "^5.10.0",
+    "ts-jest": "^23.0.1",
+    "tslint": "^5.11.0",
     "typescript": "^2.9.2"
   }
 }

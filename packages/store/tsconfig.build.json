@@ -4,7 +4,8 @@
     "outDir": "./dist",
     "typeRoots": [
       "./node_modules/@uniqys/type-definitions/types",
-      "./node_modules/@types"
+      "./node_modules/@types",
+      "../../node_modules/@types"
     ]
   },
   "include": [
