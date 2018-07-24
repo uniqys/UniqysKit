@@ -2,8 +2,6 @@
   <a href="ttps://uniqys.net/kit"><img width="320" src="UniqysKit-logo.png" alt="Uniqys Kit logo" /></a>
 </h1>
 
-[![CircleCI](https://circleci.com/gh/mfac/BPP.svg?style=svg&circle-token=81f42507830be7217929a9baf8d326395758abc7)](https://circleci.com/gh/mfac/BPP)
-
 # What is Uniqys Kit?
 Uniqys Kit is a developer-friendly toolkit to create scalable DApps on [Uniqys Network](https://uniqys.net).
 It consists of two components, Chain Core and Easy Framework.
@@ -57,14 +55,8 @@ $ npm run build
 ```
 
 ## Try sample
-:memo: You need to build first.
 
-```
-$ cd packages/sample
-$ npm start
-```
-
-and open `http://localhost:8080` in your browser.
+[See packages/sample directory.](packages/sample/README.md)
 
 ## Tests
 

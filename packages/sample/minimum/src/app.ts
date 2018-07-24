@@ -77,11 +77,12 @@ export class App extends Koa {
           contents: contents
         }
       })
-      super()
-      this.use(KoaLogger())
-        .use(KoaStatic('./node_modules/@uniqys/easy-client/lib/'))
-        .use(KoaStatic('./static/'))
-        .use(router.routes())
-        .use(router.allowedMethods())
+
+    super()
+    this.use(KoaLogger())
+      .use(KoaStatic('./node_modules/@uniqys/easy-client/lib/'))
+      .use(KoaStatic('./static/'))
+      .use(router.routes())
+      .use(router.allowedMethods())
   }
 }

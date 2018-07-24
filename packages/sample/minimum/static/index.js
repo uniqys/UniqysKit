@@ -7,12 +7,6 @@ function hello () {
     .then(res => result.innerText = `message: ${res.data}`);
 }
 
-function fetchAccountInfo () {
-  const account = easy.address.toString();
-  easy.api.account(account)
-    .then(account => result.innerText = `account: balance ${account.balance}, nonce ${account.nonce}`);
-}
-
 function getMessage () {
   const id = parseInt(param.value)
   if (!id) {
@@ -34,3 +28,21 @@ function postMessage () {
     .then(res => result.innerText = `post: id ${res.data.id}, data ${res.data.contents}`)
     .catch(err => result.innerText = `err: ${err.toString()}`);
 }
+
+function fetchAccountInfo () {
+  const account = easy.address.toString();
+  easy.api.account(account)
+    .then(account => result.innerText = `account: balance ${account.balance}, nonce ${account.nonce}`);
+}
+
+function send () {
+  const addr = param.value
+  if (!addr) {
+    result.innerText = `Parameter is invalid: (param: '${addr}')`;
+    return;
+  }
+  easy.post('/send', { to: addr, value: 1 }, { sign: true })
+    .then(res => result.innerText = `sent`)
+    .catch(err => result.innerText = `err: ${err.toString()}`);
+}
+

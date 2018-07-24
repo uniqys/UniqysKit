@@ -19,8 +19,8 @@ function startApp () {
 
 async function startEasy () {
   // load config
-  const genesis = new GenesisConfig().validateAsBlock(require('../config/genesis.json'))
-  const keyPair = new KeyConfig().validateAsKeyPair(require('../config/validatorKey.json'))
+  const genesis = new GenesisConfig().validateAsBlock(require('../../config/genesis.json'))
+  const keyPair = new KeyConfig().validateAsKeyPair(require('../../config/validatorKey.json'))
   // state store
   const stateStore = new LevelDownStore(new MemDown())
   const chainStore = new LevelDownStore(new MemDown())
