@@ -18,7 +18,13 @@ function getMessage () {
     .catch(err => result.innerText = `err: ${err.toString()}`);
 }
 
-function postMessage () {
+function getMessages () {
+  easy.get(`/messages`)
+    .then(res => result.innerText = `messages:\n${res.data.map(message => message.contents).join('\n')}`)
+    .catch(err => result.innerText = `err: ${err.toString()}`);
+}
+
+function sendMessage () {
   const msg = param.value
   if (!msg) {
     result.innerText = `Parameter is invalid: (param: '${msg}')`;

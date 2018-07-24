@@ -41,6 +41,24 @@ export class App extends Koa {
           contents: message.contents
         }
       })
+      .get('/messages', async (ctx) => {
+        const count = await new Promise<number>((resolve, reject) => {
+          db.get('messages', (err, result) => {
+            if (err) return reject(err)
+            if (typeof result === 'number') return resolve(result)
+            resolve(0)
+          })
+        })
+        const messages = await new Promise<{ id: number, sender: string, contents: string }[]>((resolve, reject) => {
+          if (!count) return resolve([])
+          const ids = new Array(count).fill(0).map((_, i) => i + 1)
+          db.getMulti(ids.map(id => `messages:${id}`), (err, results) => {
+            if (err) return reject(err)
+            resolve(ids.map(id => Object.assign({ id }, results[`messages:${id}`])))
+          })
+        })
+        ctx.body = messages
+      })
       .post('/send', BodyParser(), async (ctx) => {
         const sender = viaChain(ctx)
         const { to, value } = ctx.request.body as { to: string, value: number }
