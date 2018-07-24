@@ -21,8 +21,11 @@ Then, we will discuss your feedback, and later release an improved version of Un
 We hope you will be looking forward to it!
 
 ## Chain Core
-Chain Core in this repository can be run only locally.
-You can not synchronize blockchain via p2p network yet, but you can use it for DApps development.
+Chain Core is currently experimental.
+It can synchronize blockchain, but the consensus algorithm is not implemented yet.
+
+However, `chain-core-dev` is included in this repository, and is only for developing DApps.
+It can only be run locally, and you can not synchronize blockchain via p2p network.
 
 ## Easy Framework
 Easy Framework in this repository implements only minimal features for building DApps as with conventional web applications.
