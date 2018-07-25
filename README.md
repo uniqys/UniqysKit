@@ -59,7 +59,7 @@ $ npm run build
 
 ## Try samples
 
-[See packages/samples directory.](packages/samples/README.md)
+[See packages/samples directory.](packages/samples/)
 
 ## Tests
 
