@@ -1,6 +1,12 @@
 # Uniqys Kit samples
 
-:memo: You need to build before running any sample.
+:warning: You need to build before running any sample.
+
+```sh
+$ npm install
+$ npm run bootstrap
+$ npm run build
+```
 
 This is a sample directory of Uniqys Kit.
 The following applications are included.
@@ -13,7 +19,7 @@ You get a token every time you post a message.
 Tokens you received are transferrable to other accounts.
 
 ```sh
-$ cd messsages
+$ cd packages/samples/messages
 $ npm start
 ```
 
