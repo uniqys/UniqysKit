@@ -23,7 +23,7 @@ We hope you will be looking forward to it!
 ## Chain Core
 
 Chain Core is currently experimental.
-It can synchronize blockchain, but the consensus algorithm is not implemented yet.
+It can synchronize blockchain, but the consensus and cross-chain algorithm is not implemented yet.
 
 However, `chain-core-dev` is included in this repository, and is only for developing DApps.
 It can only be run locally, and you can not synchronize blockchain via p2p network.
