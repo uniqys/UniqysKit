@@ -3,7 +3,13 @@
   "version": "0.0.1",
   "description": "validate json configuration",
   "author": "Uniqys Project (https://uniqys.net)",
-  "private": true,
+  "license": "SEE LICENSE IN LICENSE.md",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "/dist"
+  ],
   "main": "./dist/index.js",
   "scripts": {
     "build": "run-s build:tsc",

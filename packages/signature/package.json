@@ -3,7 +3,13 @@
   "version": "0.0.1",
   "description": "cryptographic signature and address for Uniqys",
   "author": "Uniqys Project (https://uniqys.net)",
-  "private": true,
+  "license": "SEE LICENSE IN LICENSE.md",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "/dist"
+  ],
   "main": "./dist/index.js",
   "scripts": {
     "prebuild": "json2ts ./src/config/key-schema.json ./src/config/key-schema.d.ts",

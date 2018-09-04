@@ -3,7 +3,13 @@
   "version": "0.0.1",
   "description": "TypeScript implementation of priority queue based on heap",
   "author": "Uniqys Project (https://uniqys.net)",
-  "private": true,
+  "license": "SEE LICENSE IN LICENSE.md",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "/dist"
+  ],
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
