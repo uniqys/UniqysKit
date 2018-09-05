@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/serialize",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "serialize/deserialize to/from Buffer",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "SEE LICENSE IN LICENSE.md",

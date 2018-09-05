@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/async-loop",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "start/stop async function loop",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "SEE LICENSE IN LICENSE.md",
@@ -18,8 +18,6 @@
     "test:lint": "npm run lint",
     "test:build": "npm run build --noEmit",
     "test:jest": "jest --forceExit --detectOpenHandles --coverage --verbose"
-  },
-  "dependencies": {
   },
   "devDependencies": {
     "@types/jest": "^23.3.0",
