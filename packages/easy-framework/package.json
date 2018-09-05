@@ -41,7 +41,7 @@
     "@types/koa": "^2.0.46",
     "@types/koa-bodyparser": "^5.0.1",
     "@types/koa-router": "^7.0.30",
-    "@types/node": "^10.5.2",
+    "@types/node": "^10.9.4",
     "@types/semaphore": "^1.1.0",
     "@types/split": "^0.3.28",
     "@uniqys/type-definitions": "^0.0.1",
@@ -50,6 +50,6 @@
     "split": "^1.0.1",
     "ts-jest": "^23.0.1",
     "tslint": "^5.11.0",
-    "typescript": "^2.9.2"
+    "typescript": "^3.0.3"
   }
 }
