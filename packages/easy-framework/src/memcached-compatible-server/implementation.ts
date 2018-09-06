@@ -1,8 +1,6 @@
 import { Response, Checker } from './handler'
 import { Serializer, Deserializer, serialize, deserialize, UInt32, UInt64 } from '@uniqys/serialize'
 import { Store } from '@uniqys/store'
-import semaphore from 'semaphore'
-import { takeSemaphoreAsync } from '@uniqys/semaphore-async'
 
 class Item {
   constructor (
@@ -38,15 +36,14 @@ export interface Options {
 
 export class MemcachedSubset {
   private readonly useCas: boolean
-  private readonly semaphore: semaphore.Semaphore
   private readonly itemSerializer: Serializer<Item>
   private readonly itemDeserializer: Deserializer<Item>
   constructor (
     private readonly store: Store<Buffer, Buffer>,
+    private readonly lock: <T>(task: () => Promise<T>) => Promise<T>,
     options: Options = {}
   ) {
     this.useCas = options.useCas || false
-    this.semaphore = semaphore(1)
     if (this.useCas) {
       this.itemSerializer = Item.serialize
       this.itemDeserializer = Item.deserialize
@@ -57,7 +54,7 @@ export class MemcachedSubset {
   }
   public async set (keyString: string, flags: number, data: Buffer): Promise<Response.Stored> {
     const key = Buffer.from(keyString, 'utf8')
-    return takeSemaphoreAsync<Response.Stored>(this.semaphore, async () => {
+    return this.lock<Response.Stored>(async () => {
       const casUniq = this.useCas
         ? (await this.store.get(key)).match(v => deserialize(v, this.itemDeserializer).casUniq, () => 0)
         : 0
@@ -191,7 +188,7 @@ export class MemcachedSubset {
   }
   private async getAndAct<T> (keyString: string, action: (key: Buffer, item?: Item) => Promise<T>): Promise<T> {
     const key = Buffer.from(keyString, 'utf8')
-    return takeSemaphoreAsync(this.semaphore, async () =>
+    return this.lock(async () =>
       action(key, (await this.store.get(key)).match(
         v => deserialize(v, this.itemDeserializer),
         () => undefined

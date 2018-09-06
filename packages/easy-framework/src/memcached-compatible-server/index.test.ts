@@ -1,6 +1,8 @@
 import { MemcachedCompatibleServer } from '.'
 import { InMemoryStore } from '@uniqys/store'
 import net, { AddressInfo } from 'net'
+import semaphore from 'semaphore'
+import { takeSemaphoreAsync } from '@uniqys/semaphore-async'
 import split from 'split'
 
 // cSpell:words noreply
@@ -8,7 +10,7 @@ const errorRegex = /^(ERROR|SERVER_ERROR .*|CLIENT_ERROR .*)$/
 
 describe('Test memcached compatibility', () => {
   const timeout = 500
-  const server = new MemcachedCompatibleServer(new InMemoryStore(), { useCas: true })
+  const server = new MemcachedCompatibleServer(new InMemoryStore(), task => takeSemaphoreAsync(semaphore(1), task), { useCas: true })
   const _socket = new net.Socket()
   const _lines: NodeJS.ReadableStream = _socket.pipe(split())
   const client = { socket: _socket, lines: _lines }
@@ -448,7 +450,7 @@ describe('Test memcached compatibility', () => {
 // Not defined by protocol.
 describe('Test no cas mode', () => {
   const timeout = 500
-  const server = new MemcachedCompatibleServer(new InMemoryStore(), { useCas: false })
+  const server = new MemcachedCompatibleServer(new InMemoryStore(), task => takeSemaphoreAsync(semaphore(1), task), { useCas: false })
   const _socket = new net.Socket()
   const _lines: NodeJS.ReadableStream = _socket.pipe(split())
   const client = { socket: _socket, lines: _lines }

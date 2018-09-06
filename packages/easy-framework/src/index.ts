@@ -35,7 +35,7 @@ export class Easy {
 
   public gateway (): http.Server { return new Gateway(this.node, this.state, new OuterApi(this.state), this.app) }
   public innerApi (): http.Server { return this._serveApi(new InnerApi(this.state)) }
-  public innerMemcachedCompatible (): net.Server { return new MemcachedCompatibleServer(this.state.app) }
+  public innerMemcachedCompatible (): net.Server { return new MemcachedCompatibleServer(this.state.app, task => this.state.lock(task)) }
 
   private _serveApi (api: Router): http.Server {
     return http.createServer(new Koa()

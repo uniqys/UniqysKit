@@ -44,12 +44,16 @@ export class Controller implements Dapp {
     for (const coreTx of coreTxs) {
       const tx = deserialize(coreTx.data, SignedTransaction.deserialize)
       const sender = tx.signer
-      const account = await this.state.getAccount(sender)
-      // skip non continuous nonce transaction
-      if (tx.nonce !== account.nonce + 1) continue
-      await this.state.setAccount(sender, account.incrementNonce())
       const root = this.state.top.root
       try {
+        await this.state.lock(async () => {
+          const next = (await this.state.getAccount(sender)).incrementNonce()
+          // skip non continuous nonce transaction
+          if (tx.nonce !== next.nonce) {
+            throw new Error('non continuous nonce')
+          }
+          await this.state.setAccount(sender, next)
+        })
         const res = await SignedRequest.unpack(tx, this.app)
         await this.state.result.set(coreTx.hash, await Response.pack(res))
         if (res.statusCode && 400 <= res.statusCode && res.statusCode < 600) {
