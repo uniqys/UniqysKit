@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/semaphore-async",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "take semaphore async",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "SEE LICENSE IN LICENSE.md",
