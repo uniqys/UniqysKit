@@ -44,7 +44,7 @@ export class Gateway extends http.Server {
         await state.pure(() => new Promise((resolve, reject) => {
           const req = http.request(ctx.URL, {
             protocol: app.protocol,
-            host: app.hostname,
+            hostname: app.hostname,
             port: app.port,
             method: ctx.method,
             headers: ctx.headers
