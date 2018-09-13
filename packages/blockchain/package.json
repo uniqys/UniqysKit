@@ -25,7 +25,6 @@
   "devDependencies": {
     "@types/jest": "^23.3.0",
     "@types/node": "^10.9.4",
-    "@types/semaphore": "^1.1.0",
     "@uniqys/types": "^0.0.3",
     "jest": "^23.3.0",
     "json-schema-to-typescript": "^5.5.0",
@@ -36,10 +35,9 @@
   },
   "dependencies": {
     "@uniqys/config-validator": "^0.0.3",
-    "@uniqys/semaphore-async": "^0.0.3",
+    "@uniqys/lock": "^0.0.3",
     "@uniqys/serialize": "^0.0.3",
     "@uniqys/signature": "^0.0.3",
-    "@uniqys/store": "^0.0.3",
-    "semaphore": "^1.1.0"
+    "@uniqys/store": "^0.0.3"
   }
 }

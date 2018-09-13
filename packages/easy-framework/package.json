@@ -23,8 +23,8 @@
     "@uniqys/blockchain": "^0.0.3",
     "@uniqys/dapp-interface": "^0.0.3",
     "@uniqys/easy-types": "^0.0.3",
+    "@uniqys/lock": "^0.0.3",
     "@uniqys/merkle-patricia-trie": "^0.0.3",
-    "@uniqys/semaphore-async": "^0.0.3",
     "@uniqys/serialize": "^0.0.3",
     "@uniqys/signature": "^0.0.3",
     "@uniqys/store": "^0.0.3",
@@ -32,8 +32,7 @@
     "debug": "^3.1.0",
     "koa": "^2.5.2",
     "koa-bodyparser": "^4.2.1",
-    "koa-router": "^7.4.0",
-    "semaphore": "^1.1.0"
+    "koa-router": "^7.4.0"
   },
   "devDependencies": {
     "@types/debug": "0.0.30",
@@ -42,7 +41,6 @@
     "@types/koa-bodyparser": "^5.0.1",
     "@types/koa-router": "^7.0.30",
     "@types/node": "^10.9.4",
-    "@types/semaphore": "^1.1.0",
     "@types/split": "^0.3.28",
     "@uniqys/type-definitions": "^0.0.3",
     "jest": "^23.3.0",

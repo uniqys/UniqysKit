@@ -1,18 +1,12 @@
 import net from 'net'
-import { MemcachedTextProtocol } from './handler'
-import { MemcachedSubset, Options } from './implementation'
-import { Store } from '@uniqys/store'
+import { MemcachedTextProtocol, MemcachedSubset, Response } from './protocol'
 
-export { Options }
+export { MemcachedSubset, Response }
 
 export class MemcachedCompatibleServer extends net.Server {
   constructor (
-    store: Store<Buffer, Buffer>,
-    lock: <T>(task: () => Promise<T>) => Promise<T>,
-    /* istanbul ignore next: default parameter */
-    options: Options = {}
+    impl: MemcachedSubset
   ) {
-    const impl = new MemcachedSubset(store, lock, options)
     super(socket => new MemcachedTextProtocol(socket, impl).handle())
   }
 }

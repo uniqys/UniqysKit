@@ -38,10 +38,10 @@ export class Gateway extends http.Server {
         ctx.assert(!ctx.headers['uniqys-sender'], 403)
         await next()
       })
-      .use(async (ctx, _next) => {
+      .use((ctx, _next) => {
         ctx.respond = false
         // proxy
-        await state.pure(() => new Promise((resolve, reject) => {
+        return state.rwLock.readLock.use(() => new Promise((resolve, reject) => {
           const req = http.request(ctx.URL, {
             protocol: app.protocol,
             hostname: app.hostname,
