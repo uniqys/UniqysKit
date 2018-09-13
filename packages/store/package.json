@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/store",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "common key-value store class",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "SEE LICENSE IN LICENSE.md",
@@ -20,7 +20,7 @@
     "test:jest": "jest --forceExit --detectOpenHandles --coverage --verbose"
   },
   "dependencies": {
-    "@uniqys/types": "^0.0.3",
+    "@uniqys/types": "^0.0.4",
     "abstract-leveldown": "^5.0.0",
     "levelup": "^3.1.1"
   },
@@ -28,7 +28,7 @@
     "@types/abstract-leveldown": "^5.0.0",
     "@types/jest": "^23.3.0",
     "@types/node": "^10.9.4",
-    "@uniqys/type-definitions": "^0.0.3",
+    "@uniqys/type-definitions": "^0.0.4",
     "jest": "^23.3.0",
     "memdown": "^3.0.0",
     "npm-run-all": "^4.1.3",

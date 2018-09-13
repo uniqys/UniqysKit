@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/priority-queue",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "TypeScript implementation of priority queue based on heap",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "SEE LICENSE IN LICENSE.md",

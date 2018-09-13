@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/easy-types",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Uniqys Easy Framework types",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "SEE LICENSE IN LICENSE.md",
@@ -20,8 +20,8 @@
     "test:jest": "jest --forceExit --detectOpenHandles --coverage --verbose"
   },
   "dependencies": {
-    "@uniqys/serialize": "^0.0.3",
-    "@uniqys/signature": "^0.0.3"
+    "@uniqys/serialize": "^0.0.4",
+    "@uniqys/signature": "^0.0.4"
   },
   "devDependencies": {
     "@types/jest": "^23.3.0",

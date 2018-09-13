@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/chain-core-dev",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Uniqys Chain Core for development",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "SEE LICENSE IN LICENSE.md",
@@ -20,10 +20,10 @@
     "test:jest": "jest --forceExit --detectOpenHandles --coverage --verbose"
   },
   "dependencies": {
-    "@uniqys/async-loop": "^0.0.3",
-    "@uniqys/blockchain": "^0.0.3",
-    "@uniqys/dapp-interface": "^0.0.3",
-    "@uniqys/signature": "^0.0.3",
+    "@uniqys/async-loop": "^0.0.4",
+    "@uniqys/blockchain": "^0.0.4",
+    "@uniqys/dapp-interface": "^0.0.4",
+    "@uniqys/signature": "^0.0.4",
     "debug": "^3.1.0"
   },
   "devDependencies": {
