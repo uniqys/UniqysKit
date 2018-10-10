@@ -1,30 +1,30 @@
 import { Message, EventMessage, RequestMessage, ResponseMessage } from './message'
-import { ProtocolMeta as Meta } from '../network'
-import { Channel } from '../message-channel'
+import { ProtocolMeta as Meta, Channel } from '@uniqys/p2p-network'
 import { Duplex } from 'pull-stream'
 import { EventEmitter } from 'events'
 import PeerInfo from 'peer-info'
 
 export { Message }
 
-export interface SyncProtocolHandler {
-  handshake (protocol: SyncProtocol, incoming: boolean): void
-  hello (message: Message.Hello, protocol: SyncProtocol): void
-  newTransaction (message: Message.NewTransaction, protocol: SyncProtocol): void
-  newBlock (message: Message.NewBlock, protocol: SyncProtocol): void
-  newBlockHeight (message: Message.NewBlockHeight, protocol: SyncProtocol): void
-  getConsentedHeader (message: Message.GetConsentedHeader, protocol: SyncProtocol): Promise<Message.ConsentedHeader>
-  getHeaders (message: Message.GetHeaders, protocol: SyncProtocol): Promise<Message.Headers>
-  getBodies (message: Message.GetBodies, protocol: SyncProtocol): Promise<Message.Bodies>
+export interface ProtocolHandler {
+  handshake (protocol: Protocol, incoming: boolean): void
+  hello (message: Message.Hello, protocol: Protocol): void
+  newTransaction (message: Message.NewTransaction, protocol: Protocol): void
+  newBlock (message: Message.NewBlock, protocol: Protocol): void
+  newBlockHeight (message: Message.NewBlockHeight, protocol: Protocol): void
+  newConsensusMessage (message: Message.NewConsensusMessage, protocol: Protocol): void
+  getConsentedHeader (message: Message.GetConsentedHeader, protocol: Protocol): Promise<Message.ConsentedHeader>
+  getHeaders (message: Message.GetHeaders, protocol: Protocol): Promise<Message.Headers>
+  getBodies (message: Message.GetBodies, protocol: Protocol): Promise<Message.Bodies>
 }
 
-export class SyncProtocol {
+export class Protocol {
   private receiver?: (msg: ResponseMessage) => void // parallel request is not allowed
   private readonly event = new EventEmitter()
   constructor (
     public readonly peerId: string,
     private readonly channel: Channel<Message>,
-    private readonly handler: SyncProtocolHandler
+    private readonly handler: ProtocolHandler
   ) {
     this.channel.onError(err => this.event.emit('error', err))
     this.channel.onEnd(() => this.event.emit('end'))
@@ -63,6 +63,9 @@ export class SyncProtocol {
   public sendNewBlockHeight (message: Message.NewBlockHeight): Promise<void> {
     return this.channel.sendMessage(message)
   }
+  public sendNewConsensusMessage (message: Message.NewConsensusMessage): Promise<void> {
+    return this.channel.sendMessage(message)
+  }
   public fetchConsentedHeader (message: Message.GetConsentedHeader): Promise<Message.ConsentedHeader> {
     return this.fetch(message, Message.ConsentedHeader)
   }
@@ -77,8 +80,9 @@ export class SyncProtocol {
     if (msg instanceof Message.Hello) return this.handler.hello(msg, this)
     if (msg instanceof Message.NewTransaction) return this.handler.newTransaction(msg, this)
     if (msg instanceof Message.NewBlock) return this.handler.newBlock(msg, this)
-    /* istanbul ignore else */
     if (msg instanceof Message.NewBlockHeight) return this.handler.newBlockHeight(msg, this)
+    /* istanbul ignore else */
+    if (msg instanceof Message.NewConsensusMessage) return this.handler.newConsensusMessage(msg, this)
     /* istanbul ignore next: type checked */
     this.unexpected(msg)
   }
@@ -130,14 +134,14 @@ export class SyncProtocol {
   private unexpected (msg: never) { this.event.emit('error', new Error(`unexpected message ${msg}`)) }
 }
 
-export class SyncProtocolMeta implements Meta {
-  public protocol = 'uniqys/sync/v1'
+export class ProtocolMeta implements Meta {
+  public protocol = 'uniqys/v1'
   constructor (
-    private readonly handler: SyncProtocolHandler
+    private readonly handler: ProtocolHandler
   ) { }
 
   handshake (info: PeerInfo, conn: Duplex<Buffer>, incoming: boolean): void {
-    const protocol = new SyncProtocol(info.id.toB58String(), new Channel(conn, Message.deserialize, Message.serialize), this.handler)
+    const protocol = new Protocol(info.id.toB58String(), new Channel(conn, Message.deserialize, Message.serialize), this.handler)
     this.handler.handshake(protocol, incoming)
   }
 }

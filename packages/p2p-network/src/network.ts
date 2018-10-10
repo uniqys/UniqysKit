@@ -4,7 +4,6 @@ import PeerInfo from 'peer-info'
 import { Connection } from 'interface-connection'
 import { EventEmitter } from 'events'
 import PeerId from 'peer-id'
-import Multiaddr from 'multiaddr'
 import PeerBook from 'peer-book'
 import debug from 'debug'
 const logger = debug('p2p:network')
@@ -12,17 +11,27 @@ const logger = debug('p2p:network')
 export interface NetworkOptions {
   maxPeers: number
   maxPendingPeers: number
-  bootstraps: (String | Buffer | Multiaddr)[],
-  bootstrapInterval: number, // 0 is disable
-  mdnsInterval: number // 0 is disable
+  libp2pConfig: any
 }
 export namespace NetworkOptions {
   export const defaults: NetworkOptions = {
     maxPeers: 25,
     maxPendingPeers: 0,
-    bootstraps: [],
-    bootstrapInterval: 5000, // 5s
-    mdnsInterval: 1000 // 1s
+    libp2pConfig: {
+      peerDiscovery: {
+        mdns: {
+          interval: 1000, // 1s
+          broadcast: true,
+          serviceTag: 'uniqys.local',
+          enabled: true
+        },
+        bootstrap: {
+          interval: 5000, // 5s
+          list: [],
+          enabled: false
+        }
+      }
+    }
   }
 }
 

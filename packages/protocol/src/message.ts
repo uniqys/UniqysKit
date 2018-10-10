@@ -1,8 +1,8 @@
-import { Block, BlockHeader, BlockBody, Consensus, Transaction } from '@uniqys/blockchain'
+import { Block, BlockHeader, BlockBody, Consensus, ConsensusMessage, Transaction } from '@uniqys/blockchain'
 import { BufferWriter, BufferReader, Serializable, UInt8, UInt32, UInt64, List } from '@uniqys/serialize'
 import { Hash } from '@uniqys/signature'
 
-export type EventMessage = Message.Hello | Message.NewTransaction | Message.NewBlock | Message.NewBlockHeight
+export type EventMessage = Message.Hello | Message.NewTransaction | Message.NewBlock | Message.NewBlockHeight | Message.NewConsensusMessage
 export type RequestMessage = Message.GetConsentedHeader | Message.GetHeaders | Message.GetBodies
 export type ResponseMessage = Message.ConsentedHeader | Message.Headers | Message.Bodies
 export type Message = EventMessage | RequestMessage | ResponseMessage
@@ -64,7 +64,6 @@ export namespace Message {
       this.consensus.serialize(writer)
     }
   }
-
   // announce
   export class NewBlockHeight {
     public static readonly code = 0x12
@@ -79,6 +78,22 @@ export namespace Message {
     }
     public serialize (writer: BufferWriter) {
       UInt64.serialize(this.height, writer)
+    }
+  }
+  // consensus broadcast
+  export class NewConsensusMessage implements Serializable {
+    public static readonly code = 0x13
+    public readonly code = NewConsensusMessage.code
+    public readonly type = Type.Event
+    constructor (
+      public readonly message: ConsensusMessage
+    ) { }
+    public static deserialize (reader: BufferReader): NewConsensusMessage {
+      const message = ConsensusMessage.deserialize(reader)
+      return new NewConsensusMessage(message)
+    }
+    public serialize (writer: BufferWriter) {
+      this.message.serialize(writer)
     }
   }
 
@@ -198,6 +213,7 @@ export namespace Message {
       case NewTransaction.code: return NewTransaction.deserialize(reader)
       case NewBlock.code: return NewBlock.deserialize(reader)
       case NewBlockHeight.code: return NewBlockHeight.deserialize(reader)
+      case NewConsensusMessage.code: return NewConsensusMessage.deserialize(reader)
       case GetConsentedHeader.code: return GetConsentedHeader.deserialize(reader)
       case ConsentedHeader.code: return ConsentedHeader.deserialize(reader)
       case GetHeaders.code: return GetHeaders.deserialize(reader)
