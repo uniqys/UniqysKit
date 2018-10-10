@@ -41,19 +41,19 @@ export class BlockStore {
   public async getLastConsensus (): Promise<Consensus> {
     return (await this.store.get(Key.consensus)).match(
       v => Promise.resolve(deserialize(v, Consensus.deserialize)),
-      () => Promise.reject(new Error('not found'))
+      () => Promise.reject(new Error('not found lastConsensus'))
     )
   }
   public async getHeader (height: number): Promise<BlockHeader> {
     return (await this.store.get(Key.header(height))).match(
       v => Promise.resolve(deserialize(v, BlockHeader.deserialize)),
-      () => Promise.reject(new Error('not found'))
+      () => Promise.reject(new Error(`not found header(${height})`))
     )
   }
   public async getBody (height: number): Promise<BlockBody> {
     return (await this.store.get(Key.body(height))).match(
       v => Promise.resolve(deserialize(v, BlockBody.deserialize)),
-      () => Promise.reject(new Error('not found'))
+      () => Promise.reject(new Error(`not found body(${height})`))
     )
   }
 

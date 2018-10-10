@@ -7,8 +7,6 @@ export class BlockHeader implements Hashable, Serializable {
   public readonly hash: Hash
 
   constructor (
-    // TODO: consensus round in header
-    // public readonly round: number,
     public readonly height: number,
     public readonly timestamp: number,
     public readonly lastBlockHash: Hash,

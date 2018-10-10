@@ -3,7 +3,7 @@ import { InMemoryStore } from '@uniqys/store'
 import { Block } from './block'
 import { Hash } from '@uniqys/signature'
 import { TransactionList } from './transaction'
-import { ValidatorSet, Consensus } from './consensus'
+import { ValidatorSet, Consensus, Vote } from './consensus'
 import { promisify } from 'util'
 
 describe('block store', () => {
@@ -11,7 +11,7 @@ describe('block store', () => {
   let store: BlockStore
   beforeAll(() => {
     block = Block.construct(1, 100, Hash.fromData('genesis'), Hash.fromData('state'),
-        new TransactionList([]), new Consensus([]), new ValidatorSet([]))
+        new TransactionList([]), new Consensus(new Vote(0, 1, Hash.fromData('genesis')), []), new ValidatorSet([]))
   })
   beforeEach(() => {
     store = new BlockStore(new InMemoryStore())
