@@ -1,11 +1,11 @@
-import { SyncProtocol } from '@uniqys/p2p-network'
+import { Protocol } from '@uniqys/protocol'
 import { Mutex } from '@uniqys/lock'
 
 export class RemoteNode {
   private readonly mutex = new Mutex()
   constructor (
     public readonly peerId: string,
-    public readonly syncProtocol: SyncProtocol,
+    public readonly protocol: Protocol,
     public height: number
   ) { }
 

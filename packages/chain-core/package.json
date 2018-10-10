@@ -26,6 +26,7 @@
     "@uniqys/lock": "^0.0.4",
     "@uniqys/p2p-network": "^0.0.4",
     "@uniqys/priority-queue": "^0.0.4",
+    "@uniqys/protocol": "^0.0.4",
     "@uniqys/signature": "^0.0.4",
     "debug": "^3.1.0"
   },

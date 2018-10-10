@@ -1,5 +1,5 @@
 import { RemoteNode, RemoteNodeSet } from './remote-node'
-import { SyncProtocol } from '@uniqys/p2p-network'
+import { Protocol } from '@uniqys/protocol'
 import { promisify } from 'util'
 
 expect.extend({
@@ -24,7 +24,7 @@ declare global {
 
 describe('remote node', () => {
   it('can lock for use', (done) => {
-    const node = new RemoteNode('peer1', {} as SyncProtocol, 0)
+    const node = new RemoteNode('peer1', {} as Protocol, 0)
     node.use(async () => {
       await promisify(setTimeout)(50)
     }).then(() => {
@@ -40,9 +40,9 @@ describe('remote node set', () => {
   let node2: RemoteNode
   let node3: RemoteNode
   beforeEach(() => {
-    node1 = new RemoteNode('peer1', {} as SyncProtocol, 0)
-    node2 = new RemoteNode('peer2', {} as SyncProtocol, 2)
-    node3 = new RemoteNode('peer3', {} as SyncProtocol, 1)
+    node1 = new RemoteNode('peer1', {} as Protocol, 0)
+    node2 = new RemoteNode('peer2', {} as Protocol, 2)
+    node3 = new RemoteNode('peer3', {} as Protocol, 1)
   })
   it('is set of remote nodes', () => {
     const set = new RemoteNodeSet()

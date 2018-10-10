@@ -2,7 +2,7 @@ import { Blockchain, Block, BlockHeader, Consensus, ValidatorSet } from '@uniqys
 import { RemoteNode, RemoteNodeSet } from './remote-node'
 import { AsyncLoop } from '@uniqys/async-loop'
 import { EventEmitter } from 'events'
-import { Message } from '@uniqys/p2p-network'
+import { Message } from '@uniqys/protocol'
 import { PriorityQueue } from '@uniqys/priority-queue'
 import { Mutex } from '@uniqys/lock'
 import debug from 'debug'
@@ -16,6 +16,7 @@ export interface SynchronizerOptions {
   maxFetchHeaders: number // count
   maxFetchBodies: number // count
   maxPendingGap: number // height
+  propagateRateExponent: number // count ^ R
   // TODO: DoS protection
   // pendingBlocksLimit: number
   // fetchSchedulesLimit: number
@@ -32,13 +33,14 @@ export namespace SynchronizerOptions {
     // trustConsensusPeriod: 86400, // 1day: according to stake withdraw wait,
     maxFetchHeaders: 1000,
     maxFetchBodies: 100,
-    maxPendingGap: 50
+    maxPendingGap: 50,
+    propagateRateExponent: 0.5
   }
 }
 
 export class Synchronizer {
   private readonly options: SynchronizerOptions
-  private readonly blockQueue = new PriorityQueue<{block: Block, consensus: Consensus, from: RemoteNode}>()
+  private readonly blockQueue = new PriorityQueue<{block: Block, consensus: Consensus, from?: RemoteNode}>()
   private readonly fetchSchedule = new Map<number, NodeJS.Timer>()
   private readonly chainingLoop = new AsyncLoop(() => this.chainPendingBlock())
   private readonly catchUpMutex = new Mutex()
@@ -48,7 +50,6 @@ export class Synchronizer {
     private readonly blockchain: Blockchain,
     private readonly remoteNode: RemoteNodeSet,
     private readonly dropRemoteNode: (node: RemoteNode) => void,
-    private readonly propagateBlock: (block: Block, consensus: Consensus) => void,
     options?: Partial<SynchronizerOptions>
   ) {
     this.options = Object.assign({}, SynchronizerOptions.defaults, options)
@@ -81,6 +82,10 @@ export class Synchronizer {
     this.enqueueNewBlock(message.block, message.consensus, from).catch(err => this.event.emit('error', err))
   }
 
+  public newBlockFromLocal (block: Block, consensus: Consensus) {
+    this.enqueueNewBlock(block, consensus).catch(err => this.event.emit('error', err))
+  }
+
   public newNode () {
     this.catchUp()
   }
@@ -94,14 +99,14 @@ export class Synchronizer {
     }, this.options.waitForFetch))
   }
 
-  private async enqueueNewBlock (block: Block, consensus: Consensus, from: RemoteNode) {
+  private async enqueueNewBlock (block: Block, consensus: Consensus, from?: RemoteNode) {
     const knownHeight = await this.blockchain.height
     const height = block.header.height
     if (height <= knownHeight || (height - knownHeight) > this.options.maxPendingGap) { return }
     this.enqueueBlock(block, consensus, from)
   }
 
-  private enqueueBlock (block: Block, consensus: Consensus, from: RemoteNode) {
+  private enqueueBlock (block: Block, consensus: Consensus, from?: RemoteNode) {
     this.blockQueue.enqueue(block.header.height, { block, consensus, from })
   }
 
@@ -113,8 +118,8 @@ export class Synchronizer {
       const leader = _provider
       try {
         await leader.use(async () => {
-          const consented = await leader.syncProtocol.fetchConsentedHeader(new Message.GetConsentedHeader(height))
-          const body = (await leader.syncProtocol.fetchBodies(new Message.GetBodies(height, 1))).bodies[0]
+          const consented = await leader.protocol.fetchConsentedHeader(new Message.GetConsentedHeader(height))
+          const body = (await leader.protocol.fetchBodies(new Message.GetBodies(height, 1))).bodies[0]
           this.enqueueBlock(new Block(consented.header, body), consented.consensus, leader)
         })
         return
@@ -170,9 +175,9 @@ export class Synchronizer {
     //  this.catchUpValidatorSet(best)
     // }
     return best.use(async () => {
-      const consented = await best.syncProtocol.fetchConsentedHeader(new Message.GetConsentedHeader(best.height))
+      const consented = await best.protocol.fetchConsentedHeader(new Message.GetConsentedHeader(best.height))
       try {
-        consented.consensus.validate(consented.header.hash, await this.trustedValidatorSet())
+        consented.consensus.validate(consented.header.hash, this.blockchain.genesisBlock.hash, await this.trustedValidatorSet())
       } catch (err) {
         this.dropRemoteNode(best)
         throw err
@@ -191,7 +196,7 @@ export class Synchronizer {
         if (last.height <= unknown) { break }
         const from = Math.max(last.height - this.options.maxFetchHeaders, unknown)
         const count = last.height - from
-        const msg = await provider.syncProtocol.fetchHeaders(new Message.GetHeaders(from, count))
+        const msg = await provider.protocol.fetchHeaders(new Message.GetHeaders(from, count))
         const headers = msg.headers.reverse() // backward
         for (const header of headers) {
           if (header.height + 1 !== last.height || !header.hash.equals(last.lastBlockHash)) {
@@ -233,7 +238,7 @@ export class Synchronizer {
         provider.use(async () => {
           const from = job.value.from
           const count = job.value.to - job.value.from + 1
-          const msg = await provider.syncProtocol.fetchBodies(new Message.GetBodies(from, count))
+          const msg = await provider.protocol.fetchBodies(new Message.GetBodies(from, count))
           for (let i = 0; i < count; i++) {
             const header = await this.blockchain.blockStore.getHeader(from + i)
             const body = msg.bodies[i]
@@ -270,7 +275,7 @@ export class Synchronizer {
     })
   }
 
-  private async chainPendingBlock (): Promise < void > {
+  private async chainPendingBlock (): Promise<void> {
     const pendingOrUndef = this.blockQueue.dequeueValue()
     if (pendingOrUndef) {
       const pending = pendingOrUndef
@@ -281,7 +286,7 @@ export class Synchronizer {
         if (height > knownHeight) {
           if (height === knownHeight + 1) {
             pending.block.validate()
-            pending.consensus.validate(pending.block.hash, await this.trustedValidatorSet())
+            pending.consensus.validate(pending.block.hash, this.blockchain.genesisBlock.hash, await this.trustedValidatorSet())
             // take lock and recheck height
             await this.blockchain.blockStore.mutex.use(async () => {
               const knownHeight = await this.blockchain.height
@@ -295,8 +300,13 @@ export class Synchronizer {
                 await this.blockchain.blockStore.setLastConsensus(pending.consensus)
               }
             })
-            this.propagateBlock(pending.block, pending.consensus)
+            if (pending.from) {
+              logger('chain block(%d) from remote: %s', pending.block.header.height, pending.from.peerId)
+            } else {
+              logger('chain block(%d) from local', pending.block.header.height)
+            }
             this.resetCatchUpTimer()
+            await this.propagateBlock(pending.block, pending.consensus)
           } else {
             // re-enqueue
             this.enqueueBlock(pending.block, pending.consensus, pending.from)
@@ -304,16 +314,32 @@ export class Synchronizer {
         }
       // TODO: catch peer caused exception only
       } catch (err) {
-        logger('pending block connection failed: %s', err.message)
-        this.dropRemoteNode(pending.from)
+        if (pending.from) {
+          logger('failed to chain the pending block from remote: %s', err.message)
+          this.dropRemoteNode(pending.from)
+        } else {
+          logger('failed to chain the pending block from local: %s', err.message)
+          throw new Error('failed to chain from local')
+        }
       }
     }
   }
 
-  private async trustedValidatorSet (): Promise < ValidatorSet > {
+  private async propagateBlock (block: Block, consensus: Consensus): Promise<void> {
+    const height = block.header.height
+    logger('propagate block (%d)', height)
+    const newBlockMsg = new Message.NewBlock(block, consensus)
+    const newBlockHeightMsg = new Message.NewBlockHeight(height)
+    await Promise.all(this.remoteNode.pickBlockReceivers(height, this.options.propagateRateExponent)
+      .map(node => node.protocol.sendNewBlock(newBlockMsg)))
+    await Promise.all(this.remoteNode.pickBlockReceivers(height)
+      .map(node => node.protocol.sendNewBlockHeight(newBlockHeightMsg)))
+  }
+
+  private async trustedValidatorSet (): Promise<ValidatorSet> {
     if (this.options.dynamicValidatorSet) {
       // dynamic
-      const last = await this.blockchain.blockOf(await this.blockchain.height)
+      const last = await this.blockchain.blockOf(Math.max(await this.blockchain.height, 1))
       if ((Math.floor((new Date().getTime()) / 1000) - last.header.timestamp) >= this.options.trustConsensusPeriod) {
         throw new Error('can\'t trust last validator set')
       }
