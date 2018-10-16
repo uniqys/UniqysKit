@@ -1,13 +1,11 @@
 import { Config } from '@uniqys/config-validator'
 import { Address, Hash } from '@uniqys/signature'
-import { Block } from '../block'
-import { TransactionList } from '../transaction'
-import { Consensus, ValidatorSet, Validator } from '../consensus'
+import { Block, TransactionList, Consensus, ValidatorSet, Validator } from '@uniqys/blockchain'
 
 import { GenesisSchema } from './genesis-schema'
 
 export class GenesisConfig extends Config<GenesisSchema> {
-  constructor () { super(require('./genesis-schema.json')) }
+  constructor () { super(require('./schema/genesis-schema.json')) }
 
   private asBlock (config: GenesisSchema): Block {
     return Block.construct(

@@ -17,7 +17,7 @@
 
       <section>
         <h2>Your account</h2>
-        <p>These are your address and token's balance.</p>
+        <p>These are your addresses and token balances.</p>
 
         <dl class="row">
           <dt class="col-sm-2">Address</dt>
@@ -29,7 +29,7 @@
 
       <section>
         <h2>Post a message</h2>
-        <p>Let's try post a message to timeline.</p>
+        <p>Let's try posting a message to the timeline.</p>
 
         <form>
           <div class="form-group row">
@@ -55,23 +55,23 @@
           </div>
         </form>
         <div v-if="resolves.postMessage" class="alert alert-success" role="alert">
-          Post successful! (id: {{resolves.postMessage.id}}, content: {{resolves.postMessage.content}})
+          Success! Your post has been sent successfully. (id: {{resolves.postMessage.id}}, content: {{resolves.postMessage.content}})
         </div>
         <div v-else-if="rejects.postMessage" class="alert alert-danger" role="alert">
-          Post failed! {{rejects.postMessage}}
+          Failed. Something went wrong. {{rejects.postMessage}}
         </div>
       </section>
 
       <section>
         <h2>Messages Timeline</h2>
-        <p>In this Timeline, display all messages recorded in blockchain.</p>
-        <p>You can send token to other addresses.</p>
+        <p>This Timeline displays all the messages recorded in the blockchain.</p>
+        <p>You can send tokens to other addresses.</p>
 
         <div v-if="resolves.sendToken" class="alert alert-success" role="alert">
-          Token send successful!
+          Success! Your token has been sent successfully.
         </div>
         <div v-else-if="rejects.sendToken" class="alert alert-danger" role="alert">
-          Token send failed! {{rejects.sendToken}}
+          Failed. Something went wrong. {{rejects.sendToken}}
         </div>
         <div v-if="messages && messages.length">
           <div class="list-group">

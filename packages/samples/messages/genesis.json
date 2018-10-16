@@ -1,0 +1,10 @@
+{
+  "unique": "test genesis string",
+  "timestamp": 1539597442,
+  "validatorSet": [
+    {
+      "address": "74b3c2f288d40615301a0f0fd85107979d40aec2",
+      "power": 1
+    }
+  ]
+}

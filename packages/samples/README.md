@@ -3,9 +3,9 @@
 :warning: You need to build before running any sample.
 
 ```sh
-$ npm install
-$ npm run bootstrap
-$ npm run build
+npm install
+npm run bootstrap
+npm run build
 ```
 
 This is a sample directory of Uniqys Kit.
@@ -19,8 +19,16 @@ You get a token every time you post a message.
 Tokens you received are transferrable to other accounts.
 
 ```sh
-$ cd packages/samples/messages
-$ npm start
+cd packages/samples/messages
+npx uniqys init -u 'your unique string'
+npx uniqys start
 ```
 
-and open `http://localhost:8080` in your browser.
+and with a new terminal window,
+
+```sh
+# start app
+npm start
+```
+
+Finally, open `http://localhost:8080` in your browser.
