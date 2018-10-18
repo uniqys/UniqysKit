@@ -4,10 +4,10 @@ import { Network, NetworkOptions } from '@uniqys/p2p-network'
 import { KeyPair } from '@uniqys/signature'
 import { Protocol, ProtocolMeta, Message } from '@uniqys/protocol'
 import { RemoteNodeSet, RemoteNode } from './remote-node'
-import { Synchronizer } from './synchronizer'
-import { TransactionPool } from './transaction-pool'
 import { Executor } from './executor'
-import { ConsensusEngine } from './consensus-engine'
+import { Synchronizer, SynchronizerOptions } from './synchronizer'
+import { TransactionPool, TransactionPoolOptions } from './transaction-pool'
+import { ConsensusEngine, ConsensusOptions } from './consensus-engine'
 import { Responder } from './responder'
 import { EventEmitter } from 'events'
 import PeerInfo from 'peer-info'
@@ -15,26 +15,40 @@ import PeerId from 'peer-id'
 import debug from 'debug'
 const logger = debug('chain-core:node')
 
-export interface NodeOptions extends NetworkOptions {
+export interface NodeNetworkOptions extends NetworkOptions {
   handshakeTimeout: number
 }
-export namespace NodeOptions {
-  export const defaults: NodeOptions = Object.assign({
+export namespace NodeNetworkOptions {
+  export const defaults: NodeNetworkOptions = Object.assign({
     handshakeTimeout: 1000
   }, NetworkOptions.defaults)
+}
+export interface NodeOptions {
+  network: Partial<NodeNetworkOptions>
+  synchronizer: Partial<SynchronizerOptions>,
+  transactionPool: Partial<TransactionPoolOptions>,
+  consensus: Partial<ConsensusOptions>
+}
+export namespace NodeOptions {
+  export const defaults: NodeOptions = {
+    network: {},
+    synchronizer: {},
+    transactionPool: {},
+    consensus: {}
+  }
 }
 
 export class Node implements dapi.Core {
   public readonly blockchain: Blockchain
-  private readonly transactionPool: TransactionPool
-  private readonly synchronizer: Synchronizer
   private readonly executor: Executor
+  private readonly synchronizer: Synchronizer
+  private readonly transactionPool: TransactionPool
   private readonly consensusEngine: ConsensusEngine
   private readonly event = new EventEmitter()
   private readonly dapp: dapi.Dapp
   private readonly network: Network
   private readonly remoteNode = new RemoteNodeSet()
-  private readonly options: NodeOptions
+  private readonly networkOptions: NodeNetworkOptions
   private readonly responder: Responder
 
   constructor (
@@ -46,7 +60,8 @@ export class Node implements dapi.Core {
   ) {
     this.dapp = dapp
     this.blockchain = blockchain
-    this.options = Object.assign({}, NodeOptions.defaults, options)
+    const nodeOptions = Object.assign({}, NodeOptions.defaults, options)
+    this.networkOptions = Object.assign({}, NodeNetworkOptions.defaults, nodeOptions.network)
 
     this.executor = new Executor(this.blockchain, this.dapp)
     this.executor.onExecuted((_height, txs) => {
@@ -58,14 +73,16 @@ export class Node implements dapi.Core {
     this.synchronizer = new Synchronizer(
       this.blockchain,
       this.remoteNode,
-      (node) => this.dropRemoteNode(node)
+      (node) => this.dropRemoteNode(node),
+      nodeOptions.synchronizer
     )
     this.synchronizer.onError(err => this.event.emit('error', err))
 
     this.transactionPool = new TransactionPool(
       this.remoteNode,
       (tx) => this.dapp.validateTransaction(tx),
-      (txs) => this.dapp.selectTransactions(txs)
+      (txs) => this.dapp.selectTransactions(txs),
+      nodeOptions.transactionPool
     )
 
     this.consensusEngine = new ConsensusEngine(
@@ -74,11 +91,12 @@ export class Node implements dapi.Core {
       this.transactionPool,
       this.synchronizer,
       this.executor,
-      keyPair
+      keyPair,
+      nodeOptions.consensus
     )
     this.consensusEngine.onError(err => this.event.emit('error', err))
 
-    this.network = new Network(peerInfo, this.options)
+    this.network = new Network(peerInfo, this.networkOptions)
     this.network.onError(err => {
       if (err.message === 'underlying socket has been closed') { return } // TODO: OK?
       this.event.emit('error', err)
@@ -151,7 +169,7 @@ export class Node implements dapi.Core {
         logger('handshake timeout %s', protocol.peerId)
         this.dropPeer(protocol.peerId)
       }
-    }, this.options.handshakeTimeout)
+    }, this.networkOptions.handshakeTimeout)
   }
 
   private hello (msg: Message.Hello, protocol: Protocol): void {

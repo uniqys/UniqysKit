@@ -1,146 +1,27 @@
-import { Block, Blockchain, TransactionList, Transaction, Consensus, Vote, ConsensusMessage, Proposal, ValidatorSet } from '@uniqys/blockchain'
-import { KeyPair, Address, Hash } from '@uniqys/signature'
+import { Blockchain, Block, TransactionList, Transaction, Consensus, ConsensusMessage, Proposal, Vote } from '@uniqys/blockchain'
+import { KeyPair, Hash } from '@uniqys/signature'
 import { Optional } from '@uniqys/types'
 import { AsyncLoop } from '@uniqys/async-loop'
-import { ReadWriteLock } from '@uniqys/lock'
 import { Message } from '@uniqys/protocol'
-import { RemoteNodeSet, RemoteNode } from './remote-node'
-import { TransactionPool } from './transaction-pool'
-import { Synchronizer } from './synchronizer'
-import { Executor } from './executor'
+import { RemoteNodeSet, RemoteNode } from '../remote-node'
+import { TransactionPool } from '../transaction-pool'
+import { Synchronizer } from '../synchronizer'
+import { Executor } from '../executor'
+import { State, RoundState, VoteSet, Step } from './state'
 import { EventEmitter } from 'events'
 import debug from 'debug'
+import { TimeoutOptions, ConsensusTimeout } from './timeout'
 const logger = debug('chain-core:consensus')
 
-export interface ConsensusOptions {
-  proposeTimeout: number,
-  proposeTimeoutIncreaseRate: number,
-  prevoteTimeout: number,
-  prevoteTimeoutIncreaseRate: number,
-  precommitTimeout: number,
-  precommitTimeoutIncreaseRate: number
+export interface ConsensusOptions extends TimeoutOptions {
 }
 export namespace ConsensusOptions {
-  export const defaults: ConsensusOptions = {
-    proposeTimeout: 3000,
-    proposeTimeoutIncreaseRate: 1.2,
-    prevoteTimeout: 1000,
-    prevoteTimeoutIncreaseRate: 1.2,
-    precommitTimeout: 1000,
-    precommitTimeoutIncreaseRate: 1.2
-  }
-}
-enum Step { NewRound, Propose, Prevote, PrevoteWait, Precommit, PrecommitWait, Committed }
-class VoteSet<T extends (ConsensusMessage.PrevoteMessage | ConsensusMessage.PrecommitMessage)> {
-  private power = 0
-  private readonly powerOfBlock = new Map<string, number>() // vote power for the block
-  private readonly messageOfValidator = new Map<string, T>() // vote message from validator
-  private _twoThirdsMajority = Optional.none<Vote>()
-  public get twoThirdsMajority () { return this._twoThirdsMajority }
-  private _twoThirdsAny = false
-  public get twoThirdsAny () { return this._twoThirdsAny }
-  private _oneThirdAny = false
-  public get oneThirdAny () { return this._oneThirdAny }
-  constructor (
-    private readonly validatorSet: ValidatorSet
-  ) { }
-
-  public add (address: Address, message: T) {
-    const validator = address.toString()
-    if (this.messageOfValidator.has(validator)) throw new Error('duplicated vote message')
-    this.messageOfValidator.set(validator, message)
-
-    const votePower = this.validatorSet.powerOf(address)
-    const block = message.vote.blockHash.toHexString()
-    const blockPower = (this.powerOfBlock.get(block) || 0) + votePower
-    this.powerOfBlock.set(block, blockPower)
-    const totalPower = this.power + votePower
-    this.power = totalPower
-
-    if (this.twoThirdsMajority.isNone() && (blockPower * 3 > this.validatorSet.totalPower * 2)) {
-      this._twoThirdsMajority = Optional.some(message.vote)
-    }
-    if (this.twoThirdsAny === false && (totalPower * 3 > this.validatorSet.totalPower * 2)) {
-      this._twoThirdsAny = true
-    }
-    if (this.oneThirdAny === false && (totalPower * 3 > this.validatorSet.totalPower)) {
-      this._oneThirdAny = true
-    }
-  }
-
-  public has (address: Address) {
-    const validator = address.toString()
-    return this.messageOfValidator.has(validator)
-  }
-
-  public signatures (blockHash: Hash) {
-    return Array.from(this.messageOfValidator.values())
-      .filter(msg => msg.vote.blockHash.equals(blockHash))
-      .map(msg => msg.sign)
-  }
-
-  public messages () {
-    return this.messageOfValidator.values()
-  }
-}
-class RoundState {
-  public proposal?: ConsensusMessage.ProposalMessage
-  public readonly prevote: VoteSet<ConsensusMessage.PrevoteMessage>
-  public readonly precommit: VoteSet<ConsensusMessage.PrecommitMessage>
-  constructor (
-    validatorSet: ValidatorSet
-  ) {
-    this.prevote = new VoteSet(validatorSet)
-    this.precommit = new VoteSet(validatorSet)
-  }
-}
-class State {
-  public readonly lock = new ReadWriteLock()
-  private _height = 0
-  public get height () { return this._height }
-  private _appStateHash = Hash.zero
-  public get appStateHash () { return this._appStateHash }
-  private _validatorSet = new ValidatorSet([])
-  public get validatorSet () { return this._validatorSet }
-  public lockedRound = 0
-  public lockedBlock?: Block
-  public validRound = 0
-  public validBlock?: Block
-  public round = 1
-  public step = Step.NewRound
-  private roundState = new Map<number, RoundState>()
-  public newHeight (height: number, appStateHash: Hash, validatorSet: ValidatorSet) {
-    this._height = height
-    this._appStateHash = appStateHash
-    this._validatorSet = validatorSet
-    this.lockedRound = 0
-    this.lockedBlock = undefined
-    this.validRound = 0
-    this.validBlock = undefined
-    this.roundState = new Map()
-    this.newRound(1)
-  }
-  public newRound (round: number) {
-    this.round = round
-    this.step = Step.NewRound
-  }
-  public roundStateOf (round: number): RoundState {
-    const roundState = this.roundState.get(round)
-    if (roundState) {
-      return roundState
-    } else {
-      const newRoundState = new RoundState(this.validatorSet)
-      this.roundState.set(round, newRoundState)
-      return newRoundState
-    }
-  }
-  public get currentRoundState () {
-    return this.roundStateOf(this.round)
-  }
+  export const defaults: ConsensusOptions = Object.assign({
+  }, TimeoutOptions.defaults)
 }
 
 export class ConsensusEngine {
-  private options: ConsensusOptions
+  private timeout: ConsensusTimeout
   private consensusLoop = new AsyncLoop(() => this.proceedConsensus())
   private state = new State()
   private readonly event = new EventEmitter()
@@ -154,7 +35,8 @@ export class ConsensusEngine {
     private readonly _keyPair?: KeyPair,
     options?: Partial<ConsensusOptions>
   ) {
-    this.options = Object.assign({}, ConsensusOptions.defaults, options)
+    const consensusOptions = Object.assign({}, ConsensusOptions.defaults, options)
+    this.timeout = new ConsensusTimeout(consensusOptions)
     this.consensusLoop.on('error', err => this.event.emit('error', err))
     this.remoteNode.onNewHeight((node) => this.catchUpState(node))
     this.executor.onExecuted(appState => this.setNewHeight(appState.height + 1, appState.hash))
@@ -175,11 +57,11 @@ export class ConsensusEngine {
     this.setNewHeight(this.executor.lastAppState.height + 1, this.executor.lastAppState.hash)
     this.consensusLoop.start()
   }
-
   public async stop () {
     this.consensusLoop.stop()
   }
 
+  // message handling
   public newConsensusMessage (msg: ConsensusMessage, from: RemoteNode) {
     msg.match(
       proposal => this.handleProposal(proposal, from),
@@ -238,54 +120,7 @@ export class ConsensusEngine {
     this.checkRoundSkip(msg.vote.height, msg.vote.round, precommit)
   }
 
-  private catchUpState (node: RemoteNode) {
-    // send known messages to node which became the same height
-    if (node.consensusHeight === this.state.height) {
-      this.sendRoundState(node, this.state.currentRoundState).catch(err => this.event.emit('error', err))
-    }
-  }
-
-  private async sendRoundState (node: RemoteNode, roundState: RoundState) {
-    if (roundState.proposal) {
-      await node.protocol.sendNewConsensusMessage(new Message.NewConsensusMessage(roundState.proposal))
-    }
-    for (const msg of roundState.prevote.messages()) {
-      await node.protocol.sendNewConsensusMessage(new Message.NewConsensusMessage(msg))
-    }
-    for (const msg of roundState.precommit.messages()) {
-      await node.protocol.sendNewConsensusMessage(new Message.NewConsensusMessage(msg))
-    }
-  }
-
-  private checkValidBlock (height: number, round: number) {
-    this.state.lock.writeLock.use(async () => {
-      if (this.state.height !== height) return
-      if (round <= this.state.validRound) return
-      const majority = this.state.roundStateOf(round).prevote.twoThirdsMajority
-      if (majority.isSome()) {
-        const vote = majority.value
-        const msg = this.state.roundStateOf(round).proposal
-        // +2/3 prevote for block
-        if (msg && vote.blockHash.equals(msg.proposal.block.hash)) {
-          logger('see valid block %s', msg.proposal.block.hash.toHexString())
-          this.state.validRound = round
-          this.state.validBlock = msg.proposal.block
-        }
-      }
-    }).catch(err => this.event.emit('error', err))
-  }
-
-  private checkRoundSkip (height: number, round: number, vote: VoteSet<ConsensusMessage.PrevoteMessage | ConsensusMessage.PrecommitMessage>) {
-    this.state.lock.writeLock.use(async () => {
-      if (this.state.height !== height) return
-      if (round <= this.state.round) return
-      if (vote.oneThirdAny) {
-        logger('skip round %d -> %d', this.state.round, round)
-        this.state.newRound(round)
-      }
-    }).catch(err => this.event.emit('error', err))
-  }
-
+  // main consensus loop
   private async proceedConsensus () {
     await this.state.lock.writeLock.use(async () => {
       switch (this.state.step) {
@@ -305,44 +140,6 @@ export class ConsensusEngine {
           break
       }
     })
-  }
-
-  private async sendProposalMessage (transactions: Transaction[]) {
-    if (!this.isValidator) return
-    const block =
-      this.state.validBlock ? this.state.validBlock :
-      this.state.height === 1 ? this.blockchain.genesisBlock :
-      await (async () => {
-        const lastBlockHash = await this.blockchain.hashOf(this.state.height - 1)
-        const lastBlockConsensus = await this.blockchain.consensusOf(this.state.height - 1)
-        const nextValidatorSet = this.validatorSet // static validator set
-        return Block.construct(
-          this.state.height, Math.floor((new Date().getTime()) / 1000), lastBlockHash,
-          nextValidatorSet.hash, this.state.appStateHash,
-          new TransactionList(transactions), lastBlockConsensus
-        )
-      })()
-
-    const proposal = new Proposal(this.state.height, this.state.round, this.state.validRound, block)
-    const msg = ConsensusMessage.proposal(proposal, this.blockchain.genesisBlock.hash, this.keyPair)
-    logger('propose: (%d, %d) %s', proposal.height, proposal.round, proposal.block.hash.toHexString())
-    this.handleProposal(msg)
-  }
-
-  private async sendPrevoteMessage (blockHash: Optional<Hash>) {
-    if (!this.isValidator) return
-    const vote = new Vote(this.state.height, this.state.round, blockHash.match(hash => hash, () => Hash.zero))
-    const msg = ConsensusMessage.prevote(vote, this.blockchain.genesisBlock.hash, this.keyPair)
-    logger('prevote: (%d, %d) %s', vote.height, vote.round, vote.blockHash.toHexString())
-    this.handlePrevote(msg)
-  }
-
-  private async sendPrecommitMessage (blockHash: Optional<Hash>) {
-    if (!this.isValidator) return
-    const vote = new Vote(this.state.height, this.state.round, blockHash.match(hash => hash, () => Hash.zero))
-    const msg = ConsensusMessage.precommit(vote, this.blockchain.genesisBlock.hash, this.keyPair)
-    logger('precommit: (%d, %d) %s', vote.height, vote.round, vote.blockHash.toHexString())
-    this.handlePrecommit(msg)
   }
 
   private async doNewRound () {
@@ -387,7 +184,7 @@ export class ConsensusEngine {
           await this.sendPrevoteMessage(Optional.none())
           this.state.step = Step.Prevote
         }
-      }), this.proposeTimeout(round))
+      }), this.timeout.propose(round))
       this.state.step = Step.Propose
     }
   }
@@ -464,7 +261,7 @@ export class ConsensusEngine {
           await this.sendPrecommitMessage(Optional.none())
           this.state.step = Step.Precommit
         }
-      }, this.prevoteTimeout(round))
+      }, this.timeout.prevote(round))
       this.state.step = Step.PrevoteWait
       return
     }
@@ -498,7 +295,7 @@ export class ConsensusEngine {
           logger('precommit timeout')
           this.state.newRound(this.state.round + 1)
         }
-      }, this.precommitTimeout(round))
+      }, this.timeout.precommit(round))
       this.state.step = Step.PrecommitWait
       return
     }
@@ -534,13 +331,99 @@ export class ConsensusEngine {
     logger(`commit block(${block.header.height}): ${block.hash.buffer.toString('hex')}`)
   }
 
+  private catchUpState (node: RemoteNode) {
+    // send known messages to node which became the same height
+    if (node.consensusHeight === this.state.height) {
+      this.sendRoundState(node, this.state.currentRoundState).catch(err => this.event.emit('error', err))
+    }
+  }
+
+  private checkValidBlock (height: number, round: number) {
+    this.state.lock.writeLock.use(async () => {
+      if (this.state.height !== height) return
+      if (round <= this.state.validRound) return
+      const majority = this.state.roundStateOf(round).prevote.twoThirdsMajority
+      if (majority.isSome()) {
+        const vote = majority.value
+        const msg = this.state.roundStateOf(round).proposal
+        // +2/3 prevote for block
+        if (msg && vote.blockHash.equals(msg.proposal.block.hash)) {
+          logger('see valid block %s', msg.proposal.block.hash.toHexString())
+          this.state.validRound = round
+          this.state.validBlock = msg.proposal.block
+        }
+      }
+    }).catch(err => this.event.emit('error', err))
+  }
+
+  private checkRoundSkip (height: number, round: number, vote: VoteSet<ConsensusMessage.VoteMessage>) {
+    this.state.lock.writeLock.use(async () => {
+      if (this.state.height !== height) return
+      if (round <= this.state.round) return
+      if (vote.oneThirdAny) {
+        logger('skip round %d -> %d', this.state.round, round)
+        this.state.newRound(round)
+      }
+    }).catch(err => this.event.emit('error', err))
+  }
+
+  private async sendRoundState (node: RemoteNode, roundState: RoundState) {
+    if (roundState.proposal) {
+      await node.protocol.sendNewConsensusMessage(new Message.NewConsensusMessage(roundState.proposal))
+    }
+    for (const msg of roundState.prevote.messages()) {
+      await node.protocol.sendNewConsensusMessage(new Message.NewConsensusMessage(msg))
+    }
+    for (const msg of roundState.precommit.messages()) {
+      await node.protocol.sendNewConsensusMessage(new Message.NewConsensusMessage(msg))
+    }
+  }
+
+  private async sendProposalMessage (transactions: Transaction[]) {
+    if (!this.isValidator) return
+    const block =
+      this.state.validBlock ? this.state.validBlock :
+      this.state.height === 1 ? this.blockchain.genesisBlock :
+      await (async () => {
+        const lastBlockHash = await this.blockchain.hashOf(this.state.height - 1)
+        const lastBlockConsensus = await this.blockchain.consensusOf(this.state.height - 1)
+        const nextValidatorSet = this.validatorSet // static validator set
+        return Block.construct(
+          this.state.height, Math.floor((new Date().getTime()) / 1000), lastBlockHash,
+          nextValidatorSet.hash, this.state.appStateHash,
+          new TransactionList(transactions), lastBlockConsensus
+        )
+      })()
+
+    const proposal = new Proposal(this.state.height, this.state.round, this.state.validRound, block)
+    const msg = ConsensusMessage.proposal(proposal, this.blockchain.genesisBlock.hash, this.keyPair)
+    logger('propose: (%d, %d) %s', proposal.height, proposal.round, proposal.block.hash.toHexString())
+    this.handleProposal(msg)
+  }
+
+  private async sendPrevoteMessage (blockHash: Optional<Hash>) {
+    if (!this.isValidator) return
+    const vote = new Vote(this.state.height, this.state.round, blockHash.match(hash => hash, () => Hash.zero))
+    const msg = ConsensusMessage.prevote(vote, this.blockchain.genesisBlock.hash, this.keyPair)
+    logger('prevote: (%d, %d) %s', vote.height, vote.round, vote.blockHash.toHexString())
+    this.handlePrevote(msg)
+  }
+
+  private async sendPrecommitMessage (blockHash: Optional<Hash>) {
+    if (!this.isValidator) return
+    const vote = new Vote(this.state.height, this.state.round, blockHash.match(hash => hash, () => Hash.zero))
+    const msg = ConsensusMessage.precommit(vote, this.blockchain.genesisBlock.hash, this.keyPair)
+    logger('precommit: (%d, %d) %s', vote.height, vote.round, vote.blockHash.toHexString())
+    this.handlePrecommit(msg)
+  }
+
   private gossip (msg: ConsensusMessage) {
     Promise.all(this.remoteNode.pickConsensusReceivers(msg.match(p => p.proposal.height, v => v.vote.height, c => c.vote.height))
       .map(node => node.protocol.sendNewConsensusMessage(new Message.NewConsensusMessage(msg))))
       .catch(err => this.event.emit('error', err))
   }
 
-  private setTimeout (task: () => Promise < void > , ms: number) {
+  private setTimeout (task: () => Promise<void> , ms: number) {
     setTimeout(() => task().catch(err => this.event.emit('error', err)), ms)
   }
 
@@ -553,17 +436,5 @@ export class ConsensusEngine {
 
   private get validatorSet () {
     return this.blockchain.initialValidatorSet
-  }
-
-  private proposeTimeout (round: number) {
-    return this.options.proposeTimeout * Math.pow(this.options.proposeTimeoutIncreaseRate, round)
-  }
-
-  private prevoteTimeout (round: number) {
-    return this.options.prevoteTimeout * Math.pow(this.options.prevoteTimeoutIncreaseRate, round)
-  }
-
-  private precommitTimeout (round: number) {
-    return this.options.precommitTimeout * Math.pow(this.options.precommitTimeoutIncreaseRate, round)
   }
 }

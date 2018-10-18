@@ -176,6 +176,7 @@ export namespace ConsensusMessage {
       return Hash.fromData(writer.buffer)
     }
   }
+  export type VoteMessage = PrevoteMessage | PrecommitMessage
 
   export function proposal (proposal: Proposal, genesis: Hash, signer: Signer): ProposalMessage {
     return new ProposalMessage(proposal, signer.sign(ProposalMessage.digest(proposal, genesis)))
