@@ -57,7 +57,7 @@ async function start () {
   )
 
   // start all
-  for (let i = 0; i < validators.length; i++) {
+  for (let i = 0; i < validators.length - 1; i++) {
     const offset = i * 10
     const port: Port = { gateway: 8080 + offset, app: 56000 + offset, api: 56001 + offset, memcached: 56002 + offset }
     startApp(port)

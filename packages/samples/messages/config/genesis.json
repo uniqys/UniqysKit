@@ -1,0 +1,10 @@
+{
+  "unique": "my first block",
+  "timestamp": 1537927733,
+  "validatorSet": [
+    {
+      "address": "b8632244f6bcc5370caeabe73c331c3b9b4d1f9b",
+      "power": 1
+    }
+  ]
+}

@@ -5,8 +5,7 @@
   "author": "Uniqys Project (https://uniqys.net)",
   "private": true,
   "scripts": {
-    "start": "ts-node server/src/serve-validator.ts",
-    "node": "ts-node server/src/serve-node.ts",
+    "start": "ts-node server/src/serve.ts",
     "network": "ts-node server/src/serve-network.ts",
     "client-cli": "ts-node server/src/client.ts",
     "lint": "tslint -c tslint.json -p tsconfig.json",
@@ -24,6 +23,7 @@
     "@uniqys/easy-types": "^0.0.4",
     "@uniqys/signature": "^0.0.4",
     "@uniqys/store": "^0.0.4",
+    "@uniqys/cli": "^0.0.4",
     "axios": "^0.18.0",
     "debug": "^3.1.0",
     "koa": "^2.5.2",
@@ -37,7 +37,7 @@
     "vue": "^2.5.16",
     "vue-loader": "v14.2.2",
     "vue-template-compiler": "^2.5.16",
-    "yargs": "^12.0.1"
+    "yargs": "^12.0.2"
   },
   "devDependencies": {
     "@types/debug": "0.0.30",
@@ -48,7 +48,7 @@
     "@types/koa-static": "^4.0.0",
     "@types/memcached": "^2.2.5",
     "@types/node": "^10.9.4",
-    "@types/yargs": "^11.1.0",
+    "@types/yargs": "^11.1.2",
     "@uniqys/type-definitions": "^0.0.4",
     "npm-run-all": "^4.1.3",
     "ts-node": "^7.0.0",

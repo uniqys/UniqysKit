@@ -8,6 +8,14 @@
     "privateKey": {
       "description": "Hexadecimal plain private key. Must keep it in secure",
       "type": "string"
+    },
+    "publicKey": {
+      "description": "Public key which pairs with private key. This will not be used in the program and can be ignored.",
+      "type": "string"
+    },
+    "address": {
+      "description": "Hexadecimal address generated from public key. This will not be used in the program and can be ignored.",
+      "type": "string"
     }
   }
 }

@@ -1,0 +1,39 @@
+{
+  "name": "@uniqys/cli",
+  "version": "0.0.4",
+  "description": "Uniqys Command Line Tool",
+  "author": "Uniqys Project (https://uniqys.net)",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "/dist"
+  ],
+  "bin": {
+    "uniqys": "./dist/cli.js"
+  },
+  "scripts": {
+    "prebuild": "run-for-every-file --src ./src/config/schema/ --file '*.json' --run 'json2ts ./src/config/schema/{{file-name}}.json ./src/config/{{file-name}}.d.ts'",
+    "build": "run-s build:ts build:copy",
+    "build:ts": "tsc -p tsconfig.build.json",
+    "build:copy": "mkdir -p ./dist/config/schema && run-for-every-file --src ./src/config/schema/ --file '*.json' --run 'cp ./src/config/schema/{{file-name}}.json ./dist/config/schema/'",
+    "lint": "tslint -c tslint.json -p tsconfig.json"
+  },
+  "dependencies": {
+    "@uniqys/blockchain": "^0.0.4",
+    "@uniqys/chain-core-dev": "^0.0.4",
+    "@uniqys/config-validator": "^0.0.4",
+    "@uniqys/easy-framework": "^0.0.4",
+    "@uniqys/signature": "^0.0.4",
+    "@uniqys/store": "^0.0.4",
+    "yargs": "^12.0.2"
+  },
+  "devDependencies": {
+    "@types/yargs": "^11.1.2",
+    "@uniqys/type-definitions": "^0.0.4",
+    "json-schema-to-typescript": "^5.5.0",
+    "memdown": "^3.0.0",
+    "run-for-every-file": "^1.1.0"
+  }
+}

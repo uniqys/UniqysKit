@@ -1,13 +1,11 @@
 import { Config } from '@uniqys/config-validator'
 import { Address, Hash } from '@uniqys/signature'
-import { Block } from '../block'
-import { TransactionList } from '../transaction'
-import { Consensus, ValidatorSet, Validator, Vote } from '../consensus'
+import { Block, TransactionList, Consensus, ValidatorSet, Validator, Vote } from '@uniqys/blockchain'
 
 import { GenesisSchema } from './genesis-schema'
 
 export class GenesisConfig extends Config<GenesisSchema> {
-  constructor () { super(require('./genesis-schema.json')) }
+  constructor () { super(require('./schema/genesis-schema.json')) }
 
   private asBlockAndValidatorSet (config: GenesisSchema): [Block, ValidatorSet] {
     const zeroHash = Hash.fromData(config.unique)
@@ -20,7 +18,7 @@ export class GenesisConfig extends Config<GenesisSchema> {
         validatorSet.hash,
         new Hash(Buffer.alloc(32)),
         new TransactionList([]),
-        new Consensus(new Vote(0, 1, zeroHash), []) // TODO: round = 1, OK?
+        new Consensus(new Vote(0, 1, zeroHash), [])
       ),
       validatorSet
     ]
