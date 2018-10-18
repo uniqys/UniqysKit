@@ -7,7 +7,7 @@
   "scripts": {
     "start": "ts-node server/src/serve-validator.ts",
     "node": "ts-node server/src/serve-node.ts",
-    "network": "run-p start node",
+    "network": "ts-node server/src/serve-network.ts",
     "client-cli": "ts-node server/src/client.ts",
     "lint": "tslint -c tslint.json -p tsconfig.json",
     "test": "run-s test:build test:lint",
