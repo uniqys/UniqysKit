@@ -1,7 +1,7 @@
 import { Serializable, UInt64, BufferWriter, BufferReader, serialize } from '@uniqys/serialize'
 import { Hash, Hashable } from '@uniqys/signature'
 import { TransactionList } from './transaction'
-import { Consensus, ValidatorSet } from './consensus'
+import { Consensus } from './consensus'
 
 export class BlockHeader implements Hashable, Serializable {
   public readonly hash: Hash
@@ -47,24 +47,20 @@ export class BlockHeader implements Hashable, Serializable {
 export class BlockBody implements Serializable {
   constructor (
     public readonly transactionList: TransactionList,
-    public readonly lastBlockConsensus: Consensus,
-    public readonly nextValidatorSet: ValidatorSet // TODO: Optional?
+    public readonly lastBlockConsensus: Consensus
   ) { }
   public static deserialize (reader: BufferReader): BlockBody {
     const transactions = TransactionList.deserialize(reader)
     const consensus = Consensus.deserialize(reader)
-    const validatorSet = ValidatorSet.deserialize(reader)
-    return new BlockBody(transactions, consensus, validatorSet)
+    return new BlockBody(transactions, consensus)
   }
   public serialize (writer: BufferWriter) {
     this.transactionList.serialize(writer)
     this.lastBlockConsensus.serialize(writer)
-    this.nextValidatorSet.serialize(writer)
   }
   public validate (header: BlockHeader) {
     if (!header.transactionRoot.equals(this.transactionList.hash)) { throw new Error('invalid transactionRoot') }
     if (!header.lastBlockConsensusRoot.equals(this.lastBlockConsensus.hash)) { throw new Error('invalid lastBlockConsensusHash') }
-    if (!header.nextValidatorSetRoot.equals(this.nextValidatorSet.hash)) { throw new Error('invalid nextValidatorSetRoot') }
   }
 }
 
@@ -80,14 +76,14 @@ export class Block implements Hashable, Serializable {
     height: number,
     timestamp: number,
     lastBlockHash: Hash,
+    nextValidatorSet: Hash,
     appStateHash: Hash,
     transactions: TransactionList,
-    lastBlockConsensus: Consensus,
-    nextValidatorSet: ValidatorSet
+    lastBlockConsensus: Consensus
   ): Block {
-    const body = new BlockBody(transactions, lastBlockConsensus, nextValidatorSet)
+    const body = new BlockBody(transactions, lastBlockConsensus)
     const header = new BlockHeader(height, timestamp, lastBlockHash,
-      body.transactionList.hash, body.lastBlockConsensus.hash, body.nextValidatorSet.hash, appStateHash)
+      body.transactionList.hash, body.lastBlockConsensus.hash, nextValidatorSet, appStateHash)
     return new Block(header, body)
   }
   public static deserialize (reader: BufferReader): Block {

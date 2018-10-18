@@ -22,7 +22,7 @@ export function startApp (port: Port) {
 
 export async function startEasy (port: Port, isValidator: boolean) {
   // load config
-  const genesis = new GenesisConfig().validateAsBlock(require('../../../config/genesis.json'))
+  const [genesis, validators] = new GenesisConfig().validateAsBlockAndValidatorSet(require('../../../config/genesis.json'))
   const keyPair = new KeyConfig().validateAsKeyPair(require('../../../config/validatorKey.json'))
   // state store
   const stateStore = new LevelDownStore(new MemDown())
@@ -30,7 +30,7 @@ export async function startEasy (port: Port, isValidator: boolean) {
   const peerInfo = await promisify(PeerInfo.create)()
   peerInfo.multiaddrs.add('/ip4/0.0.0.0/tcp/0')
   const easy = new Easy(new URL(`http://localhost:${port.app}`), stateStore, (dapp) => {
-    const node = new Node(dapp, new Blockchain(new BlockStore(chainStore), genesis), peerInfo, isValidator ? keyPair : undefined)
+    const node = new Node(dapp, new Blockchain(new BlockStore(chainStore), genesis, validators), peerInfo, isValidator ? keyPair : undefined)
     node.onError(err => console.log(err))
     return node
   })

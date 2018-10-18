@@ -1,5 +1,5 @@
 import { Store } from '@uniqys/store'
-import { Mutex } from '@uniqys/lock'
+import { ReadWriteLock } from '@uniqys/lock'
 import { serialize, deserialize, UInt64 } from '@uniqys/serialize'
 import { BlockHeader, BlockBody } from './block'
 import { Consensus } from './consensus'
@@ -25,7 +25,7 @@ namespace Key {
   }
 }
 export class BlockStore {
-  public readonly mutex = new Mutex()
+  public readonly rwLock = new ReadWriteLock()
   private _height: undefined | number // cache
   constructor (
     private readonly store: Store<Buffer, Buffer>

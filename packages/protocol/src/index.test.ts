@@ -1,6 +1,6 @@
 import { ProtocolHandler, Protocol, Message, ProtocolMeta } from '.'
 import { Channel } from '@uniqys/p2p-network'
-import { Block, TransactionList, Transaction, Consensus, ValidatorSet, Vote, ConsensusMessage, Proposal } from '@uniqys/blockchain'
+import { Block, TransactionList, Transaction, Consensus, Vote, ConsensusMessage, Proposal } from '@uniqys/blockchain'
 import { Hash, KeyPair } from '@uniqys/signature'
 import { Source, Sink } from 'pull-stream'
 import PeerInfo from 'peer-info'
@@ -54,8 +54,8 @@ describe('sync protocol', () => {
     channel1 = new Channel({ source: stream2to1.source, sink: stream1to2.sink }, Message.deserialize, Message.serialize)
     channel2 = new Channel({ source: stream1to2.source, sink: stream2to1.sink }, Message.deserialize, Message.serialize)
     transaction = new Transaction(Buffer.alloc(0))
-    block = Block.construct(1, 100, Hash.fromData('genesis'), Hash.fromData('state'),
-        new TransactionList([]), new Consensus(new Vote(0, 1, Hash.fromData('genesis')), []), new ValidatorSet([]))
+    block = Block.construct(1, 100, Hash.fromData('genesis'), Hash.fromData('validators'), Hash.fromData('state'),
+        new TransactionList([]), new Consensus(new Vote(0, 1, Hash.fromData('genesis')), []))
     consensus = new Consensus(new Vote(1, 1, block.hash), [])
   })
   it('send and receive hello event', (done) => {
@@ -113,10 +113,10 @@ describe('sync protocol', () => {
     const protocol1 = new Protocol('peer1', channel1, makeHandler({
       newConsensusMessage: (msg) => {
         msg.message.match(p => {
-          expect(p.height).toBe(1)
-          expect(p.round).toBe(2)
-          expect(p.lockedRound).toBe(0)
-          expect(p.block.hash.equals(block.hash)).toBeTruthy()
+          expect(p.proposal.height).toBe(1)
+          expect(p.proposal.round).toBe(2)
+          expect(p.proposal.lockedRound).toBe(0)
+          expect(p.proposal.block.hash.equals(block.hash)).toBeTruthy()
         }, _ => { /* */ }, _ => { /* */ })
         expect(msg.message.signerAddress(block.hash).equals(signer.address)).toBeTruthy()
         done()

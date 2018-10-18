@@ -9,20 +9,24 @@ import { GenesisSchema } from './genesis-schema'
 export class GenesisConfig extends Config<GenesisSchema> {
   constructor () { super(require('./genesis-schema.json')) }
 
-  private asBlock (config: GenesisSchema): Block {
+  private asBlockAndValidatorSet (config: GenesisSchema): [Block, ValidatorSet] {
     const zeroHash = Hash.fromData(config.unique)
-    return Block.construct(
-      1,
-      config.timestamp,
-      zeroHash,
-      new Hash(Buffer.alloc(32)),
-      new TransactionList([]),
-      new Consensus(new Vote(0, 1, zeroHash), []), // TODO: round = 1, OK?
-      new ValidatorSet(config.validatorSet.map(v => new Validator(Address.fromString(v.address), v.power)))
-    )
+    const validatorSet = new ValidatorSet(config.validatorSet.map(v => new Validator(Address.fromString(v.address), v.power)))
+    return [
+      Block.construct(
+        1,
+        config.timestamp,
+        zeroHash,
+        validatorSet.hash,
+        new Hash(Buffer.alloc(32)),
+        new TransactionList([]),
+        new Consensus(new Vote(0, 1, zeroHash), []) // TODO: round = 1, OK?
+      ),
+      validatorSet
+    ]
   }
 
-  public validateAsBlock (config: {}): Block {
-    return this.asBlock(this.validate(config))
+  public validateAsBlockAndValidatorSet (config: {}): [Block, ValidatorSet] {
+    return this.asBlockAndValidatorSet(this.validate(config))
   }
 }

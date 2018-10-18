@@ -3,15 +3,14 @@ import { InMemoryStore } from '@uniqys/store'
 import { Block } from './block'
 import { Hash } from '@uniqys/signature'
 import { TransactionList } from './transaction'
-import { ValidatorSet, Consensus, Vote } from './consensus'
-import { promisify } from 'util'
+import { Consensus, Vote } from './consensus'
 
 describe('block store', () => {
   let block: Block
   let store: BlockStore
   beforeAll(() => {
-    block = Block.construct(1, 100, Hash.fromData('genesis'), Hash.fromData('state'),
-        new TransactionList([]), new Consensus(new Vote(0, 1, Hash.fromData('genesis')), []), new ValidatorSet([]))
+    block = Block.construct(1, 100, Hash.fromData('genesis'), Hash.fromData('validators'), Hash.fromData('state'),
+        new TransactionList([]), new Consensus(new Vote(0, 1, Hash.fromData('genesis')), []))
   })
   beforeEach(() => {
     store = new BlockStore(new InMemoryStore())
@@ -22,6 +21,9 @@ describe('block store', () => {
   it('set and get height', async () => {
     await store.setHeight(10)
     expect(await store.getHeight()).toBe(10)
+    // clear cache
+    const newStore = new BlockStore(store['store'])
+    expect(await newStore.getHeight()).toBe(10)
   })
   it('set and get last consensus', async () => {
     await store.setLastConsensus(block.body.lastBlockConsensus)
@@ -38,14 +40,6 @@ describe('block store', () => {
   it('throw if not stored', async () => {
     await expect(store.getHeader(1)).rejects.toThrow()
     await expect(store.getBody(1)).rejects.toThrow()
-  })
-  it('can lock for concurrent access', async () => {
-    const increment = async () => {
-      const height = await store.getHeight()
-      await promisify(setTimeout)(50)
-      await store.setHeight(height + 1)
-    }
-    await Promise.all([store.mutex.use(increment), store.mutex.use(increment)])
-    expect(await store.getHeight()).toBe(2)
+    await expect(store.getLastConsensus()).rejects.toThrow()
   })
 })

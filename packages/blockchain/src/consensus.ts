@@ -25,7 +25,7 @@ export class Validator implements Hashable, Serializable {
 
 export class ValidatorSet implements Hashable, Serializable {
   public get hash () { return MerkleTree.root(this.validators) }
-  public readonly allPower: number
+  public readonly totalPower: number
   private readonly power: Map<string, number>
   constructor (
     public readonly validators: Validator[]
@@ -33,7 +33,13 @@ export class ValidatorSet implements Hashable, Serializable {
     this.power = new Map(validators.map<[string, number]>(v => [v.address.toString(), v.power]))
     let sum = 0
     for (const v of validators) { sum += v.power }
-    this.allPower = sum
+    this.totalPower = sum
+  }
+  // naive round robin
+  // TODO: implements WEIGHTED round robin
+  // istanbul ignore next: TODO
+  public proposer (height: number, round: number): Address {
+    return this.validators[(height + round) % this.validators.length].address
   }
   public static deserialize (reader: BufferReader): ValidatorSet {
     return new ValidatorSet(List.deserialize(Validator.deserialize)(reader))
@@ -47,7 +53,9 @@ export class ValidatorSet implements Hashable, Serializable {
   }
 
   public powerOf (address: Address) {
-    return this.power.get(address.toString())!
+    const power = this.power.get(address.toString())
+    if (!power) { throw new Error('not included in the validator set') }
+    return power
   }
 }
 
@@ -93,31 +101,32 @@ export class Vote implements Serializable {
 
 export abstract class ConsensusMessage implements Serializable {
   public abstract match<T> (
-    proposal: (p: Proposal, sign: Signature) => T,
-    preVote: (v: Vote, sign: Signature) => T,
-    preCommit: (v: Vote, sign: Signature) => T
+    proposal: (proposal: ConsensusMessage.ProposalMessage) => T,
+    prevote: (preVote: ConsensusMessage.PrevoteMessage) => T,
+    precommit: (preCommit: ConsensusMessage.PrecommitMessage) => T
   ): T
   public abstract signerAddress (genesis: Hash): Address
   public isProposal (): this is ConsensusMessage.ProposalMessage { return this.match(_ => true, _ => false, _ => false) }
-  public isPreVote (): this is ConsensusMessage.PreVoteMessage { return this.match(_ => false, _ => true, _ => false) }
-  public isPreCommit (): this is ConsensusMessage.PreCommitMessage { return this.match(_ => false, _ => false, _ => true) }
+  public isPreVote (): this is ConsensusMessage.PrevoteMessage { return this.match(_ => false, _ => true, _ => false) }
+  public isPreCommit (): this is ConsensusMessage.PrecommitMessage { return this.match(_ => false, _ => false, _ => true) }
   public serialize (writer: BufferWriter): void {
     return ConsensusMessage.serialize(this, writer)
   }
 }
 
-enum MessageType { Proposal, PreVote, PreCommit }
+export enum MessageType { Proposal = 0, Prevote = 1, Precommit = 2 }
 export namespace ConsensusMessage {
   export class ProposalMessage extends ConsensusMessage {
+    public readonly type: MessageType.Proposal = MessageType.Proposal
     constructor (
       public readonly proposal: Proposal,
       public readonly sign: Signature
     ) { super() }
     public match<T> (
-      proposal: (p: Proposal, sign: Signature) => T,
-      _preVote: (v: Vote, sign: Signature) => T,
-      _preCommit: (v: Vote, sign: Signature) => T
-    ): T { return proposal(this.proposal, this.sign) }
+      proposal: (proposal: ProposalMessage) => T,
+      _prevote: (preVote: PrevoteMessage) => T,
+      _precommit: (preCommit: PrecommitMessage) => T
+    ): T { return proposal(this) }
     public signerAddress (genesis: Hash): Address { return this.sign.address(ProposalMessage.digest(this.proposal, genesis)) }
     public static digest (proposal: Proposal, genesis: Hash): Hash {
       const writer = new BufferWriter()
@@ -127,69 +136,71 @@ export namespace ConsensusMessage {
       return Hash.fromData(writer.buffer)
     }
   }
-  export class PreVoteMessage extends ConsensusMessage {
+  export class PrevoteMessage extends ConsensusMessage {
+    public readonly type: MessageType.Prevote = MessageType.Prevote
     constructor (
       public readonly vote: Vote,
       public readonly sign: Signature
     ) { super() }
     public match<T> (
-      _proposal: (p: Proposal, sign: Signature) => T,
-      preVote: (v: Vote, sign: Signature) => T,
-      _preCommit: (v: Vote, sign: Signature) => T
-    ): T { return preVote(this.vote, this.sign) }
-    public signerAddress (genesis: Hash): Address { return this.sign.address(PreVoteMessage.digest(this.vote, genesis)) }
+      _proposal: (proposal: ProposalMessage) => T,
+      prevote: (preVote: PrevoteMessage) => T,
+      _precommit: (preCommit: PrecommitMessage) => T
+    ): T { return prevote(this) }
+    public signerAddress (genesis: Hash): Address { return this.sign.address(PrevoteMessage.digest(this.vote, genesis)) }
     public static digest (vote: Vote, genesis: Hash): Hash {
       const writer = new BufferWriter()
       genesis.serialize(writer)
-      UInt8.serialize(MessageType.PreVote, writer)
+      UInt8.serialize(MessageType.Prevote, writer)
       vote.serialize(writer)
       return Hash.fromData(writer.buffer)
     }
   }
-  export class PreCommitMessage extends ConsensusMessage {
+  export class PrecommitMessage extends ConsensusMessage {
+    public readonly type: MessageType.Precommit = MessageType.Precommit
     constructor (
       public readonly vote: Vote,
       public readonly sign: Signature
     ) { super() }
     public match<T> (
-      _proposal: (p: Proposal, sign: Signature) => T,
-      _preVote: (v: Vote, sign: Signature) => T,
-      preCommit: (v: Vote, sign: Signature) => T
-    ): T { return preCommit(this.vote, this.sign) }
-    public signerAddress (genesis: Hash): Address { return this.sign.address(PreCommitMessage.digest(this.vote, genesis)) }
+      _proposal: (proposal: ProposalMessage) => T,
+      _prevote: (preVote: PrevoteMessage) => T,
+      precommit: (preCommit: PrecommitMessage) => T
+    ): T { return precommit(this) }
+    public signerAddress (genesis: Hash): Address { return this.sign.address(PrecommitMessage.digest(this.vote, genesis)) }
     public static digest (vote: Vote, genesis: Hash): Hash {
       const writer = new BufferWriter()
       genesis.serialize(writer)
-      UInt8.serialize(MessageType.PreCommit, writer)
+      UInt8.serialize(MessageType.Precommit, writer)
       vote.serialize(writer)
       return Hash.fromData(writer.buffer)
     }
   }
 
-  export function proposal (proposal: Proposal, genesis: Hash, signer: Signer): ConsensusMessage {
+  export function proposal (proposal: Proposal, genesis: Hash, signer: Signer): ProposalMessage {
     return new ProposalMessage(proposal, signer.sign(ProposalMessage.digest(proposal, genesis)))
   }
-  export function preVote (vote: Vote, genesis: Hash, signer: Signer): ConsensusMessage {
-    return new PreVoteMessage(vote, signer.sign(PreVoteMessage.digest(vote, genesis)))
+  export function prevote (vote: Vote, genesis: Hash, signer: Signer): PrevoteMessage {
+    return new PrevoteMessage(vote, signer.sign(PrevoteMessage.digest(vote, genesis)))
   }
-  export function preCommit (vote: Vote, genesis: Hash, signer: Signer): ConsensusMessage {
-    return new PreCommitMessage(vote, signer.sign(PreCommitMessage.digest(vote, genesis)))
+  export function precommit (vote: Vote, genesis: Hash, signer: Signer): PrecommitMessage {
+    return new PrecommitMessage(vote, signer.sign(PrecommitMessage.digest(vote, genesis)))
   }
   export const serialize: Serializer<ConsensusMessage> = (message, writer) => message.match(
-    (proposal, sign) => {
+    proposal => {
       UInt8.serialize(MessageType.Proposal, writer)
-      proposal.serialize(writer)
-      sign.serialize(writer)
+      proposal.proposal.serialize(writer)
+      proposal.sign.serialize(writer)
     },
-    (preVote, sign) => {
-      UInt8.serialize(MessageType.PreVote, writer)
-      preVote.serialize(writer)
-      sign.serialize(writer)
+    prevote => {
+      UInt8.serialize(MessageType.Prevote, writer)
+      prevote.vote.serialize(writer)
+      prevote.sign.serialize(writer)
     },
-    (preCommit, sign) => {
-      UInt8.serialize(MessageType.PreCommit, writer)
-      preCommit.serialize(writer)
-      sign.serialize(writer)
+    precommit => {
+      UInt8.serialize(MessageType.Precommit, writer)
+      precommit.vote.serialize(writer)
+      precommit.sign.serialize(writer)
     }
   )
   export const deserialize: Deserializer<ConsensusMessage> = (reader) => {
@@ -200,15 +211,15 @@ export namespace ConsensusMessage {
         const sign = Signature.deserialize(reader)
         return new ProposalMessage(proposal, sign)
       }
-      case MessageType.PreVote: {
+      case MessageType.Prevote: {
         const vote = Vote.deserialize(reader)
         const sign = Signature.deserialize(reader)
-        return new PreVoteMessage(vote, sign)
+        return new PrevoteMessage(vote, sign)
       }
-      case MessageType.PreCommit: {
+      case MessageType.Precommit: {
         const vote = Vote.deserialize(reader)
         const sign = Signature.deserialize(reader)
-        return new PreCommitMessage(vote, sign)
+        return new PrecommitMessage(vote, sign)
       }
       default: throw new Error()
     }
@@ -240,10 +251,10 @@ export class Consensus implements Hashable, Serializable {
     if (!this.vote.blockHash.equals(blockHash)) { throw new Error('block hash mismatch') }
     let power = 0
     for (const sign of this.signatures) {
-      const address = new ConsensusMessage.PreCommitMessage(this.vote, sign).signerAddress(genesisHash)
+      const address = new ConsensusMessage.PrecommitMessage(this.vote, sign).signerAddress(genesisHash)
       if (!validatorSet.exists(address)) { throw new Error('not exists in validator set') }
       power += validatorSet.powerOf(address)
     }
-    if (!(power * 3 > validatorSet.allPower * 2)) { throw new Error('signatures power is not greater than 2/3 validator set power') }
+    if (!(power * 3 > validatorSet.totalPower * 2)) { throw new Error('signatures power is not greater than 2/3 validator set power') }
   }
 }
