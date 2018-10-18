@@ -1,10 +1,10 @@
 import { Blockchain, Block, BlockHeader, Consensus, ValidatorSet } from '@uniqys/blockchain'
-import { RemoteNode, RemoteNodeSet } from './remote-node'
 import { AsyncLoop } from '@uniqys/async-loop'
-import { EventEmitter } from 'events'
 import { Message } from '@uniqys/protocol'
-import { PriorityQueue } from '@uniqys/priority-queue'
+import { PriorityQueue, Utility } from '@uniqys/priority-queue'
 import { Mutex } from '@uniqys/lock'
+import { RemoteNode, RemoteNodeSet } from './remote-node'
+import { EventEmitter } from 'events'
 import debug from 'debug'
 const logger = debug('chain-core:sync')
 
@@ -40,7 +40,7 @@ export namespace SynchronizerOptions {
 
 export class Synchronizer {
   private readonly options: SynchronizerOptions
-  private readonly blockQueue = new PriorityQueue<{block: Block, consensus: Consensus, from?: RemoteNode}>()
+  private readonly blockQueue = new PriorityQueue(Utility.ascending<{block: Block, consensus: Consensus, from?: RemoteNode}>())
   private readonly fetchSchedule = new Map<number, NodeJS.Timer>()
   private readonly chainingLoop = new AsyncLoop(() => this.chainPendingBlock())
   private readonly catchUpMutex = new Mutex()
@@ -107,7 +107,7 @@ export class Synchronizer {
   }
 
   private enqueueBlock (block: Block, consensus: Consensus, from?: RemoteNode) {
-    this.blockQueue.enqueue(block.header.height, { block, consensus, from })
+    this.blockQueue.enqueue({ priority: block.header.height, value: { block, consensus, from } })
   }
 
   private async fetch (height: number): Promise<void > {
@@ -163,7 +163,8 @@ export class Synchronizer {
       // fetch bodies in parallel
       await this.catchUpBodies(consented.header.height)
       // update height and last consensus
-      await this.updateHeight(consented.header.height, consented.consensus)
+      await this.blockchain.blockStore.rwLock.writeLock.use(() =>
+        this.updateHeight(consented.header.height, consented.consensus))
       logger('catch up with %s to height %d', best.peerId, consented.header.height)
     } catch (err) {
       logger('catch up failed: %s', err.message)
@@ -213,11 +214,11 @@ export class Synchronizer {
 
   private async catchUpBodies (target: number) {
     // split to jobs
-    const jobQueue = new PriorityQueue<{from: number, to: number}>()
+    const jobQueue = new PriorityQueue<{from: number, to: number}>((job1, job2) => job2.to - job1.to)
     const known = await this.blockchain.height
-    for (let i = target; known < i; i -= this.options.maxFetchBodies) {
-      const from = Math.max(i - this.options.maxFetchBodies, known + 1)
-      jobQueue.enqueue(i, { from, to: i })
+    for (let to = target; known < to; to -= this.options.maxFetchBodies) {
+      const from = Math.max(to - this.options.maxFetchBodies, known + 1)
+      jobQueue.enqueue({ from, to })
     }
     // process jobs
     let inProgress = 0
@@ -229,15 +230,15 @@ export class Synchronizer {
           return
         }
         if (!job) { return } // wait for job in progress
-        const provider = this.remoteNode.pickIdleProvider(job.value.to)
+        const provider = this.remoteNode.pickIdleProvider(job.to)
         if (!provider) {
-          return jobQueue.enqueue(job.priority, job.value) // wait for idle node
+          return jobQueue.enqueue(job) // wait for idle node
         }
         inProgress++
         // parallel
         provider.use(async () => {
-          const from = job.value.from
-          const count = job.value.to - job.value.from + 1
+          const from = job.from
+          const count = job.to - job.from + 1
           const msg = await provider.protocol.fetchBodies(new Message.GetBodies(from, count))
           for (let i = 0; i < count; i++) {
             const header = await this.blockchain.blockStore.getHeader(from + i)
@@ -254,8 +255,8 @@ export class Synchronizer {
         })
           .finally(() => { inProgress-- })
           .catch(err => {
-            logger('retry fetch body from %d to %d. reason: %s', job.value.from, job.value.to, err.message)
-            jobQueue.enqueue(job.priority, job.value)
+            logger('retry fetch body from %d to %d. reason: %s', job.from, job.to, err.message)
+            jobQueue.enqueue(job)
           })
       })
       fetchLoop.on('error', reject)
@@ -265,20 +266,18 @@ export class Synchronizer {
     logger('catch up bodies complete')
   }
 
-  private updateHeight (height: number, consensus: Consensus) {
-    return this.blockchain.blockStore.mutex.use(async () => {
-      const known = await this.blockchain.height
-      if (height > known) {
-        await this.blockchain.blockStore.setHeight(height)
-        await this.blockchain.blockStore.setLastConsensus(consensus)
-      }
-    })
+  private async updateHeight (height: number, consensus: Consensus) {
+    const known = await this.blockchain.height
+    if (height > known) {
+      await this.blockchain.blockStore.setHeight(height)
+      await this.blockchain.blockStore.setLastConsensus(consensus)
+    }
   }
 
   private async chainPendingBlock (): Promise<void> {
-    const pendingOrUndef = this.blockQueue.dequeueValue()
+    const pendingOrUndef = this.blockQueue.dequeue()
     if (pendingOrUndef) {
-      const pending = pendingOrUndef
+      const pending = pendingOrUndef.value
       try {
         const knownHeight = await this.blockchain.height
         const height = pending.block.header.height
@@ -288,7 +287,7 @@ export class Synchronizer {
             pending.block.validate()
             pending.consensus.validate(pending.block.hash, this.blockchain.genesisBlock.hash, await this.trustedValidatorSet())
             // take lock and recheck height
-            await this.blockchain.blockStore.mutex.use(async () => {
+            await this.blockchain.blockStore.rwLock.writeLock.use(async () => {
               const knownHeight = await this.blockchain.height
               // istanbul ignore else: OK. The block has been added concurrently by another logic.
               if (height === knownHeight + 1) {
@@ -296,8 +295,7 @@ export class Synchronizer {
                   this.blockchain.blockStore.setHeader(height, pending.block.header),
                   this.blockchain.blockStore.setBody(height, pending.block.body)
                 ])
-                await this.blockchain.blockStore.setHeight(height)
-                await this.blockchain.blockStore.setLastConsensus(pending.consensus)
+                await this.updateHeight(height, pending.consensus)
               }
             })
             if (pending.from) {
@@ -338,15 +336,10 @@ export class Synchronizer {
 
   private async trustedValidatorSet (): Promise<ValidatorSet> {
     if (this.options.dynamicValidatorSet) {
-      // dynamic
-      const last = await this.blockchain.blockOf(Math.max(await this.blockchain.height, 1))
-      if ((Math.floor((new Date().getTime()) / 1000) - last.header.timestamp) >= this.options.trustConsensusPeriod) {
-        throw new Error('can\'t trust last validator set')
-      }
-      return last.body.nextValidatorSet
+      throw new Error('not implemented')
     } else {
       // static
-      return this.blockchain.validatorSetOf(1)
+      return this.blockchain.initialValidatorSet
     }
   }
 }

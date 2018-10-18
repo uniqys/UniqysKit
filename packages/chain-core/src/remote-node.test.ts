@@ -154,5 +154,19 @@ describe('remote node set', () => {
     expect(receivers.length).toBe(1)
     expect(receivers[0]).toEqualAnyOf([node1])
   })
-  // TODO: TODO:
+  it('pick consensus receiver', () => {
+    const set = new RemoteNodeSet()
+    set.add(node1)
+    set.add(node2)
+    set.add(node3)
+
+    let receivers: RemoteNode[] = []
+    // pick node which height is consensus height - 1
+    receivers = set.pickConsensusReceivers(2)
+    expect(receivers.length).toBe(1)
+    expect(receivers[0]).toEqualAnyOf([node3])
+
+    receivers = set.pickConsensusReceivers(5)
+    expect(receivers.length).toBe(0)
+  })
 })

@@ -20,7 +20,7 @@ export interface NodeOptions extends NetworkOptions {
 }
 export namespace NodeOptions {
   export const defaults: NodeOptions = Object.assign({
-    handshakeTimeout: 100
+    handshakeTimeout: 1000
   }, NetworkOptions.defaults)
 }
 
@@ -70,6 +70,7 @@ export class Node implements dapi.Core {
 
     this.consensusEngine = new ConsensusEngine(
       this.blockchain,
+      this.remoteNode,
       this.transactionPool,
       this.synchronizer,
       this.executor,
@@ -96,7 +97,10 @@ export class Node implements dapi.Core {
         const node = this.getRemoteNode(protocol)
         this.synchronizer.newBlockHeight(msg, node)
       },
-      newConsensusMessage: (_msg, _protocol) => { /* */ },
+      newConsensusMessage: (msg, protocol) => {
+        const node = this.getRemoteNode(protocol)
+        this.consensusEngine.newConsensusMessage(msg.message, node)
+      },
       getConsentedHeader: (msg, protocol) => this.responder.getConsentedHeader(msg, protocol),
       getHeaders: (msg, protocol) => this.responder.getHeaders(msg, protocol),
       getBodies: (msg, protocol) => this.responder.getBodies(msg, protocol)
@@ -110,14 +114,14 @@ export class Node implements dapi.Core {
     await this.initialize()
     this.executor.start()
     this.synchronizer.start()
-    this.consensusEngine.start()
+    await this.consensusEngine.start()
     await this.network.start()
   }
 
   public async stop (): Promise<void> {
     for (const node of this.remoteNode.nodes()) { node.protocol.end() }
     await this.network.stop()
-    this.consensusEngine.stop()
+    await this.consensusEngine.stop()
     this.synchronizer.stop()
     this.executor.stop()
   }
@@ -144,6 +148,7 @@ export class Node implements dapi.Core {
 
     setTimeout(() => {
       if (!this.remoteNode.get(protocol.peerId)) {
+        logger('handshake timeout %s', protocol.peerId)
         this.dropPeer(protocol.peerId)
       }
     }, this.options.handshakeTimeout)
@@ -159,7 +164,8 @@ export class Node implements dapi.Core {
         this.remoteNode.delete(node)
       })
     } else {
-      this.dropPeer(protocol.peerId) // this peer is on another chain
+      logger('this peer is on another chain %s', protocol.peerId)
+      this.dropPeer(protocol.peerId)
     }
   }
 

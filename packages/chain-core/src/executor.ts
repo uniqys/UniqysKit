@@ -45,7 +45,11 @@ export class Executor {
   }
 
   public onError (listener: (err: Error) => void) { this.event.on('error', listener) }
-  public onExecuted (listener: (height: number, txs: Transaction[]) => void) { this.event.on('executed', listener) }
+  public onExecuted (listener: (appState: dapi.AppState, txs: Transaction[]) => void) { this.event.on('executed', listener) }
+
+  public get completed () {
+    return (async () => await this.blockchain.height === this.lastAppState.height)()
+  }
 
   private async executeBlockTransactions () {
     if ((await this.blockchain.height) !== this.lastAppState.height) {
@@ -61,7 +65,7 @@ export class Executor {
         if (!appState.hash.equals(expect)) throw new Error('app hash mismatch')
       }
       this._lastAppState = appState
-      this.event.emit('executed', height, txs)
+      this.event.emit('executed', appState, txs)
     }
   }
 }

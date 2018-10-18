@@ -1,7 +1,7 @@
-import { RemoteNodeSet } from './remote-node'
 import { Transaction } from '@uniqys/blockchain'
 import { Hash } from '@uniqys/signature'
 import { Message } from '@uniqys/protocol'
+import { RemoteNodeSet } from './remote-node'
 import debug from 'debug'
 const logger = debug('chain-core:tx-pool')
 
@@ -12,7 +12,7 @@ export interface TransactionPoolOptions {
 export namespace TransactionPoolOptions {
   export const defaults: TransactionPoolOptions = {
     maxPooledTransactions: 1000,
-    propagateRateExponent: 0.5
+    propagateRateExponent: 1
   }
 }
 

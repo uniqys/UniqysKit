@@ -6,6 +6,7 @@ import { serialize, Serializable, BufferReader, BufferWriter, UInt8 } from '@uni
 import { Address } from './address'
 
 export class Hash extends Bytes32 {
+  public static zero = new Hash(Buffer.alloc(32))
   public static deserialize (reader: BufferReader): Hash {
     return new Hash(Bytes32.deserialize(reader).buffer)
   }
