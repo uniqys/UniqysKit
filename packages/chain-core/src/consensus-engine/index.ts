@@ -16,8 +16,9 @@ const logger = debug('chain-core:consensus')
 export interface ConsensusOptions extends TimeoutOptions {
 }
 export namespace ConsensusOptions {
-  export const defaults: ConsensusOptions = Object.assign({
-  }, TimeoutOptions.defaults)
+  export const defaults: ConsensusOptions = Object.assign(TimeoutOptions.defaults, {
+
+  })
 }
 
 export class ConsensusEngine {

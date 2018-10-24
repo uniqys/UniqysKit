@@ -4,17 +4,22 @@ import PeerInfo from 'peer-info'
 import { Connection } from 'interface-connection'
 import { EventEmitter } from 'events'
 import PeerId from 'peer-id'
+import Multiaddr from 'multiaddr'
 import PeerBook from 'peer-book'
 import debug from 'debug'
 const logger = debug('p2p:network')
 
 export interface NetworkOptions {
+  port: number
+  address: string
   maxPeers: number
   maxPendingPeers: number
   libp2pConfig: any
 }
 export namespace NetworkOptions {
   export const defaults: NetworkOptions = {
+    port: 5665,
+    address: '0.0.0.0',
     maxPeers: 25,
     maxPendingPeers: 0,
     libp2pConfig: {
@@ -60,6 +65,9 @@ export class Network {
 
   public start (): Promise<void> {
     logger('start peer %s', this.localPeer.id.toB58String())
+    const addr = { address: this.options.address, port: this.options.port }
+    this.localPeer.multiaddrs.add(Multiaddr.fromNodeAddress(addr, 'tcp'))
+    logger('listen %s:%d', addr.address, addr.port)
     return new Promise((resolve, reject) => this.node.start(err => {
       /* istanbul ignore if: library internal error */
       if (err) return reject(err)

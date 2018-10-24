@@ -48,6 +48,7 @@ export class LevelDownStore implements Store<Buffer, Buffer> {
   public async get (key: Buffer): Promise<Optional<Buffer>> {
     try {
       const value = await this.db.get(key)
+      /* istanbul ignore if: for levelup typing support */
       if (typeof value === 'string') {
         return Optional.some(Buffer.from(value))
       } else {

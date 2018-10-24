@@ -20,7 +20,9 @@
     "test:jest": "jest --forceExit --detectOpenHandles --coverage --verbose"
   },
   "dependencies": {
+    "@uniqys/async-loop": "^0.0.4",
     "@uniqys/blockchain": "^0.0.4",
+    "@uniqys/chain-core": "^0.0.4",
     "@uniqys/dapp-interface": "^0.0.4",
     "@uniqys/easy-types": "^0.0.4",
     "@uniqys/lock": "^0.0.4",
@@ -41,7 +43,7 @@
     "@types/koa-bodyparser": "^5.0.1",
     "@types/koa-router": "^7.0.30",
     "@types/node": "^10.9.4",
-    "@types/split": "^0.3.28",
+    "@types/split": "^1.0.0",
     "@uniqys/type-definitions": "^0.0.4",
     "jest": "^23.3.0",
     "npm-run-all": "^4.1.3",

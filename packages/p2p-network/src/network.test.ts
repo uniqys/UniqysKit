@@ -20,9 +20,9 @@ describe('network', () => {
         bootstrap: { enabled: false }
       }
     }
-    net1 = new Network(peer1, { libp2pConfig: config, maxPeers: 1, maxPendingPeers: 1 })
-    net2 = new Network(peer2, { libp2pConfig: config })
-    net3 = new Network(peer3, { libp2pConfig: config })
+    net1 = new Network(peer1, { port: 0, libp2pConfig: config, maxPeers: 1, maxPendingPeers: 1 })
+    net2 = new Network(peer2, { port: 0, libp2pConfig: config })
+    net3 = new Network(peer3, { port: 0, libp2pConfig: config })
     await Promise.all([net1.start(), net2.start(), net3.start()])
   }, 20000)
   afterAll(async () => {
