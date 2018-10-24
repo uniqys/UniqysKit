@@ -6,8 +6,6 @@ import KoaStatic from 'koa-static'
 import axios from 'axios'
 import Memcached from 'memcached'
 import debug from 'debug'
-
-debug.enable('app*')
 const logger = debug('app')
 
 function viaChain (ctx: Koa.Context): string {

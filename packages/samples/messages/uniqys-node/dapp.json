@@ -1,0 +1,12 @@
+{
+  "unique": "0353f9b6d23226a166790b97b9ab58a25bb4d66aa4955439ef9a65d2166ab17eae17cc5b4ae9bddb",
+  "timestamp": 1540345985,
+  "validatorSet": [
+    {
+      "address": "7491cc5cb29e3dd5329438a9c8cb5679ead1baa9",
+      "power": 1
+    }
+  ],
+  "initApp": "",
+  "startApp": "npm start"
+}
