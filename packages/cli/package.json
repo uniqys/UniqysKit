@@ -22,7 +22,7 @@
     "build:ts": "tsc -p tsconfig.build.json",
     "build:copy": "mkdir -p ./dist/config/schema && run-for-every-file --src ./src/config/schema/ --file '*.json' --run 'cp ./src/config/schema/{{file-name}}.json ./dist/config/schema/'",
     "lint": "tslint -c tslint.json -p tsconfig.json",
-    "test": "run-s test:build test:lint test:jest",
+    "test": "run-s test:build test:lint",
     "test:build": "tsc -p tsconfig.json --noEmit",
     "test:lint": "npm run lint"
   },
