@@ -14,26 +14,39 @@
     "uniqys": "./dist/cli.js"
   },
   "scripts": {
-    "prebuild": "run-for-every-file --src ./src/config/schema/ --file '*.json' --run 'json2ts ./src/config/schema/{{file-name}}.json ./src/config/{{file-name}}.d.ts'",
+    "prebuild": "run-s gen-schema:*",
+    "gen-schema:dapp": "typescript-json-schema tsconfig.build.json DappConfigSchema --include src/config/dapp.ts --out src/config/schema/dapp.json --required",
+    "gen-schema:node": "typescript-json-schema tsconfig.build.json NodeConfig --include src/config/node.ts --out src/config/schema/node.json --required",
+    "gen-schema:key": "typescript-json-schema tsconfig.build.json KeySchema --include src/config/key.ts --out src/config/schema/key.json --required",
     "build": "run-s build:ts build:copy",
     "build:ts": "tsc -p tsconfig.build.json",
     "build:copy": "mkdir -p ./dist/config/schema && run-for-every-file --src ./src/config/schema/ --file '*.json' --run 'cp ./src/config/schema/{{file-name}}.json ./dist/config/schema/'",
-    "lint": "tslint -c tslint.json -p tsconfig.json"
+    "lint": "tslint -c tslint.json -p tsconfig.json",
+    "test": "run-s test:build test:lint",
+    "test:build": "tsc -p tsconfig.json --noEmit",
+    "test:lint": "npm run lint"
   },
   "dependencies": {
     "@uniqys/blockchain": "^0.0.4",
-    "@uniqys/chain-core-dev": "^0.0.4",
     "@uniqys/config-validator": "^0.0.4",
     "@uniqys/easy-framework": "^0.0.4",
     "@uniqys/signature": "^0.0.4",
     "@uniqys/store": "^0.0.4",
+    "@uniqys/types": "^0.0.4",
+    "fs-extra": "^7.0.0",
+    "leveldown": "^4.0.1",
     "yargs": "^12.0.2"
   },
   "devDependencies": {
+    "@types/fs-extra": "^5.0.4",
+    "@types/leveldown": "^4.0.0",
+    "@types/node": "^10.9.4",
     "@types/yargs": "^11.1.2",
     "@uniqys/type-definitions": "^0.0.4",
-    "json-schema-to-typescript": "^5.5.0",
-    "memdown": "^3.0.0",
-    "run-for-every-file": "^1.1.0"
+    "npm-run-all": "^4.1.3",
+    "run-for-every-file": "^1.1.0",
+    "tslint": "^5.11.0",
+    "typescript": "^3.0.3",
+    "typescript-json-schema": "^0.32.0"
   }
 }

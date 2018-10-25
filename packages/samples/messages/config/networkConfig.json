@@ -1,6 +1,0 @@
-{
-  "gatewayPort": 8080,
-  "innerApiPort": 56010,
-  "memcachedPort": 56011,
-  "appUrl": "http://localhost:56080/"
-}

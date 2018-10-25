@@ -1,5 +1,5 @@
 import { Block, BlockHeader, BlockBody } from './block'
-import { ValidatorSet, Consensus } from './consensus'
+import { Consensus, ValidatorSet } from './consensus'
 import { Hash } from '@uniqys/signature'
 import { BlockStore } from './block-store'
 
@@ -7,11 +7,12 @@ export class Blockchain {
   private isReady = false
   constructor (
     public readonly blockStore: BlockStore,
-    public readonly genesisBlock: Block
+    public readonly genesisBlock: Block,
+    public readonly initialValidatorSet: ValidatorSet
   ) { }
   public async ready (): Promise<void> {
     if (this.isReady) { return Promise.resolve() }
-    await this.blockStore.mutex.use(async () => {
+    await this.blockStore.rwLock.writeLock.use(async () => {
       const height = await this.blockStore.getHeight()
       if (height === 0) {
         await Promise.all([
@@ -20,7 +21,8 @@ export class Blockchain {
         ])
       }
     })
-    if (!(await this.blockStore.getHeader(1)).hash.equals(this.genesisBlock.hash)) {
+    const storedGenesis = await this.blockStore.getHeader(1)
+    if (!storedGenesis.hash.equals(this.genesisBlock.hash)) {
       throw new Error('Stored genesis block is invalid. You need to reset store.')
     }
     this.isReady = true
@@ -43,14 +45,9 @@ export class Blockchain {
     ])
     return new Block(header, body)
   }
-  public async validatorSetOf (height: number): Promise<ValidatorSet> {
-    this.checkReady()
-    // this block validatorSet is last block nextValidatorSet
-    return (await this.blockOf(Math.max(height - 1, 1))).body.nextValidatorSet
-  }
   public async consensusOf (height: number): Promise<Consensus> {
     this.checkReady()
-    return this.blockStore.mutex.use(async () => {
+    return this.blockStore.rwLock.readLock.use(async () => {
       const chainHeight = await this.blockStore.getHeight()
       if (chainHeight === height) {
         // no next block

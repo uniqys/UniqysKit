@@ -1,4 +1,4 @@
-import levelup from 'levelup'
+import levelup, { LevelUp } from 'levelup'
 import { AbstractLevelDOWN } from 'abstract-leveldown'
 import { Optional } from '@uniqys/types'
 
@@ -39,16 +39,21 @@ export class InMemoryStore<V = Buffer> implements Store<Buffer, V> {
 }
 
 export class LevelDownStore implements Store<Buffer, Buffer> {
-  private readonly db: levelup.LevelUp<Buffer, Buffer>
+  private readonly db: LevelUp<AbstractLevelDOWN<string | Buffer, string | Buffer>>
   constructor (
-    db: AbstractLevelDOWN<Buffer, Buffer>
+    db: AbstractLevelDOWN<string | Buffer, string | Buffer>
   ) {
     this.db = levelup(db)
   }
   public async get (key: Buffer): Promise<Optional<Buffer>> {
     try {
       const value = await this.db.get(key)
-      return Optional.some(value)
+      /* istanbul ignore if: for levelup typing support */
+      if (typeof value === 'string') {
+        return Optional.some(Buffer.from(value))
+      } else {
+        return Optional.some(value)
+      }
     } catch (err) {
       /* istanbul ignore else: back-end error */
       if (err instanceof levelup.errors.NotFoundError) {

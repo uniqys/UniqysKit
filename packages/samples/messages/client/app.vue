@@ -102,7 +102,7 @@
 </template>
 
 <script>
-const easy = new Easy('http://localhost:8080')
+const easy = new Easy(location.origin)
 
 export default {
   data () {

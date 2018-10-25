@@ -5,7 +5,8 @@
   "author": "Uniqys Project (https://uniqys.net)",
   "private": true,
   "scripts": {
-    "start": "DEBUG=chain-core*,easy*,app* ts-node server/src/serve.ts",
+    "start": "ts-node server/src/serve.ts",
+    "network": "ts-node server/src/serve-network.ts",
     "client-cli": "ts-node server/src/client.ts",
     "lint": "tslint -c tslint.json -p tsconfig.json",
     "test": "run-s test:build test:lint",
@@ -16,7 +17,7 @@
   },
   "dependencies": {
     "@uniqys/blockchain": "^0.0.4",
-    "@uniqys/chain-core-dev": "^0.0.4",
+    "@uniqys/chain-core": "^0.0.4",
     "@uniqys/easy-client": "^0.0.4",
     "@uniqys/easy-framework": "^0.0.4",
     "@uniqys/easy-types": "^0.0.4",
@@ -32,6 +33,7 @@
     "koa-static": "^5.0.0",
     "memcached": "^2.2.2",
     "memdown": "^3.0.0",
+    "peer-info": "^0.14.1",
     "vue": "^2.5.16",
     "vue-loader": "v14.2.2",
     "vue-template-compiler": "^2.5.16",

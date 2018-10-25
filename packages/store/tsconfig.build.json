@@ -1,12 +1,7 @@
 {
   "extends": "../../config-base/tsconfig.build",
   "compilerOptions": {
-    "outDir": "./dist",
-    "typeRoots": [
-      "./node_modules/@uniqys/type-definitions/types",
-      "./node_modules/@types",
-      "../../node_modules/@types"
-    ]
+    "outDir": "./dist"
   },
   "include": [
     "./src/**/*.ts"

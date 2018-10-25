@@ -1,14 +1,18 @@
 import { Transaction } from '@uniqys/blockchain'
 import { Hash } from '@uniqys/signature'
+import { Message } from '@uniqys/protocol'
+import { RemoteNodeSet } from './remote-node'
 import debug from 'debug'
 const logger = debug('chain-core:tx-pool')
 
 export interface TransactionPoolOptions {
   maxPooledTransactions: number // count
+  propagateRateExponent: number // count ^ R
 }
 export namespace TransactionPoolOptions {
   export const defaults: TransactionPoolOptions = {
-    maxPooledTransactions: 1000
+    maxPooledTransactions: 1000,
+    propagateRateExponent: 1
   }
 }
 
@@ -16,9 +20,9 @@ export class TransactionPool {
   private readonly options: TransactionPoolOptions
   private pool = new Map<string, Transaction>()
   constructor (
+    private readonly remoteNode: RemoteNodeSet,
     private readonly validator: (tx: Transaction) => Promise<boolean>,
     private readonly selector: (txs: Transaction[]) => Promise<Transaction[]>,
-    private readonly propagator: (tx: Transaction) => void,
     options?: Partial<TransactionPoolOptions>
   ) {
     this.options = Object.assign({}, TransactionPoolOptions.defaults, options)
@@ -35,11 +39,11 @@ export class TransactionPool {
     if (await this.validator(tx)) {
       if (!this.canAdd(key)) return // re-check
       this.pool.set(key, tx)
-      this.propagator(tx)
+      await this.propagateTransaction(tx)
     }
   }
 
-  public async update (executed: Transaction[]): Promise <void> {
+  public async update (executed: Transaction[]): Promise<void> {
     // remove executed txs
     executed.forEach(tx => this.pool.delete(tx.hash.toHexString()))
 
@@ -54,6 +58,13 @@ export class TransactionPool {
 
   public selectTransactions (): Promise<Transaction[]> {
     return this.pool.size === 0 ? Promise.resolve([]) : this.selector(Array.from(this.pool.values()))
+  }
+
+  private async propagateTransaction (tx: Transaction): Promise<void> {
+    logger('propagate transaction %s', tx.hash.toHexString())
+    const newTransactionMsg = new Message.NewTransaction(tx)
+    await Promise.all(this.remoteNode.pickTransactionReceivers(this.options.propagateRateExponent)
+      .map(node => node.protocol.sendNewTransaction(newTransactionMsg)))
   }
 
   private canAdd (key: string): boolean {

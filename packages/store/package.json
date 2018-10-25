@@ -27,8 +27,9 @@
   "devDependencies": {
     "@types/abstract-leveldown": "^5.0.0",
     "@types/jest": "^23.3.0",
+    "@types/levelup": "^3.1.0",
+    "@types/memdown": "^3.0.0",
     "@types/node": "^10.9.4",
-    "@uniqys/type-definitions": "^0.0.4",
     "jest": "^23.3.0",
     "memdown": "^3.0.0",
     "npm-run-all": "^4.1.3",

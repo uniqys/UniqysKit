@@ -16,9 +16,6 @@ const KadDHT = require('libp2p-kad-dht')
 
 export class Libp2pBundle extends libp2p {
   constructor (peerInfo: PeerInfo, peerBook: PeerBook, options: NetworkOptions) {
-    const discovery = []
-    if (options.bootstrapInterval > 0) { discovery.push(new Bootstrap({ list: options.bootstraps, interval: options.bootstrapInterval })) }
-    if (options.mdnsInterval > 0) { discovery.push(new MulticastDNS(peerInfo, { serviceTag: 'uniqys.local', interval: options.mdnsInterval })) }
     const _options: Options = {
       peerInfo: peerInfo,
       peerBook: peerBook,
@@ -26,9 +23,10 @@ export class Libp2pBundle extends libp2p {
         transport: [new TCP()],
         streamMuxer: [Mplex],
         connEncryption: [SECIO],
-        peerDiscovery: discovery,
+        peerDiscovery: [MulticastDNS, Bootstrap],
         dht: KadDHT
-      }
+      },
+      config: options.libp2pConfig
     }
 
     super(_options)

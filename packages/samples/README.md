@@ -18,17 +18,25 @@ Messages is a simple application that can post and read messages.
 You get a token every time you post a message.
 Tokens you received are transferrable to other accounts.
 
+### Start 1 validator node network
+
 ```sh
-cd packages/samples/messages
-npx uniqys init -u 'your unique string'
+cd packages/samples/messages/uniqys-node
+npx uniqys init
 npx uniqys start
 ```
 
-and with a new terminal window,
+Finally, open `http://localhost:8080` in your browser.
+
+### Start 4 validator nodes network
 
 ```sh
-# start app
-npm start
+cd packages/samples/messages/uniqys-4-node
+cd node1
+npx uniqys init
+npx uniqys start
 ```
 
-Finally, open `http://localhost:8080` in your browser.
+Repeat 4 times `node[1-4]`.
+
+Open `http://localhost:8080`, `8081`, `8082` or `8083` in your browser.

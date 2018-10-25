@@ -10,19 +10,33 @@ import debug from 'debug'
 const logger = debug('p2p:network')
 
 export interface NetworkOptions {
+  port: number
+  address: string
   maxPeers: number
   maxPendingPeers: number
-  bootstraps: (String | Buffer | Multiaddr)[],
-  bootstrapInterval: number, // 0 is disable
-  mdnsInterval: number // 0 is disable
+  libp2pConfig: any
 }
 export namespace NetworkOptions {
   export const defaults: NetworkOptions = {
+    port: 5665,
+    address: '0.0.0.0',
     maxPeers: 25,
     maxPendingPeers: 0,
-    bootstraps: [],
-    bootstrapInterval: 5000, // 5s
-    mdnsInterval: 1000 // 1s
+    libp2pConfig: {
+      peerDiscovery: {
+        mdns: {
+          interval: 1000, // 1s
+          broadcast: true,
+          serviceTag: 'uniqys.local',
+          enabled: true
+        },
+        bootstrap: {
+          interval: 5000, // 5s
+          list: [],
+          enabled: false
+        }
+      }
+    }
   }
 }
 
@@ -51,6 +65,9 @@ export class Network {
 
   public start (): Promise<void> {
     logger('start peer %s', this.localPeer.id.toB58String())
+    const addr = { address: this.options.address, port: this.options.port }
+    this.localPeer.multiaddrs.add(Multiaddr.fromNodeAddress(addr, 'tcp'))
+    logger('listen %s:%d', addr.address, addr.port)
     return new Promise((resolve, reject) => this.node.start(err => {
       /* istanbul ignore if: library internal error */
       if (err) return reject(err)

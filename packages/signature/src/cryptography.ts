@@ -6,6 +6,7 @@ import { serialize, Serializable, BufferReader, BufferWriter, UInt8 } from '@uni
 import { Address } from './address'
 
 export class Hash extends Bytes32 {
+  public static zero = new Hash(Buffer.alloc(32))
   public static deserialize (reader: BufferReader): Hash {
     return new Hash(Bytes32.deserialize(reader).buffer)
   }
@@ -36,8 +37,8 @@ export class Signature implements Hashable, Serializable {
   }
 
   // Ethereum compatible
-  public static sign (messageHash: Hash, privateKey: Bytes32): Signature {
-    const sig = secp256k1.sign(messageHash.buffer, privateKey.buffer)
+  public static sign (digest: Hash, privateKey: Bytes32): Signature {
+    const sig = secp256k1.sign(digest.buffer, privateKey.buffer)
 
     return new Signature(Buffer.concat([
       sig.signature,
@@ -54,18 +55,20 @@ export class Signature implements Hashable, Serializable {
   public equals (other: Signature): boolean {
     return this.buffer.equals(other.buffer)
   }
-  public recover (messageHash: Hash): Bytes64 {
+  public recover (digest: Hash): Bytes64 {
     try {
-      return new Bytes64(secp256k1.recover(messageHash.buffer, this.signature.buffer, this.recovery, false).slice(1))
+      return new Bytes64(secp256k1.recover(digest.buffer, this.signature.buffer, this.recovery, false).slice(1))
     } catch (e) {
       throw new Error('couldn\'t recover public key from signature')
     }
   }
-
+  public address (digest: Hash): Address {
+    return Address.fromPublicKey(this.recover(digest))
+  }
 }
 
 export interface Signer {
-  sign (messageHash: Hash): Signature
+  sign (digest: Hash): Signature
 }
 
 export class KeyPair implements Signer {
@@ -90,8 +93,8 @@ export class KeyPair implements Signer {
   }
 
   // Ethereum compatible
-  public sign (messageHash: Hash) {
-    return Signature.sign(messageHash, this.privateKey)
+  public sign (digest: Hash) {
+    return Signature.sign(digest, this.privateKey)
   }
 
   get address (): Address {

@@ -1,0 +1,24 @@
+{
+  "unique": "c2464d2d40ec53225c0c3e5d2c767e0f46fb887473de334654dd7d6efdec1f900720ca5eae262fe8",
+  "timestamp": 1540357311,
+  "validatorSet": [
+    {
+      "address": "8f11859a4f846021fcc896669141528906491d2e",
+      "power": 1
+    },
+    {
+      "address": "f269311065a003d729b2e9c61b2a079399660f92",
+      "power": 1
+    },
+    {
+      "address": "1178f9cfee481a65299e556b7e18162ad85c8ac8",
+      "power": 1
+    },
+    {
+      "address": "5fac25967f9ec65ec7cc3fe4d5290ee8bfe7468f",
+      "power": 1
+    }
+  ],
+  "initApp": "",
+  "startApp": "npm start"
+}

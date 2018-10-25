@@ -1,50 +1,162 @@
+import { ChainCore, ChainCoreOptions } from '@uniqys/chain-core'
+import { Store } from '@uniqys/store'
+import { Blockchain } from '@uniqys/blockchain'
+import { KeyPair } from '@uniqys/signature'
+import { AsyncLoop } from '@uniqys/async-loop'
 import { Gateway } from './gateway'
 import { OuterApi, InnerApi } from './api'
 import { MemcachedCompatibleServer } from './memcached-compatible-server'
 import { Controller } from './controller'
 import { State } from './state'
-import { Core } from '@uniqys/dapp-interface'
-import { Store } from '@uniqys/store'
+import PeerInfo from 'peer-info'
 import Koa from 'koa'
 import Router from 'koa-router'
 import { URL } from 'url'
 import net from 'net'
 import http from 'http'
 import { EasyMemcached } from './memcached-implementation'
+import debug from 'debug'
+const logger = debug('easy-fw')
 
-export interface Node extends Core {
-  start (): Promise<void>
-  stop (): Promise<void>
+export interface ListenOptions {
+  /**
+   * port number
+   *
+   * @TJS-type integer
+   */
+  port: number
+  /**
+   * host name
+   */
+  host: string
+}
+export interface EasyOptions {
+  gateway: ListenOptions
+  innerApi: ListenOptions
+  innerMemcached: ListenOptions
+  app: ListenOptions
+  appStartTimeout: number
+}
+export namespace EasyOptions {
+  export const defaults: EasyOptions = {
+    gateway: { port: 8080, host: '0.0.0.0' },
+    innerApi: { port: 5651, host: '127.0.0.1' },
+    innerMemcached: { port: 5652, host: '127.0.0.1' },
+    app: { port: 5650, host: '127.0.0.1' },
+    appStartTimeout: 5000
+  }
+}
+export interface Options extends ChainCoreOptions {
+  easy: Partial<EasyOptions>
+}
+export namespace Options {
+  export const defaults: Options = Object.assign(ChainCoreOptions.defaults, {
+    easy: {}
+  })
 }
 
 export class Easy {
-  public readonly node: Node
-  public readonly controller: Controller
-  private readonly state: State
-  private readonly memcachedImpl: EasyMemcached
+  public readonly options: EasyOptions
+  public readonly gateway: http.Server
+  public readonly innerApi: http.Server
+  public readonly innerMemcached: net.Server
+  private readonly core: ChainCore
   constructor (
-    private readonly app: URL,
-    store: Store<Buffer, Buffer>,
-    node: (dapp: Controller) => Node
+    blockchain: Blockchain,
+    stateStore: Store<Buffer, Buffer>,
+    peerInfo: PeerInfo,
+    keyPair?: KeyPair,
+    options?: Partial<Options>
   ) {
-    this.state = new State(store)
-    this.memcachedImpl = new EasyMemcached(this.state.app)
-    this.controller = new Controller(app, this.state, this.memcachedImpl)
-    this.node = node(this.controller)
+    this.options = Object.assign({}, EasyOptions.defaults, Object.assign({}, Options.defaults, options).easy)
+    const appUrl = new URL(`http://${this.options.app.host}:${this.options.app.port}`)
+    const state = new State(stateStore)
+    const memcachedImpl = new EasyMemcached(state.app)
+    const controller = new Controller(appUrl, state, memcachedImpl)
+    this.core = new ChainCore(controller, blockchain, peerInfo, keyPair, options)
+    this.gateway = new Gateway(this.core, state, new OuterApi(state), appUrl)
+    this.innerApi = Easy.serveApi(new InnerApi(state))
+    this.innerMemcached = new MemcachedCompatibleServer(memcachedImpl)
+  }
+  public async listen () {
+    await Promise.all([
+      Easy.listen(this.gateway, this.options.gateway),
+      Easy.listen(this.innerApi, this.options.innerApi),
+      Easy.listen(this.innerMemcached, this.options.innerMemcached)
+    ])
+    logger('listen gateway: %s', Easy.listenedAddressToString(this.gateway))
+    logger('listen inner API: %s', Easy.listenedAddressToString(this.innerApi))
+    logger('listen inner Memcached: %s', Easy.listenedAddressToString(this.innerMemcached))
   }
   public async start () {
-    await this.node.start()
+    await this.waitApp()
+    await this.core.start()
+    logger('started')
   }
-
-  public gateway (): http.Server { return new Gateway(this.node, this.state, new OuterApi(this.state), this.app) }
-  public innerApi (): http.Server { return this._serveApi(new InnerApi(this.state)) }
-  public innerMemcachedCompatible (): net.Server { return new MemcachedCompatibleServer(this.memcachedImpl) }
-
-  private _serveApi (api: Router): http.Server {
+  public async stop () {
+    await this.core.stop()
+    logger('stopped')
+  }
+  public async close () {
+    await Promise.all([
+      Easy.close(this.gateway),
+      Easy.close(this.innerApi),
+      Easy.close(this.innerMemcached)
+    ])
+    logger('close gateway')
+    logger('close inner API')
+    logger('close inner Memcached')
+  }
+  private static serveApi (api: Router): http.Server {
     return http.createServer(new Koa()
       .use(api.routes())
       .use(api.allowedMethods())
       .callback()
     )
+  }
+  private static listenedAddressToString (server: net.Server) {
+    const addr = server.address()
+    return typeof addr === 'string' ? addr : `${addr.address}:${addr.port}`
+  }
+  private static async listen (server: net.Server, options: ListenOptions): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      server.listen(options)
+      server.once('listening', resolve)
+      server.once('error', reject)
+    })
+  }
+  private static async close (server: net.Server): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      server.close()
+      server.once('close', resolve)
+      server.once('error', reject)
+    })
+  }
+  private async waitApp (): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      const loop = new AsyncLoop(async () => {
+        const connectable = await new Promise((resolve => {
+          const socket = new net.Socket()
+          const notConnected = () => {
+            socket.destroy()
+            resolve(false)
+          }
+          socket.setTimeout(500, notConnected)
+          socket.on('error', notConnected)
+          socket.connect(this.options.app.port, this.options.app.host, () => {
+            socket.end()
+            resolve(true)
+          })
+        }))
+        if (connectable) {
+          loop.stop()
+        }
+      })
+      loop.start()
+      setTimeout(() => {
+        reject(new Error('app start wait timeout'))
+      }, this.options.appStartTimeout)
+      loop.on('end', resolve)
+    })
   }
 }
