@@ -17,7 +17,7 @@ const command: CommandModule = {
       alias: 'vs',
       array: true,
       default: [],
-      describe: 'Validator `address:power` array',
+      describe: 'Validator list in `address:power` format',
       type: 'string'
     })
     .option('unique', {

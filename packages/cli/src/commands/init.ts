@@ -46,7 +46,7 @@ const command: CommandModule = {
 
     // ensure data dir and config
     if (fs.existsSync(dataDir) && (!fs.statSync(dataDir).isDirectory() || fs.readdirSync(dataDir).length !== 0)) {
-      console.log(`'${dataDir}' already exists and is not empty directory.`)
+      console.log(`'${dataDir}' already exists and is not an empty directory.`)
       if (!argv.reset) {
         console.log(`If you want to reset it, use '--reset' flag`)
         return
