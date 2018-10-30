@@ -3,7 +3,7 @@
   "version": "0.0.4",
   "description": "Uniqys Command Line Tool",
   "author": "Uniqys Project (https://uniqys.net)",
-  "license": "SEE LICENSE IN LICENSE.md",
+  "license": "MPL-2.0",
   "publishConfig": {
     "access": "public"
   },

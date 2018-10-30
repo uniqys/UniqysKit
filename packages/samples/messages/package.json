@@ -4,6 +4,7 @@
   "description": "A simple messaging application sample.",
   "author": "Uniqys Project (https://uniqys.net)",
   "private": true,
+  "license": "Apache-2.0",
   "scripts": {
     "start": "ts-node server/src/serve.ts",
     "network": "ts-node server/src/serve-network.ts",

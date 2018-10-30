@@ -3,7 +3,6 @@
   "description": "Uniqys Kit - Create your dapp in Uniqys Network",
   "author": "Uniqys Project (https://uniqys.net)",
   "private": true,
-  "license": "SEE LICENSE IN LICENSE.md",
   "scripts": {
     "postinstall": "check-node-version --package",
     "bootstrap": "lerna bootstrap --hoist",

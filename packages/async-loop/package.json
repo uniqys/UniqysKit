@@ -3,7 +3,7 @@
   "version": "0.0.4",
   "description": "start/stop async function loop",
   "author": "Uniqys Project (https://uniqys.net)",
-  "license": "SEE LICENSE IN LICENSE.md",
+  "license": "Apache-2.0",
   "publishConfig": {
     "access": "public"
   },
