@@ -66,7 +66,8 @@ export class Executor {
       logger(`execute transaction in block(${height})`)
       const block = await this.blockchain.blockOf(height)
       const txs = block.body.transactionList.transactions
-      const appState = await this.dapp.executeTransactions(txs)
+      const header = block.header
+      const appState = await this.dapp.executeTransactions(txs, header)
       if (appState.height !== height) throw new Error('block height mismatch')
       if (appState.height < knownHeight) {
         const expect = (await this.blockchain.headerOf(appState.height + 1)).appStateHash

@@ -30,6 +30,7 @@ function viaChain (ctx: Koa.Context): string {
   if (!(sender && typeof sender === 'string')) ctx.throw(403, 'access via chain required')
   return sender
 }
+
 export class App extends Koa {
   constructor (apiUrl: string, dbUrl: string) {
     const api = axios.create({
@@ -82,6 +83,8 @@ export class App extends Koa {
       })
       .post('/messages', BodyParser(), async (ctx) => {
         const sender = viaChain(ctx)
+        const timestamp = ctx.header['uniqys-timestamp']
+        const blockhash = ctx.header['uniqys-blockhash']
         const { contents } = ctx.request.body as { contents: string }
         logger('post message %s from %s', contents, sender)
         const id = await new Promise<number>((resolve, reject) => {
@@ -95,7 +98,7 @@ export class App extends Koa {
           })
         })
         await new Promise((resolve, reject) => {
-          db.set(`messages:${id}`, { sender, contents }, 0, (err) => {
+          db.set(`messages:${id}`, { sender, contents, timestamp, blockhash }, 0, (err) => {
             if (err) return reject(err)
             resolve()
           })

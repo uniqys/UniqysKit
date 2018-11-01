@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-import { Transaction } from '@uniqys/blockchain'
+import { Transaction, BlockHeader } from '@uniqys/blockchain'
 import { Hash } from '@uniqys/signature'
 
 export class AppState {
@@ -24,5 +24,5 @@ export interface Dapp {
   connect (): Promise<AppState>
   validateTransaction (transaction: Transaction): Promise<boolean>
   selectTransactions (transactions: Transaction[]): Promise<Transaction[]>
-  executeTransactions (transactions: Transaction[]): Promise<AppState>
+  executeTransactions (transactions: Transaction[], header: BlockHeader): Promise<AppState>
 }

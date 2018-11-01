@@ -7,7 +7,7 @@
 */
 
 import { Dapp, AppState } from '@uniqys/dapp-interface'
-import { Transaction as CoreTransaction } from '@uniqys/blockchain'
+import { Transaction as CoreTransaction, BlockHeader } from '@uniqys/blockchain'
 import { SignedTransaction } from '@uniqys/easy-types'
 import { deserialize } from '@uniqys/serialize'
 import { State } from './state'
@@ -50,7 +50,7 @@ export class Controller implements Dapp {
     }
     return selected
   }
-  public async executeTransactions (coreTxs: CoreTransaction[]): Promise<AppState> {
+  public async executeTransactions (coreTxs: CoreTransaction[], header: BlockHeader): Promise<AppState> {
     for (const coreTx of coreTxs) {
       const tx = deserialize(coreTx.data, SignedTransaction.deserialize)
       const sender = tx.signer
@@ -63,7 +63,7 @@ export class Controller implements Dapp {
           await this.state.setAccount(sender, next)
           // allow read/write
           this.memcachedImpl.changeMode(OperationMode.ReadWrite)
-          const res = await Response.pack(await SignedRequest.unpack(tx, this.app))
+          const res = await Response.pack(await SignedRequest.unpack(tx, header, this.app))
           await this.state.result.set(coreTx.hash, res)
           if (400 <= res.status && res.status < 600) { throw new Error(res.message) }
         } catch (err) {

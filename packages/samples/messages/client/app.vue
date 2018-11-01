@@ -95,7 +95,13 @@
               class="list-group-item flex-column align-items-start"
             >
               <p class="mb-1">{{message.contents}}</p>
-              <p class="mb-1"><small>{{message.sender}}</small></p>
+              <p class="mb-1">
+                <small>
+                  Sender: {{message.sender}}<br>
+                  Time: {{getDateStr(message.timestamp)}}<br>
+                  Block hash: {{message.blockhash}}
+                </small>
+              </p>
               <button
                 class="btn btn-light"
                 :disabled="message.sender == address"
@@ -198,6 +204,16 @@ export default {
           this.modal.message = res.data.message
         })
     },
+    getDateStr(timestamp) {
+      const date = new Date(parseInt(timestamp) * 1000)
+      const y = date.getFullYear();
+      const m = date.getMonth() + 1;
+      const d = date.getDate();
+      const h = date.getHours();
+      const i = date.getMinutes();
+      const s = date.getSeconds();
+      return `${y}/${m}/${d} ${h}:${i}:${s}`
+    }
   },
   created () {
     this.updateAccount()

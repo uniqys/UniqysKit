@@ -7,6 +7,7 @@
 */
 
 import { HttpHeaders, HttpRequest, HttpResponse, Transaction, SignedTransaction } from '@uniqys/easy-types'
+import { BlockHeader } from '@uniqys/blockchain'
 import { Signature } from '@uniqys/signature'
 import http from 'http'
 import { URL } from 'url'
@@ -72,10 +73,12 @@ export namespace SignedRequest {
     sign.recover(tx.hash) // check signature
     return new SignedTransaction(sign, tx)
   }
-  export async function unpack (signedTx: SignedTransaction, to: URL): Promise<http.IncomingMessage> {
+  export async function unpack (signedTx: SignedTransaction, blockHeader: BlockHeader, to: URL): Promise<http.IncomingMessage> {
     return new Promise<http.IncomingMessage>((resolve, reject) => {
       const headers = Headers.unpack(signedTx.transaction.request.headers)
       headers['uniqys-sender'] = signedTx.signer.toString()
+      headers['uniqys-timestamp'] = blockHeader.timestamp.toString(10)
+      headers['uniqys-blockhash'] = blockHeader.hash.toHexString()
       const req = http.request({
         protocol: to.protocol,
         host: to.hostname,
