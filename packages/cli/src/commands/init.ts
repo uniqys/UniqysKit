@@ -45,14 +45,18 @@ const command: CommandModule = {
     // check existing config file
     if (fs.existsSync(outPath)) {
       config = require(outPath)
-      dappPath = path.resolve(outPath, config.dapp)
-      dataDir = path.resolve(outPath, config.dataDir)
+      dappPath = path.resolve(path.dirname(outPath), config.dapp)
+      dataDir = path.resolve(path.dirname(outPath), config.dataDir)
     } else {
-      config.dapp = path.relative(outPath, dappPath)
-      config.dataDir = path.relative(outPath, dataDir)
+      config.dapp = path.relative(path.dirname(outPath), dappPath)
+      config.dataDir = path.relative(path.dirname(outPath), dataDir)
     }
 
-    // ensure data dir and config
+    // ensure dapp conf, data dir, and config is valid
+    if (!fs.existsSync(dappPath)) {
+      console.log('DApp config does not exist. Run dapp-conf command before init.')
+      return
+    }
     if (fs.existsSync(dataDir) && (!fs.statSync(dataDir).isDirectory() || fs.readdirSync(dataDir).length !== 0)) {
       console.log(`'${dataDir}' already exists and is not an empty directory.`)
       if (!argv.reset) {
@@ -61,6 +65,7 @@ const command: CommandModule = {
       }
       console.log(`reset data dir: '${dataDir}`)
     }
+
     fs.emptyDirSync(dataDir)
     fs.writeJsonSync(outPath, config, { spaces: 2 })
 

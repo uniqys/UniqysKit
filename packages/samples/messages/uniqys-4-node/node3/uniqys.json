@@ -1,7 +1,7 @@
 {
-  "dapp": "../../dapp.json",
-  "dataDir": "../.data",
-  "validatorKey": "../validatorKey.json",
+  "dapp": "../dapp.json",
+  "dataDir": ".data",
+  "validatorKey": "validatorKey.json",
   "easy": {
     "gateway": {
       "port": 8082,

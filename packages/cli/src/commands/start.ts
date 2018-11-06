@@ -34,13 +34,13 @@ const command: CommandModule = {
   handler: async argv => {
     const configPath = path.join(process.cwd(), argv.config)
     const config = NodeConfig.validate(fs.readJsonSync(configPath))
-    const keyPath = path.resolve(configPath, config.validatorKey)
+    const keyPath = path.resolve(path.dirname(configPath), config.validatorKey)
     const keyPair = config.validatorKey !== '' ? Key.validate(fs.readJsonSync(keyPath)) : undefined
-    const dappPath = path.resolve(configPath, config.dapp)
+    const dappPath = path.resolve(path.dirname(configPath), config.dapp)
     const dappCwd = path.dirname(dappPath)
     const dappConfig = DappConfig.validate(fs.readJsonSync(dappPath))
 
-    const dataDir = path.resolve(configPath, config.dataDir)
+    const dataDir = path.resolve(path.dirname(configPath), config.dataDir)
     const stateStore = new LevelDownStore(new leveldown(path.join(dataDir, 'state')))
     const chainStore = new LevelDownStore(new leveldown(path.join(dataDir, 'chain')))
     const blockchain = new Blockchain(new BlockStore(chainStore), dappConfig.genesisBlock, dappConfig.initialValidatorSet)
