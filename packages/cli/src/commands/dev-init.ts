@@ -81,9 +81,9 @@ const command: CommandModule = {
       startApp: 'echo "no start command specified"'
     }
     const config = Object.assign({}, NodeConfig.defaults, {
-      dapp: path.relative(configPath, dappPath),
-      dataDir: path.relative(configPath, dataDir),
-      validatorKey: path.relative(configPath, keyPath)
+      dapp: path.relative(path.dirname(configPath), dappPath),
+      dataDir: path.relative(path.dirname(configPath), dataDir),
+      validatorKey: path.relative(path.dirname(configPath), keyPath)
     })
     const key: KeySchema = {
       privateKey: privateKey.buffer.toString('hex'),
