@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/type-definitions",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "TypeScript type definitions for external packages",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "Apache-2.0",
