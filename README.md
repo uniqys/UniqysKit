@@ -1,6 +1,8 @@
-<h1 align="center">
+<p align="center">
   <a href="ttps://uniqys.net/kit"><img width="320" src="UniqysKit-logo.png" alt="Uniqys Kit logo" /></a>
-</h1>
+</p>
+
+[![CircleCI](https://circleci.com/gh/uniqys/UniqysKit.svg?style=svg)](https://circleci.com/gh/uniqys/UniqysKit)
 
 # What is Uniqys Kit?
 
@@ -26,7 +28,7 @@ We would appreciate if you could give us your feedback via GitHub issue, [Gitter
 `chain-core-dev` package is removed, and `chain-core` package is available.
 `chain-core` implements Tendermint consensus algorithm and thereby it can construct a secure blockchain network.
 It only supports static validator set, and dynamic validator set will be implemented in the future version.
- 
+
 ## Easy Framework
 
 Easy Framework is ready for developers to use, and it now provides you necessary data for building DApps (i.e. timestamp, block hash).
@@ -76,7 +78,7 @@ Building a DApp with Uniqys Kit is mostly as simple as building a modern web app
 
 # License
 
-License for each package in Uniqys Kit is different.  
+License for each package in Uniqys Kit is different.
 Some packages are under the Apache License Version 2.0, and the other packages are under the Mozilla Public License Version 2.0.
 
 Please refer to `LICENSE` under each package.
