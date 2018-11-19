@@ -4,6 +4,7 @@
   "description": "Merkle Patricia Trie as a merkleized key-value store",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "MPL-2.0",
+  "repository": "https://github.com/uniqys/UniqysKit/tree/master/packages/merkle-patricia-trie",
   "publishConfig": {
     "access": "public"
   },

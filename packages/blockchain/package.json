@@ -4,6 +4,7 @@
   "description": "Uniqys blockchain structure",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "MPL-2.0",
+  "repository": "https://github.com/uniqys/UniqysKit/tree/master/packages/blockchain",
   "publishConfig": {
     "access": "public"
   },

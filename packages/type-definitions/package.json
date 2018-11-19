@@ -4,6 +4,7 @@
   "description": "TypeScript type definitions for external packages",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "Apache-2.0",
+  "repository": "https://github.com/uniqys/UniqysKit/tree/master/packages/type-definitions",
   "publishConfig": {
     "access": "public"
   },

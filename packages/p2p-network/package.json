@@ -4,6 +4,7 @@
   "description": "P2P network implementation for Uniqys",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "MPL-2.0",
+  "repository": "https://github.com/uniqys/UniqysKit/tree/master/packages/p2p-network",
   "publishConfig": {
     "access": "public"
   },

@@ -4,6 +4,7 @@
   "description": "TypeScript implementation of priority queue based on heap",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "Apache-2.0",
+  "repository": "https://github.com/uniqys/UniqysKit/tree/master/packages/priority-queue",
   "publishConfig": {
     "access": "public"
   },

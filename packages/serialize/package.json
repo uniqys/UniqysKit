@@ -4,6 +4,7 @@
   "description": "serialize/deserialize to/from Buffer",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "Apache-2.0",
+  "repository": "https://github.com/uniqys/UniqysKit/tree/master/packages/serialize",
   "publishConfig": {
     "access": "public"
   },

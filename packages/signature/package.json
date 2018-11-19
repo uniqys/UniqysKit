@@ -4,6 +4,7 @@
   "description": "cryptographic signature and address for Uniqys",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "Apache-2.0",
+  "repository": "https://github.com/uniqys/UniqysKit/tree/master/packages/signature",
   "publishConfig": {
     "access": "public"
   },
