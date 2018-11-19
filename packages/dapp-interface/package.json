@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/dapp-interface",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "description": "Uniqys DAPI definition",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "MPL-2.0",
@@ -21,7 +21,7 @@
     "typescript": "^3.0.3"
   },
   "dependencies": {
-    "@uniqys/blockchain": "^0.0.4",
-    "@uniqys/signature": "^0.0.4"
+    "@uniqys/blockchain": "^0.1.0",
+    "@uniqys/signature": "^0.1.0"
   }
 }
