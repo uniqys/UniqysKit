@@ -2,46 +2,44 @@
   <a href="ttps://uniqys.net/kit"><img width="320" src="UniqysKit-logo.png" alt="Uniqys Kit logo" /></a>
 </p>
 
+# Uniqys Kit: A blockchain platform for DApps
+
 [![CircleCI](https://circleci.com/gh/uniqys/UniqysKit.svg?style=svg)](https://circleci.com/gh/uniqys/UniqysKit)
 
-# What is Uniqys Kit?
-
-Uniqys Kit is a developer-friendly toolkit to create scalable DApps on [Uniqys Network](https://uniqys.net).
+Uniqys Kit is a developer-friendly toolkit to create scalable DApps in [Uniqys Network](https://uniqys.net).
 Uniqys Kit has two main components: Chain Core and Easy Framework.
 
 - Chain Core provides fast and scalable blockchain infrastructure by using the sidechain technology.
-- Easy Framework enables developers to create DApps without having blockchain in mind.
+- Easy Framework enables developers to create DApps without being conscious of the blockchain.
 
-Both are currently under development.
+For details, please visit our [website](https://uniqys.net/kit) and [documentation](https://uniqys.github.io/UniqysKitDocs/).
 
-For details, please visit [our website](https://uniqys.net/kit).
-
-# Current status
+## Current status
 
 This is a beta version of Uniqys Kit, and it is still under development.
 It is ready for building a blockchain and is able to take consensus to maintain a sole application state in the network.
 
 We would appreciate if you could give us your feedback via GitHub issue, [Gitter](https://gitter.im/uniqys/UniqysKit-preview), or [Twitter](https://twitter.com/uniqys).
 
-## Chain Core
+### Chain Core
 
 `chain-core-dev` package is removed, and `chain-core` package is available.
 `chain-core` implements Tendermint consensus algorithm and thereby it can construct a secure blockchain network.
 It only supports static validator set, and dynamic validator set will be implemented in the future version.
 
-## Easy Framework
+### Easy Framework
 
 Easy Framework is ready for developers to use, and it now provides you necessary data for building DApps (i.e. timestamp, block hash).
 
-# Getting started
+## Getting started
 
-## Setup for [ndenv](https://github.com/riywo/ndenv)
+### Setup for [ndenv](https://github.com/riywo/ndenv)
 
 ```sh
 $ ndenv install v10.9.0
 ```
 
-## Installation
+### Install
 
 :memo: This project is created as monorepo. You must run bootstrap before building Uniqys Kit.
 
@@ -50,25 +48,25 @@ $ npm install
 $ npm run bootstrap
 ```
 
-## Build
+### Build
 
 ```sh
 $ npm run build
 ```
 
-## Trying samples
-
-After building Uniqys Kit, please see [packages/samples directory.](packages/samples/)
-
-## Tests
+### Test
 
 ```sh
 $ npm test
 ```
 
-## Creating your DApp
+### Try Samples
 
-We are currently preparing documents for building a DApp with Uniqys Kit.
+After building Uniqys Kit, please see [packages/samples directory.](packages/samples/)
+
+### Create Your DApp
+
+Please check our [documentation](https://uniqys.github.io/UniqysKitDocs/) for instruction.
 To see our examples, please refer to [packages/samples](packages/samples/).
 
 Building a DApp with Uniqys Kit is mostly as simple as building a modern web application.
@@ -76,7 +74,7 @@ Building a DApp with Uniqys Kit is mostly as simple as building a modern web app
 - To implement a server-side API, use Memcached (with permanent data storage) for the database. You can use the existing memcached library.
 - To implement a frontend, use Easy Client for accessing your server-side API. Consider Easy Client as an HTTP client library (like Axios) with features to sign a transaction.
 
-# License
+## License
 
 License for each package in Uniqys Kit is different.
 Some packages are under the Apache License Version 2.0, and the other packages are under the Mozilla Public License Version 2.0.
