@@ -22,14 +22,16 @@ import { TimeoutOptions, ConsensusTimeout } from './timeout'
 const logger = debug('chain-core:consensus')
 
 export interface ConsensusOptions extends TimeoutOptions {
+  allowBlockTimestampError: number
 }
 export namespace ConsensusOptions {
   export const defaults: ConsensusOptions = Object.assign(TimeoutOptions.defaults, {
-
+    allowBlockTimestampError: 900
   })
 }
 
 export class ConsensusEngine {
+  private consensusOptions: ConsensusOptions
   private timeout: ConsensusTimeout
   private consensusLoop = new AsyncLoop(() => this.proceedConsensus())
   private state = new State()
@@ -44,8 +46,8 @@ export class ConsensusEngine {
     private readonly _keyPair?: KeyPair,
     options?: Partial<ConsensusOptions>
   ) {
-    const consensusOptions = Object.assign({}, ConsensusOptions.defaults, options)
-    this.timeout = new ConsensusTimeout(consensusOptions)
+    this.consensusOptions = Object.assign({}, ConsensusOptions.defaults, options)
+    this.timeout = new ConsensusTimeout(this.consensusOptions)
     this.consensusLoop.on('error', err => this.event.emit('error', err))
     this.remoteNode.onNewHeight((node) => this.catchUpState(node))
     this.executor.onExecuted(appState => this.setNewHeight(appState.height + 1, appState.hash))
@@ -319,8 +321,14 @@ export class ConsensusEngine {
         if (!block.hash.equals(this.blockchain.genesisBlock.hash)) throw new Error('invalid genesis block')
       } else {
         const lastBlockHeader = await this.blockchain.headerOf(this.state.height - 1)
+        const currentTimestamp = Math.floor((new Date().getTime()) / 1000)
         if (!block.header.lastBlockHash.equals(lastBlockHeader.hash)) throw new Error('lastBlockHash mismatch')
         if (!block.header.appStateHash.equals(this.state.appStateHash)) throw new Error('appStateHash mismatch')
+        if (block.header.timestamp <= lastBlockHeader.timestamp ||
+            block.header.timestamp > currentTimestamp + this.consensusOptions.allowBlockTimestampError ||
+            block.header.timestamp < currentTimestamp - this.consensusOptions.allowBlockTimestampError) {
+          throw new Error('invalid timestamp')
+        }
       }
       return true
     } catch (err) {
