@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/easy-types",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Uniqys Easy Framework types",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "MPL-2.0",
@@ -21,8 +21,8 @@
     "test:jest": "jest --forceExit --detectOpenHandles --coverage --verbose"
   },
   "dependencies": {
-    "@uniqys/serialize": "^0.1.1",
-    "@uniqys/signature": "^0.1.1"
+    "@uniqys/serialize": "^0.1.2",
+    "@uniqys/signature": "^0.1.2"
   },
   "devDependencies": {
     "@types/jest": "^23.3.0",

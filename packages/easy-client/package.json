@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/easy-client",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Uniqys Easy Framework client",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "MPL-2.0",
@@ -23,9 +23,9 @@
     "test:lint": "npm run lint"
   },
   "dependencies": {
-    "@uniqys/easy-types": "^0.1.1",
-    "@uniqys/signature": "^0.1.1",
-    "@uniqys/types": "^0.1.1",
+    "@uniqys/easy-types": "^0.1.2",
+    "@uniqys/signature": "^0.1.2",
+    "@uniqys/types": "^0.1.2",
     "axios": "^0.18.0"
   },
   "devDependencies": {

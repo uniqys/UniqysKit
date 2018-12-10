@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/async-loop",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "start/stop async function loop",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "Apache-2.0",
