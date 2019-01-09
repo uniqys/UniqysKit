@@ -13,7 +13,8 @@ import { Optional } from '@uniqys/types'
 export class AppState {
   constructor (
     public readonly height: number,
-    public readonly hash: Hash
+    public readonly hash: Hash,
+    public readonly eventTransactionRoot: Hash
   ) {}
 }
 
@@ -26,4 +27,9 @@ export interface Dapp {
   validateTransaction (transaction: Transaction): Promise<boolean>
   selectTransactions (transactions: Transaction[]): Promise<Optional<Transaction[]>>
   executeTransactions (transactions: Transaction[], header: BlockHeader): Promise<AppState>
+}
+
+export interface EventProvider {
+  start (): Promise<void>
+  getEventTransactions (fromTimestamp: number, toTimestamp: number): Promise<Transaction[]>
 }

@@ -11,6 +11,7 @@ import { BlockHeader } from '@uniqys/blockchain'
 import { Signature } from '@uniqys/signature'
 import http from 'http'
 import { URL } from 'url'
+import urljoin from 'url-join'
 
 export namespace Headers {
   export function pack (headers: http.IncomingHttpHeaders): HttpHeaders {
@@ -89,6 +90,27 @@ export namespace SignedRequest {
       }, res => resolve(res))
       req.on('error', reject)
       req.write(signedTx.transaction.request.body)
+      req.end()
+    })
+  }
+}
+
+export namespace EventRequest {
+  export async function unpack (eventTx: Transaction, blockHeader: BlockHeader, to: URL): Promise<http.IncomingMessage> {
+    return new Promise<http.IncomingMessage>((resolve, reject) => {
+      const headers = Headers.unpack(eventTx.request.headers)
+      headers['uniqys-timestamp'] = blockHeader.timestamp.toString(10)
+      headers['uniqys-blockhash'] = blockHeader.hash.toHexString()
+      const req = http.request({
+        protocol: to.protocol,
+        host: to.hostname,
+        port: to.port,
+        method: eventTx.request.method,
+        path: urljoin('/uniqys', eventTx.request.path),
+        headers: headers
+      }, res => resolve(res))
+      req.on('error', reject)
+      req.write(eventTx.request.body)
       req.end()
     })
   }

@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-import { Blockchain, Block, TransactionList, Transaction, Consensus, ConsensusMessage, Proposal, Vote } from '@uniqys/blockchain'
+import { Blockchain, Block, TransactionList, Transaction, TransactionType, Consensus, ConsensusMessage, Proposal, Vote, MerkleTree } from '@uniqys/blockchain'
 import { KeyPair, Hash } from '@uniqys/signature'
 import { Optional } from '@uniqys/types'
 import { AsyncLoop } from '@uniqys/async-loop'
@@ -50,7 +50,7 @@ export class ConsensusEngine {
     this.timeout = new ConsensusTimeout(this.consensusOptions)
     this.consensusLoop.on('error', err => this.event.emit('error', err))
     this.remoteNode.onNewHeight((node) => this.catchUpState(node))
-    this.executor.onExecuted(appState => this.setNewHeight(appState.height + 1, appState.hash))
+    this.executor.onExecuted(appState => this.setNewHeight(appState.height + 1, appState.hash, appState.eventTransactionRoot))
   }
   public get isValidator () {
     return this._keyPair && this.validatorSet.exists(this._keyPair.address)
@@ -65,7 +65,7 @@ export class ConsensusEngine {
   public async start () {
     logger('start consensus engine')
     if (this.isValidator) logger('validator %s', this.keyPair.address.toString())
-    this.setNewHeight(this.executor.lastAppState.height + 1, this.executor.lastAppState.hash)
+    this.setNewHeight(this.executor.lastAppState.height + 1, this.executor.lastAppState.hash, MerkleTree.root([]))
     this.consensusLoop.start()
   }
   public async stop () {
@@ -333,6 +333,9 @@ export class ConsensusEngine {
             block.header.timestamp < currentTimestamp - this.consensusOptions.allowBlockTimestampError) {
           throw new Error('invalid timestamp')
         }
+        const eventTxs = block.body.transactionList.transactions.filter((tx) => tx.type === TransactionType.Event)
+        const eventTxRoot = MerkleTree.root(eventTxs)
+        if (!eventTxRoot.equals(this.state.eventTransactionRoot)) throw new Error('eventTransactionRoot mismatch')
       }
       return true
     } catch (err) {
@@ -448,10 +451,10 @@ export class ConsensusEngine {
     setTimeout(() => task().catch(err => this.event.emit('error', err)), ms)
   }
 
-  private setNewHeight (height: number, appStateHash: Hash) {
+  private setNewHeight (height: number, appStateHash: Hash, eventTransactionRoot: Hash) {
     this.state.lock.writeLock.use(async () => {
       logger('new height %d with app state %s', height, appStateHash.toHexString())
-      this.state.newHeight(height, appStateHash, this.validatorSet)
+      this.state.newHeight(height, appStateHash, this.validatorSet, eventTransactionRoot)
     }).catch(err => this.event.emit('error', err))
   }
 

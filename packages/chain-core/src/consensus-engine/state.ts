@@ -6,8 +6,8 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-import { Block, Vote, ConsensusMessage, ValidatorSet } from '@uniqys/blockchain'
-import { Address, Hash } from '@uniqys/signature'
+import { Block, Vote, ConsensusMessage, ValidatorSet, MerkleTree } from '@uniqys/blockchain'
+import { Address, Hash, Signature } from '@uniqys/signature'
 import { Optional } from '@uniqys/types'
 import { ReadWriteLock } from '@uniqys/lock'
 
@@ -63,7 +63,7 @@ export class VoteSet<T extends ConsensusMessage.VoteMessage> {
     return this.messageOfValidator.has(validator)
   }
 
-  public signatures (blockHash: Hash) {
+  public signatures (blockHash: Hash): Signature[] {
     return Array.from(this.messageOfValidator.values())
       .filter(msg => msg.vote.blockHash.equals(blockHash))
       .map(msg => msg.sign)
@@ -94,17 +94,20 @@ export class State {
   public get appStateHash () { return this._appStateHash }
   private _validatorSet = new ValidatorSet([])
   public get validatorSet () { return this._validatorSet }
+  private _eventTransactionRoot = MerkleTree.root([])
+  public get eventTransactionRoot () { return this._eventTransactionRoot }
   public lockedRound = 0
-  public lockedBlock?: Block
+  public lockedBlock ?: Block
   public validRound = 0
-  public validBlock?: Block
+  public validBlock ?: Block
   public round = 1
   public step = Step.NewRound
   private roundState = new Map<number, RoundState>()
-  public newHeight (height: number, appStateHash: Hash, validatorSet: ValidatorSet) {
+  public newHeight (height: number, appStateHash: Hash, validatorSet: ValidatorSet, eventTransactionRoot: Hash) {
     this._height = height
     this._appStateHash = appStateHash
     this._validatorSet = validatorSet
+    this._eventTransactionRoot = eventTransactionRoot
     this.lockedRound = 0
     this.lockedBlock = undefined
     this.validRound = 0

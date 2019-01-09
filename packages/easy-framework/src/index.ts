@@ -11,6 +11,7 @@ import { Store } from '@uniqys/store'
 import { Blockchain } from '@uniqys/blockchain'
 import { KeyPair } from '@uniqys/signature'
 import { AsyncLoop } from '@uniqys/async-loop'
+import { EventProvider } from '@uniqys/dapp-interface'
 import { Gateway } from './gateway'
 import { OuterApi, InnerApi } from './api'
 import { MemcachedCompatibleServer } from './memcached-compatible-server'
@@ -74,13 +75,14 @@ export class Easy {
     stateStore: Store<Buffer, Buffer>,
     peerInfo: PeerInfo,
     keyPair?: KeyPair,
+    public readonly eventProvider?: EventProvider,
     options?: Partial<Options>
   ) {
     this.options = Object.assign({}, EasyOptions.defaults, Object.assign({}, Options.defaults, options).easy)
     const appUrl = new URL(`http://${this.options.app.host}:${this.options.app.port}`)
-    const state = new State(stateStore)
+    const state = new State(stateStore, blockchain.genesisBlock.header.timestamp)
     const memcachedImpl = new EasyMemcached(state.app)
-    const controller = new Controller(appUrl, state, memcachedImpl)
+    const controller = new Controller(appUrl, state, memcachedImpl, eventProvider)
     this.core = new ChainCore(controller, blockchain, peerInfo, keyPair, options)
     this.gateway = new Gateway(this.core, state, new OuterApi(state), appUrl)
     this.innerApi = Easy.serveApi(new InnerApi(state))
@@ -97,6 +99,7 @@ export class Easy {
     logger('listen inner Memcached: %s', Easy.listenedAddressToString(this.innerMemcached))
   }
   public async start () {
+    if (this.eventProvider) { await this.eventProvider.start() }
     await this.waitApp()
     await this.core.start()
     logger('started')

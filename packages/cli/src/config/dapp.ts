@@ -43,6 +43,10 @@ export interface DappConfigSchema {
    */
   validatorSet: ValidatorSchema[]
   /**
+   * Name of a package to use as a event provider.
+   */
+  eventProvider?: string
+  /**
    * Command to initialize application logic.
    */
   initApp?: string
@@ -55,6 +59,7 @@ export interface DappConfigSchema {
 export interface DappConfig {
   genesisBlock: Block
   initialValidatorSet: ValidatorSet
+  eventProvider?: string
   initAppCommand?: string
   startAppCommand: string
 }
@@ -77,6 +82,7 @@ export namespace DappConfig {
     return {
       genesisBlock,
       initialValidatorSet,
+      eventProvider: validated.eventProvider,
       initAppCommand: validated.initApp,
       startAppCommand: validated.startApp
     }

@@ -6,14 +6,14 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-import { Dapp, AppState } from '@uniqys/dapp-interface'
-import { Transaction as CoreTransaction, BlockHeader } from '@uniqys/blockchain'
-import { SignedTransaction } from '@uniqys/easy-types'
+import { Dapp, AppState, EventProvider } from '@uniqys/dapp-interface'
+import { Transaction as CoreTransaction, BlockHeader, TransactionType, MerkleTree } from '@uniqys/blockchain'
+import { Transaction, SignedTransaction } from '@uniqys/easy-types'
 import { deserialize } from '@uniqys/serialize'
 import { Optional } from '@uniqys/types'
 import { State } from './state'
 import { EasyMemcached, OperationMode } from './memcached-implementation'
-import { SignedRequest, Response } from './packer'
+import { SignedRequest, EventRequest, Response } from './packer'
 import { URL } from 'url'
 import debug from 'debug'
 const logger = debug('easy-fw:controller')
@@ -22,12 +22,15 @@ export class Controller implements Dapp {
   constructor (
     private readonly app: URL,
     private readonly state: State,
-    private readonly memcachedImpl: EasyMemcached
+    private readonly memcachedImpl: EasyMemcached,
+    private readonly eventProvider?: EventProvider
   ) { }
 
   public async connect (): Promise<AppState> {
     await this.state.ready()
-    return this.state.appState()
+    const root = this.state.getAppStateHash()
+    const height = await this.state.getHeight()
+    return new AppState(height, root, MerkleTree.root([]))
   }
   public async validateTransaction (coreTx: CoreTransaction): Promise<boolean> {
     try {
@@ -49,37 +52,82 @@ export class Controller implements Dapp {
         selected.push(coreTx)
       }
     }
+    const latestBlockTimestamp = await this.state.meta.getLatestBlockTimestamp()
+    const latestEventTimestamp = await this.state.meta.getLatestEventTimestamp()
+    if (this.eventProvider) {
+      selected.push(...await this.eventProvider.getEventTransactions(latestEventTimestamp, latestBlockTimestamp))
+    }
     if (selected.length > 0) {
       // Pending transaction existed
       return Optional.some(selected)
+    }
+    const currentTimestamp = Math.floor(new Date().getTime() / 1000)
+    if (this.eventProvider && (await this.eventProvider.getEventTransactions(latestEventTimestamp, currentTimestamp)).length > 0) {
+      // Pending event transaction existed
+      // Propose empty block
+      return Optional.some([])
     }
     return Optional.none()
   }
   public async executeTransactions (coreTxs: CoreTransaction[], header: BlockHeader): Promise<AppState> {
     for (const coreTx of coreTxs) {
-      const tx = deserialize(coreTx.data, SignedTransaction.deserialize)
-      const sender = tx.signer
-      await this.state.rwLock.writeLock.use(async () => {
-        const root = this.state.top.root
-        try {
-          const next = (await this.state.getAccount(sender)).incrementNonce()
-          // skip non continuous nonce transaction
-          if (tx.nonce !== next.nonce) { throw new Error('non continuous nonce') }
-          await this.state.setAccount(sender, next)
-          // allow read/write
-          this.memcachedImpl.changeMode(OperationMode.ReadWrite)
-          const res = await Response.pack(await SignedRequest.unpack(tx, header, this.app))
-          await this.state.result.set(coreTx.hash, res)
-          if (400 <= res.status && res.status < 600) { throw new Error(res.message) }
-        } catch (err) {
-          logger('error in action: %s', err.message)
-          await this.state.top.rollback(root)
-        } finally {
-          this.memcachedImpl.changeMode(OperationMode.ReadOnly)
+      switch (coreTx.type) {
+        case TransactionType.Normal: {
+          const tx = deserialize(coreTx.data, SignedTransaction.deserialize)
+          const sender = tx.signer
+          await this.state.rwLock.writeLock.use(async () => {
+            try {
+              const next = (await this.state.getAccount(sender)).incrementNonce()
+              // skip non continuous nonce transaction
+              if (tx.nonce !== next.nonce) { throw new Error('non continuous nonce') }
+              await this.state.setAccount(sender, next)
+              this.memcachedImpl.changeMode(OperationMode.ReadWrite)
+              const res = await Response.pack(await SignedRequest.unpack(tx, header, this.app))
+              await this.state.result.set(coreTx.hash, res)
+              if (400 <= res.status && res.status < 600) { throw new Error(res.message) }
+            } catch (err) {
+              logger('error in action: %s', err.message)
+              await this.state.top.rollback(root)
+            } finally {
+              this.memcachedImpl.changeMode(OperationMode.ReadOnly)
+            }
+          })
+          break
         }
-      })
+        case TransactionType.Event: {
+          const tx = deserialize(coreTx.data, Transaction.deserialize)
+          await this.state.rwLock.writeLock.use(async () => {
+            try {
+              const nextNonce = await this.state.event.getNonce() + 1
+              if (tx.nonce !== nextNonce) { throw new Error('non continuous nonce') }
+              await this.state.event.incrementNonce()
+              this.memcachedImpl.changeMode(OperationMode.ReadWrite)
+              const res = await Response.pack(await EventRequest.unpack(tx, header, this.app))
+              await this.state.event.set(coreTx.hash, res)
+              if (400 <= res.status && res.status < 600) { throw new Error(res.message) }
+            } catch (err) {
+              logger('error in action: %s', err.message)
+              await this.state.top.rollback(root)
+            } finally {
+              this.memcachedImpl.changeMode(OperationMode.ReadOnly)
+            }
+          })
+          break
+        }
+        default: throw new Error()
+      }
     }
     await this.state.meta.incrementHeight()
-    return this.state.appState()
+    await this.state.meta.setLatestBlockTimestamp(header.timestamp)
+
+    const eventTxs = coreTxs.filter(tx => tx.type === TransactionType.Event)
+    if (eventTxs.length > 0) { await this.state.meta.setLatestEventTimestamp(header.timestamp) }
+    const latestEventTimestamp = await this.state.meta.getLatestEventTimestamp()
+    const newEventTxs = this.eventProvider ? await this.eventProvider.getEventTransactions(latestEventTimestamp, header.timestamp) : []
+    const eventTransactionRoot = MerkleTree.root(newEventTxs)
+
+    const root = this.state.getAppStateHash()
+    const height = await this.state.getHeight()
+    return new AppState(height, root, eventTransactionRoot)
   }
 }
