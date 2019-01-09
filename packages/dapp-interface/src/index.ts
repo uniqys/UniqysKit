@@ -8,6 +8,7 @@
 
 import { Transaction, BlockHeader } from '@uniqys/blockchain'
 import { Hash } from '@uniqys/signature'
+import { Optional } from '@uniqys/types'
 
 export class AppState {
   constructor (
@@ -23,6 +24,6 @@ export interface Core {
 export interface Dapp {
   connect (): Promise<AppState>
   validateTransaction (transaction: Transaction): Promise<boolean>
-  selectTransactions (transactions: Transaction[]): Promise<Transaction[]>
+  selectTransactions (transactions: Transaction[]): Promise<Optional<Transaction[]>>
   executeTransactions (transactions: Transaction[], header: BlockHeader): Promise<AppState>
 }

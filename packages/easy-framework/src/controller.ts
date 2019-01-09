@@ -10,6 +10,7 @@ import { Dapp, AppState } from '@uniqys/dapp-interface'
 import { Transaction as CoreTransaction, BlockHeader } from '@uniqys/blockchain'
 import { SignedTransaction } from '@uniqys/easy-types'
 import { deserialize } from '@uniqys/serialize'
+import { Optional } from '@uniqys/types'
 import { State } from './state'
 import { EasyMemcached, OperationMode } from './memcached-implementation'
 import { SignedRequest, Response } from './packer'
@@ -39,7 +40,7 @@ export class Controller implements Dapp {
       return false
     }
   }
-  public async selectTransactions (coreTxs: CoreTransaction[]): Promise<CoreTransaction[]> {
+  public async selectTransactions (coreTxs: CoreTransaction[]): Promise<Optional<CoreTransaction[]>> {
     const selected: CoreTransaction[] = []
     for (const coreTx of coreTxs) {
       const tx = deserialize(coreTx.data, SignedTransaction.deserialize)
@@ -48,7 +49,11 @@ export class Controller implements Dapp {
         selected.push(coreTx)
       }
     }
-    return selected
+    if (selected.length > 0) {
+      // Pending transaction existed
+      return Optional.some(selected)
+    }
+    return Optional.none()
   }
   public async executeTransactions (coreTxs: CoreTransaction[], header: BlockHeader): Promise<AppState> {
     for (const coreTx of coreTxs) {

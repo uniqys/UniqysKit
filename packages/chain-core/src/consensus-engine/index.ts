@@ -174,9 +174,9 @@ export class ConsensusEngine {
       return
     }
     const transactions = await this.transactionPool.selectTransactions()
-    if (transactions.length > 0) {
+    if (transactions.isSome()) {
       logger('enter propose: has transactions')
-      await this.enterPropose(transactions)
+      await this.enterPropose(transactions.value)
       return
     }
   }
@@ -185,7 +185,11 @@ export class ConsensusEngine {
     const height = this.state.height
     const round = this.state.round
     if (this.isValidator && this.validatorSet.proposer(height, round).equals(this.keyPair.address)) {
-      await this.sendProposalMessage(transactions || await this.transactionPool.selectTransactions())
+      if (!transactions) {
+        const opt = await this.transactionPool.selectTransactions()
+        transactions = opt.isSome() ? opt.value : []
+      }
+      await this.sendProposalMessage(transactions)
       this.state.step = Step.Propose
       return
     } else {
