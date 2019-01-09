@@ -8,19 +8,24 @@
 
 import { MerkleTree } from './merkle-tree'
 import { Hash, Hashable } from '@uniqys/signature'
-import { Serializable, BufferWriter, BufferReader, SizedBuffer, List } from '@uniqys/serialize'
+import { Serializable, BufferWriter, BufferReader, SizedBuffer, List, UInt8 } from '@uniqys/serialize'
 
+export enum TransactionType { Normal = 0, Event = 1 }
 export class Transaction implements Hashable, Serializable {
   public readonly hash: Hash
   constructor (
+    public readonly type: TransactionType,
     public readonly data: Buffer
   ) {
     this.hash = Hash.fromData(this.data)
   }
   public static deserialize (reader: BufferReader): Transaction {
-    return new Transaction(SizedBuffer.deserialize(reader))
+    const type = UInt8.deserialize(reader)
+    const data = SizedBuffer.deserialize(reader)
+    return new Transaction(type, data)
   }
   public serialize (writer: BufferWriter) {
+    UInt8.serialize(this.type, writer)
     SizedBuffer.serialize(this.data, writer)
   }
   public equals (other: Transaction) {

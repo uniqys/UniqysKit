@@ -8,7 +8,7 @@
 
 import { ProtocolHandler, Protocol, Message, ProtocolMeta } from '.'
 import { Channel } from '@uniqys/p2p-network'
-import { Block, TransactionList, Transaction, Consensus, Vote, ConsensusMessage, Proposal } from '@uniqys/blockchain'
+import { Block, TransactionList, Transaction, TransactionType, Consensus, Vote, ConsensusMessage, Proposal } from '@uniqys/blockchain'
 import { Hash, KeyPair } from '@uniqys/signature'
 import { Source, Sink } from 'pull-stream'
 import PeerInfo from 'peer-info'
@@ -61,7 +61,7 @@ describe('sync protocol', () => {
     const stream2to1 = new ThroughDuplex<Buffer>()
     channel1 = new Channel({ source: stream2to1.source, sink: stream1to2.sink }, Message.deserialize, Message.serialize)
     channel2 = new Channel({ source: stream1to2.source, sink: stream2to1.sink }, Message.deserialize, Message.serialize)
-    transaction = new Transaction(Buffer.alloc(0))
+    transaction = new Transaction(TransactionType.Normal, Buffer.alloc(0))
     block = Block.construct(1, 100, Hash.fromData('genesis'), Hash.fromData('validators'), Hash.fromData('state'),
         new TransactionList([]), new Consensus(new Vote(0, 1, Hash.fromData('genesis')), []))
     consensus = new Consensus(new Vote(1, 1, block.hash), [])

@@ -10,7 +10,7 @@ import http from 'http'
 import { URL } from 'url'
 import Koa from 'koa'
 import Router from 'koa-router'
-import { Transaction as CoreTransaction } from '@uniqys/blockchain'
+import { Transaction as CoreTransaction, TransactionType } from '@uniqys/blockchain'
 import { Core } from '@uniqys/dapp-interface'
 import { serialize } from '@uniqys/serialize'
 import { OuterApi } from './api'
@@ -32,7 +32,7 @@ export class Gateway extends http.Server {
       .use(async (ctx, next) => {
         if (ctx.headers['uniqys-sign']) {
           const tx = await SignedRequest.pack(ctx.req, app)
-          const coreTx = new CoreTransaction(serialize(tx))
+          const coreTx = new CoreTransaction(TransactionType.Normal, serialize(tx))
           await core.sendTransaction(coreTx)
           ctx.status = 202 // Accepted
           ctx.body = {
