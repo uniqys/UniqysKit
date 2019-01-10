@@ -1,0 +1,38 @@
+{
+  "name": "@uniqys/event-provider-sample",
+  "version": "0.1.2",
+  "description": "Uniqys Event Provider",
+  "author": "Uniqys Project (https://uniqys.net)",
+  "license": "MPL-2.0",
+  "repository": "https://github.com/uniqys/UniqysKit/tree/master/packages/event-provider",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "/dist"
+  ],
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "tslint -c tslint.json -p tsconfig.json",
+    "test": "run-s test:build test:lint",
+    "test:build": "tsc -p tsconfig.json --noEmit",
+    "test:lint": "npm run lint"
+  },
+  "dependencies": {
+    "@uniqys/blockchain": "^0.1.2",
+    "@uniqys/dapp-interface": "^0.1.2",
+    "@uniqys/serialize": "0.1.2",
+    "@uniqys/signature": "^0.1.2",
+    "@uniqys/easy-types": "^0.1.2",
+    "debug": "^3.1.0"
+  },
+  "devDependencies": {
+    "@types/debug": "0.0.30",
+    "@types/jest": "^23.3.0",
+    "@types/node": "^10.9.4",
+    "npm-run-all": "^4.1.5",
+    "tslint": "^5.11.0",
+    "typescript": "^3.0.3"
+  }
+}

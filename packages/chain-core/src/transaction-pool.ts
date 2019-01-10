@@ -66,7 +66,7 @@ export class TransactionPool {
   }
 
   public selectTransactions (): Promise<Optional<Transaction[]>> {
-    return this.pool.size === 0 ? Promise.resolve(Optional.none()) : this.selector(Array.from(this.pool.values()))
+    return this.selector(Array.from(this.pool.values()))
   }
 
   private async propagateTransaction (tx: Transaction): Promise<void> {

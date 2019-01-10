@@ -75,7 +75,7 @@ export class Easy {
     stateStore: Store<Buffer, Buffer>,
     peerInfo: PeerInfo,
     keyPair?: KeyPair,
-    public readonly eventProvider?: EventProvider,
+    eventProvider?: EventProvider,
     options?: Partial<Options>
   ) {
     this.options = Object.assign({}, EasyOptions.defaults, Object.assign({}, Options.defaults, options).easy)
@@ -99,7 +99,6 @@ export class Easy {
     logger('listen inner Memcached: %s', Easy.listenedAddressToString(this.innerMemcached))
   }
   public async start () {
-    if (this.eventProvider) { await this.eventProvider.start() }
     await this.waitApp()
     await this.core.start()
     logger('started')

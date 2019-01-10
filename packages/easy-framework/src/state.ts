@@ -72,9 +72,6 @@ export class TransactionResult {
   }
 }
 
-namespace EventKey {
-  export const nonce = Buffer.from('nonce:')
-}
 export class EventResult {
   constructor (
     private readonly store: Store<Buffer, Buffer>
@@ -90,17 +87,9 @@ export class EventResult {
       () => Optional.none()
     )
   }
-
-  public async getNonce (): Promise<number> {
-    return (await this.store.get(EventKey.nonce)).match(
-      v => deserialize(v, UInt64.deserialize),
-      () => 0
-    )
-  }
-  public async incrementNonce () {
-    const nonce = await this.getNonce()
-    await this.store.set(EventKey.nonce, serialize(nonce + 1, UInt64.serialize))
-  }
+}
+namespace EventKey {
+  export const nonce = Buffer.from('event-nonce:')
 }
 
 export class State {
@@ -124,6 +113,7 @@ export class State {
   }
   public async ready (): Promise<void> {
     await this.meta.setLatestBlockTimestamp(this.genesisTimestamp)
+    await this.meta.setLatestEventTimestamp(this.genesisTimestamp)
     await this.top.ready()
   }
   public getAppStateHash (): Hash {
@@ -140,5 +130,15 @@ export class State {
   }
   public async setAccount (address: Address, account: Account): Promise<void> {
     await this.top.set(address.buffer, serialize(account))
+  }
+  public async getEventNonce (): Promise<number> {
+    return (await this.store.get(EventKey.nonce)).match(
+      v => deserialize(v, UInt64.deserialize),
+      () => 0
+    )
+  }
+  public async incrementEventNonce () {
+    const nonce = await this.getEventNonce()
+    await this.store.set(EventKey.nonce, serialize(nonce + 1, UInt64.serialize))
   }
 }
