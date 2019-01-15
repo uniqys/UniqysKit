@@ -28,6 +28,7 @@
     "@uniqys/types": "^0.1.2",
     "axios": "^0.18.0",
     "web3": "^1.0.0-beta.37",
+    "@types/ethereumjs-util": "5.2.0",
     "ethereumjs-util": "6.0.0"
   },
   "devDependencies": {
