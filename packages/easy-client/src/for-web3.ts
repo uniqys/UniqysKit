@@ -26,14 +26,15 @@ function checkLocalStorage () {
 */
 
 export class EasyClientForWeb3 extends EasyClient {
-  constructor (provider: Provider, address: string, base: string) {
+  constructor (provider: Provider, base: string) {
 
-    const web3 = new Web3(provider);
-
+    const web3:any = new Web3(provider);
+    
     const signer = {
-      address: Address.fromString(address),
+      address: Address.fromString(web3.givenProvider.selectedAddress.substring(2)),
+
       sign: async (tx: Transaction) => {
-        const sig = await web3.eth.sign(utils.bufferToHex(tx.hash.buffer), address)
+        const sig = await web3.eth.sign(utils.bufferToHex(tx.hash.buffer), web3.givenProvider.selectedAddress)
         const buffer: any = utils.toBuffer(sig);
         buffer[64] = buffer[64] - 27;
         const sign = new Signature(buffer)   
