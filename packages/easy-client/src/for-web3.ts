@@ -31,7 +31,7 @@ export class EasyClientForWeb3 extends EasyClient {
     const web3 = new Web3(provider);
 
     const signer = {
-      address: Address.fromString(address);
+      address: Address.fromString(address),
       sign: async (tx: Transaction) => {
         const account = await web3.eth.getAccounts()[0];
         return new Promise<Signature>((resolve) => {
