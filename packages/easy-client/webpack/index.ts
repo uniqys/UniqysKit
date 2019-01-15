@@ -6,7 +6,6 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-import { EasyClientForBrowser } from '../src'
-import { EasyClientForWeb3} from '../src'
+import { EasyClientForBrowser, EasyClientForWeb3 } from '../src'
 
 export = {EasyClientForBrowser, EasyClientForWeb3}
