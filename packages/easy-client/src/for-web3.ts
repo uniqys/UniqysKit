@@ -7,9 +7,9 @@
 */
 
 import { EasyClient } from './client'
-import { KeyPair, Signature } from '@uniqys/signature'
+import { /*KeyPair,*/ Signature } from '@uniqys/signature'
 import { Transaction } from '@uniqys/easy-types'
-import { Bytes32 } from '@uniqys/types'
+//import { Bytes32 } from '@uniqys/types'
 import Web3 = require('web3')
 import { Provider } from 'web3/providers';
 import utils = require('ethereumjs-util')
