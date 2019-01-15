@@ -13,18 +13,6 @@ import Web3 = require('web3')
 import { Provider } from 'web3/providers';
 import utils = require('ethereumjs-util')
 
-/*
-function checkLocalStorage () {
-  try {
-    localStorage.setItem('__localStorage_test__', '__test__')
-    localStorage.removeItem('__localStorage_test__')
-    return true
-  } catch (e) {
-    return false
-  }
-}
-*/
-
 export class EasyClientForWeb3 extends EasyClient {
   constructor (provider: Provider, base: string) {
 
