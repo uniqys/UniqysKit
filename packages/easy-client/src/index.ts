@@ -8,3 +8,4 @@
 
 export * from './client'
 export * from './for-browser'
+export * from './for-web3'

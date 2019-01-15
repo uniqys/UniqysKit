@@ -7,5 +7,6 @@
 */
 
 import { EasyClientForBrowser } from '../src'
+import { EasyClientForWeb3} from '../src'
 
-export = EasyClientForBrowser
+export = {EasyClientForBrowser, EasyClientForWeb3}
