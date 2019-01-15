@@ -7,7 +7,7 @@
 */
 
 import { EasyClient } from './client'
-import { Signature } from '@uniqys/signature'
+import { Address, Signature } from '@uniqys/signature'
 import { Transaction } from '@uniqys/easy-types'
 import Web3 = require('web3')
 import { Provider } from 'web3/providers';
@@ -26,16 +26,16 @@ function checkLocalStorage () {
 */
 
 export class EasyClientForWeb3 extends EasyClient {
-  constructor (provider: Provider, base: string) {
+  constructor (provider: Provider, address: string, base: string) {
 
     const web3 = new Web3(provider);
 
     const signer = {
-      address: async () => {return utils.toBuffer(web3.eth.getAccounts()[0])},
+      address: Address.fromString(address);
       sign: async (tx: Transaction) => {
         const account = await web3.eth.getAccounts()[0];
         return new Promise<Signature>((resolve) => {
-          resolve(web3.eth.sign(utils.bufferToHex(tx.hash.buffer), account))
+          resolve(web3.eth.sign(utils.bufferToHex(tx.hash.buffer), address))
         })
       }
     }
