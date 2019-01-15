@@ -29,7 +29,7 @@ module.exports = {
     new LicenseWebpackPlugin({
       pattern: /.*/,
       unacceptablePattern: /GPL/,
-      abortOnUnacceptableLicense: true,
+      abortOnUnacceptableLicense: false,
       modulesDirectories: ['../../node_modules'], // hoisted
       perChunkOutput: false,
       addBanner: true

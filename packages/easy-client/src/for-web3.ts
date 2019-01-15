@@ -32,9 +32,13 @@ export class EasyClientForWeb3 extends EasyClient {
 
     const signer = {
       address: Address.fromString(address),
-      sign: (tx: Transaction) => {
-        return new Promise<Signature>((resolve) => {
-          resolve(web3.eth.sign(utils.bufferToHex(tx.hash.buffer), address))
+      sign: async (tx: Transaction) => {
+        const sig = await web3.eth.sign(utils.bufferToHex(tx.hash.buffer), address)
+        const buffer: any = utils.toBuffer(sig);
+        buffer[64] = buffer[64] - 27;
+        const sign = new Signature(buffer)   
+        return new Promise<Signature>((resolve) => {       
+          resolve(sign)
         })
       }
     }
