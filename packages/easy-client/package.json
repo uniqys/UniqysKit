@@ -28,10 +28,11 @@
     "@uniqys/types": "^0.1.2",
     "axios": "^0.18.0",
     "web3": "^1.0.0-beta.37",
-    "@types/ethereumjs-util": "5.2.0",
     "ethereumjs-util": "6.0.0"
   },
   "devDependencies": {
+    "@types/web3": "^1.0.14",
+    "@types/ethereumjs-util": "5.2.0",     
     "@types/node": "^10.9.4",
     "awesome-typescript-loader": "^5.2.0",
     "license-webpack-plugin": "^1.3.1",
