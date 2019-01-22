@@ -27,8 +27,7 @@
     "@uniqys/signature": "^0.1.2",
     "@uniqys/types": "^0.1.2",
     "axios": "^0.18.0",
-    "web3": "^1.0.0-beta.37",
-    "ethereumjs-util": "6.0.0"
+    "web3": "^1.0.0-beta.37"
   },
   "devDependencies": {
     "@types/web3": "^1.0.14",
