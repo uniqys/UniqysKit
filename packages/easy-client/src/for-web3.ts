@@ -15,19 +15,16 @@ import { Provider } from 'web3/providers'
 export class EasyClientForWeb3 extends EasyClient {
   constructor (provider: Provider, base: string) {
 
-    const web3 = new Web3(provider)
+    const web3:any = new Web3(provider)
 
     const signer = {
       address: Address.fromString(web3.givenProvider.selectedAddress.substring(2)),
 
       sign: async (tx: Transaction) => {
-        const sig = await web3.eth.sign('0x' + tx.hash.buffer.toString(), web3.givenProvider.selectedAddress)
+        const sig = await web3.eth.sign('0x' + Buffer.from(tx.hash.buffer).toString('hex'), web3.givenProvider.selectedAddress)
         const buffer = Buffer.from(sig.substr(2), "hex")
         buffer[64] = buffer[64] - 27;
-        const sign = new Signature(buffer);
-        return new Promise<Signature>((resolve) => {
-          resolve(sign)
-        })
+        return new Signature(buffer);
       }
     }
 
