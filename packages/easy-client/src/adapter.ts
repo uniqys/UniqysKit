@@ -61,7 +61,7 @@ export function adapter (signer: Signer, api: Api): (config: RequestConfig) => A
     const headers = HttpHeaders.fromObject(config.headers, key => !(/^uniqys-.+/.test(key) || !normalized.includes(key)))
 
     // nonce
-    const nonce = await api.nonce(signer.address.toString()) + 1
+    const nonce = await api.nonce((await signer.address).toString()) + 1
 
     // make tx and sign
     const tx = new Transaction(nonce, new HttpRequest(config.method, path, headers, data)) // data

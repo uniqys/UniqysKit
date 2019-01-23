@@ -17,7 +17,7 @@
 import repl from 'repl'
 import { inspect } from 'util'
 
-import { KeyPair, Signature } from '@uniqys/signature'
+import { KeyPair, Signature, Address } from '@uniqys/signature'
 import { EasyClient } from '@uniqys/easy-client'
 import { Transaction } from '@uniqys/easy-types'
 
@@ -25,7 +25,7 @@ async function start (url: string) {
   const keyPair = new KeyPair()
   const replServer = repl.start()
   const signer = {
-    address: keyPair.address,
+    address: new Promise<Address>((resolve) => resolve(keyPair.address)),
     sign: async (tx: Transaction) => {
       console.log(`nonce: ${tx.nonce}`)
       console.log(`method: ${tx.request.method}`)
@@ -60,7 +60,8 @@ async function start (url: string) {
   replServer.defineCommand('account', {
     help: 'GET /uniqys/accounts/:me',
     action (this: repl.REPLServer) {
-      easy.api.account(signer.address.toString())
+      easy.getAddress()
+        .then(address => easy.api.account(address.toString()))
         .then(account => {
           console.log(`account: balance ${account.balance}, nonce ${account.nonce}`)
           this.displayPrompt()

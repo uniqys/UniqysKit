@@ -13,7 +13,7 @@ import { Transaction } from '@uniqys/easy-types'
 import { adapter } from './adapter'
 
 export interface Signer {
-  address: Address
+  address: Promise<Address>
   sign (tx: Transaction): Promise<Signature>
 }
 
@@ -24,7 +24,6 @@ export interface RequestConfig extends AxiosRequestConfig {
 export class EasyClient {
   public readonly app: AxiosInstance
   public readonly api: Api
-  public get address (): Address { return this.signer.address }
   constructor (
     private readonly signer: Signer,
     config?: AxiosRequestConfig
@@ -35,6 +34,8 @@ export class EasyClient {
     config.adapter = adapter(signer, this.api)
     this.app = Axios.create(config)
   }
+
+  public async getAddress (): Promise<Address> { return this.signer.address }
 
   // delegate
   public get defaults () { return this.app.defaults }

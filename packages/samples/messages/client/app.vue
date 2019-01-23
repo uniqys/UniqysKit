@@ -129,7 +129,7 @@ const easy = new Easy(location.origin)
 export default {
   data () {
     return {
-      address: easy.address.toString(),
+      address: null,
       account: {
         balance: 0,
         nonce: 0,
@@ -216,9 +216,12 @@ export default {
     }
   },
   created () {
-    this.updateAccount()
-    this.updateMessages()
+    easy.getAddress()
+      .then((address) => {
+        this.address = address.toString()
+        this.updateAccount()
+        this.updateMessages()
+      })
   }
 }
 </script>
-
