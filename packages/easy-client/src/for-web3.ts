@@ -13,21 +13,34 @@ import Web3 from 'web3'
 import { Provider } from 'web3/providers'
 
 export class EasyClientForWeb3 extends EasyClient {
+
   constructor (provider: Provider, base: string) {
+   const web3 = new Web3(provider)
+   const selectedAddress = async () => {
+    const accounts = await web3.eth.getAccounts()
+    return Address.fromString(accounts[0].substring(2))
+   }
 
-    const web3:any = new Web3(provider)
-
-    const signer = {
-      address: Address.fromString(web3.givenProvider.selectedAddress.substring(2)),
-
-      sign: async (tx: Transaction) => {
-        const sig = await web3.eth.sign('0x' + Buffer.from(tx.hash.buffer).toString('hex'), web3.givenProvider.selectedAddress)
-        const buffer = Buffer.from(sig.substr(2), "hex")
-        buffer[64] = buffer[64] - 27;
-        return new Signature(buffer);
-      }
+   const signer = {
+    address: Address.zero,
+    async sign (tx: Transaction) {
+     this.address = await selectedAddress()
+     const sig = await web3.eth.sign('0x' + Buffer.from(tx.hash.buffer).toString('hex'), this.address.toString())
+     const buffer = Buffer.from(sig.substr(2), 'hex')
+     buffer[64] = buffer[64] - 27
+     return new Signature(buffer)
     }
-
-    super(signer, { baseURL: base })
+   }
+ ​
+   setInterval(async function() {
+    const address = await selectedAddress()
+    if (!signer.address.equals(address)) {
+     signer.address = address;
+    }
+   }, 100);
+ ​
+   selectedAddress().then(address => signer.address = address)
+   super(signer, { baseURL: base })
   }
-}
+
+ }
