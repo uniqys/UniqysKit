@@ -54,7 +54,6 @@ const command: CommandModule = {
       unique: argv.unique,
       timestamp: argv.timestamp,
       validatorSet: validatorSet,
-      eventProvider: '',
       initApp: '',
       startApp: 'echo "no start command specified"'
     }

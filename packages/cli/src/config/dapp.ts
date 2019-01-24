@@ -26,6 +26,17 @@ export interface ValidatorSchema {
   power: number
 }
 
+export interface EventProviderSchema {
+  /**
+   * Name of an event-provider package.
+   */
+  package: string
+  /**
+   * Options for event-provider.
+   */
+  options: any
+}
+
 export interface DappConfigSchema {
   /**
    * String to make chain unique. It is hashed and become genesis.lastBlockHash
@@ -45,7 +56,7 @@ export interface DappConfigSchema {
   /**
    * Name of a package to use as a event provider.
    */
-  eventProvider?: string
+  eventProvider?: EventProviderSchema
   /**
    * Command to initialize application logic.
    */
@@ -59,7 +70,7 @@ export interface DappConfigSchema {
 export interface DappConfig {
   genesisBlock: Block
   initialValidatorSet: ValidatorSet
-  eventProvider?: string
+  eventProvider?: EventProviderSchema
   initAppCommand?: string
   startAppCommand: string
 }

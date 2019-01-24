@@ -58,9 +58,9 @@ export class Controller implements Dapp {
     // Check for event transactions to include in next block
     const latestBlockTimestamp = await this.state.meta.getLatestBlockTimestamp()
     const latestEventTimestamp = await this.state.meta.getLatestEventTimestamp()
-    const eventNonce = await this.state.getEventNonce()
+    const nextEventNonce = await this.state.getEventNonce() + 1
     if (this.eventProvider) {
-      selected.push(...await this.eventProvider.getTransactions(latestEventTimestamp, latestBlockTimestamp, eventNonce))
+      selected.push(...await this.eventProvider.getTransactions(latestEventTimestamp, latestBlockTimestamp, nextEventNonce))
     }
 
     if (selected.length > 0) {
@@ -70,8 +70,9 @@ export class Controller implements Dapp {
 
     // Check for pending new event transactions
     const currentTimestamp = Math.floor(new Date().getTime() / 1000)
-    const newEventTxs = this.eventProvider ?
-      await this.eventProvider.getTransactions(latestEventTimestamp, currentTimestamp, eventNonce) : []
+    const newEventTxs = this.eventProvider
+      ? await this.eventProvider.getTransactions(latestEventTimestamp, currentTimestamp, nextEventNonce)
+      : []
     if (this.eventProvider && newEventTxs.length > 0) {
       // Pending event transaction existed
       // Propose empty block
@@ -136,10 +137,13 @@ export class Controller implements Dapp {
 
     const eventTxs = coreTxs.filter(tx => tx.type === TransactionType.Event)
     if (eventTxs.length > 0) { await this.state.meta.setLatestEventTimestamp(header.timestamp) }
+
     const latestEventTimestamp = await this.state.meta.getLatestEventTimestamp()
-    const eventNonce = await this.state.getEventNonce()
-    const newEventTxs = this.eventProvider ? await this.eventProvider.getTransactions(latestEventTimestamp, header.timestamp, eventNonce) : []
-    const eventTransactionRoot = MerkleTree.root(newEventTxs)
+    const nextEventNonce = await this.state.getEventNonce() + 1
+    const newEventTxs = this.eventProvider
+      ? await this.eventProvider.getTransactions(latestEventTimestamp, header.timestamp, nextEventNonce)
+      : []
+    const eventTransactionRoot = MerkleTree.root(newEventTxs) // TODO: Need sort?
 
     const root = this.state.getAppStateHash()
     const height = await this.state.getHeight()

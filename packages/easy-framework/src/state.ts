@@ -112,8 +112,12 @@ export class State {
     this.rwLock = new ReadWriteLock()
   }
   public async ready (): Promise<void> {
-    await this.meta.setLatestBlockTimestamp(this.genesisTimestamp)
-    await this.meta.setLatestEventTimestamp(this.genesisTimestamp)
+    if (await this.meta.getLatestBlockTimestamp() === 0) {
+      await this.meta.setLatestBlockTimestamp(this.genesisTimestamp)
+    }
+    if (await this.meta.getLatestEventTimestamp() === 0) {
+      await this.meta.setLatestEventTimestamp(this.genesisTimestamp)
+    }
     await this.top.ready()
   }
   public getAppStateHash (): Hash {
