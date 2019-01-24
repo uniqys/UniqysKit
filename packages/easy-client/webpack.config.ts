@@ -28,8 +28,8 @@ module.exports = {
   plugins: [
     new LicenseWebpackPlugin({
       pattern: /.*/,
-      unacceptablePattern: /GPL/,
-      abortOnUnacceptableLicense: false,
+      unacceptablePattern: /^GPL/,
+      abortOnUnacceptableLicense: true,
       modulesDirectories: ['../../node_modules'], // hoisted
       perChunkOutput: false,
       addBanner: true
