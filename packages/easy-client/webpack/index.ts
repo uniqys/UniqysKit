@@ -8,4 +8,4 @@
 
 import { EasyClientForBrowser, EasyClientForWeb3 } from '../src'
 
-export = { EasyClientForBrowser, EasyClientForWeb3 }
+export { EasyClientForBrowser as Browser, EasyClientForWeb3 as Web3 }
