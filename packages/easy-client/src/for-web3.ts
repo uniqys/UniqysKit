@@ -25,7 +25,7 @@ export class EasyClientForWeb3 extends EasyClient {
       address: Address.zero,
       async sign (tx: Transaction) {
         this.address = await selectedAddress()
-        const sig = await web3.eth.sign('0x' + Buffer.from(tx.hash.buffer).toString('hex'), this.address.toString())
+        const sig = await web3.eth.sign(`0x${tx.hash.toHexString()}`, this.address.toString())
         const buffer = Buffer.from(sig.substr(2), 'hex')
         buffer[64] = buffer[64] - 27
         return new Signature(buffer)
@@ -38,8 +38,6 @@ export class EasyClientForWeb3 extends EasyClient {
         signer.address = address
       }
     }, 100)
-
-    selectedAddress().then(address => signer.address = address).catch()
     super(signer, { baseURL: base })
   }
 
