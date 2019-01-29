@@ -7,7 +7,7 @@
 */
 
 import { Block, Vote, ConsensusMessage, ValidatorSet } from '@uniqys/blockchain'
-import { Address, Hash } from '@uniqys/signature'
+import { Address, Hash, Signature } from '@uniqys/signature'
 import { Optional } from '@uniqys/types'
 import { ReadWriteLock } from '@uniqys/lock'
 
@@ -63,7 +63,7 @@ export class VoteSet<T extends ConsensusMessage.VoteMessage> {
     return this.messageOfValidator.has(validator)
   }
 
-  public signatures (blockHash: Hash) {
+  public signatures (blockHash: Hash): Signature[] {
     return Array.from(this.messageOfValidator.values())
       .filter(msg => msg.vote.blockHash.equals(blockHash))
       .map(msg => msg.sign)
