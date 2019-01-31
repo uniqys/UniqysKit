@@ -114,7 +114,7 @@
 <script>
 import axios from 'axios'
 // TODO: fetch key from web3
-const keyPair = require('../confs/validatorKey.json')
+const keyPair = require('../uniqys-node/validatorKey.json')
 const localStorageKey = 'easy_private_key'
 
 localStorage.setItem(localStorageKey, keyPair.privateKey)

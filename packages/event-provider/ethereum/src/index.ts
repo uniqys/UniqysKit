@@ -33,9 +33,9 @@ export default class EthCrossChain implements dapi.EventProvider {
   public readonly web3: Web3
   public contract?: Contract = undefined
 
-  constructor (nodeConfigPath: string, options: EthOptions) {
+  constructor (dappConfDir: string, options: EthOptions) {
     this.ethOptions = Object.assign({}, EthOptions.defaults, options)
-    this.ethOptions.artifactPath = path.resolve(path.dirname(nodeConfigPath), this.ethOptions.artifactPath)
+    this.ethOptions.artifactPath = path.resolve(dappConfDir, this.ethOptions.artifactPath)
     this.web3 = new Web3(this.ethOptions.providerEndPoint)
   }
 

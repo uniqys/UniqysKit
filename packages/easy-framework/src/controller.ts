@@ -59,7 +59,7 @@ export class Controller implements Dapp {
     const latestBlockTimestamp = await this.state.meta.getLatestBlockTimestamp()
     const latestEventTimestamp = await this.state.meta.getLatestEventTimestamp()
     const nextEventNonce = await this.state.getEventNonce() + 1
-    if (this.eventProvider) {
+    if (this.eventProvider && latestEventTimestamp < latestBlockTimestamp) {
       selected.push(...await this.eventProvider.getTransactions(latestEventTimestamp, latestBlockTimestamp, nextEventNonce))
     }
 
@@ -70,7 +70,7 @@ export class Controller implements Dapp {
 
     // Check for pending new event transactions
     const currentTimestamp = Math.floor(new Date().getTime() / 1000)
-    const newEventTxs = this.eventProvider
+    const newEventTxs = this.eventProvider && (latestEventTimestamp < currentTimestamp)
       ? await this.eventProvider.getTransactions(latestEventTimestamp, currentTimestamp, nextEventNonce)
       : []
     if (this.eventProvider && newEventTxs.length > 0) {
@@ -143,7 +143,9 @@ export class Controller implements Dapp {
     const newEventTxs = this.eventProvider
       ? await this.eventProvider.getTransactions(latestEventTimestamp, header.timestamp, nextEventNonce)
       : []
-    const eventTransactionRoot = MerkleTree.root(newEventTxs) // TODO: Need sort?
+    // sort to unify merkle root
+    newEventTxs.sort((tx1, tx2) => Buffer.compare(tx1.hash.buffer, tx2.hash.buffer))
+    const eventTransactionRoot = MerkleTree.root(newEventTxs)
 
     const root = this.state.getAppStateHash()
     const height = await this.state.getHeight()

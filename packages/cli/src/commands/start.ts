@@ -48,7 +48,7 @@ const command: CommandModule = {
     const eventProvider = dappConfig.eventProvider
       ? (() => {
         const EventProvider = require(dappConfig.eventProvider.package).default
-        return new EventProvider(configPath, dappConfig.eventProvider.options)
+        return new EventProvider(dappCwd, dappConfig.eventProvider.options)
       })()
       : undefined
     const easy = new Easy(blockchain, stateStore, peerInfo, keyPair, eventProvider, config)
