@@ -124,7 +124,7 @@
 </template>
 
 <script>
-const easy = new Easy(location.origin)
+const easy = new Easy.Browser(location.origin)
 
 export default {
   data () {
