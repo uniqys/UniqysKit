@@ -51,7 +51,9 @@ describe('KeyPair', () => {
 
 describe('Signature', () => {
   it('serialize and deserialize', () => {
-    const signature = new Signature(Buffer.alloc(65))
+    const buffer = Buffer.alloc(65)
+    buffer[64] = 27
+    const signature = new Signature(buffer)
     expect(deserialize(serialize(signature), Signature.deserialize)).toEqual(signature)
   })
   it('is equatable', () => {
@@ -66,6 +68,9 @@ describe('Signature', () => {
   })
   it('throw error when wrong size', () => {
     expect(() => { new Signature(Buffer.alloc(64)) }).toThrow()
+  })
+  it('throw error when invalid signature', () => {
+    expect(() => { new Signature(Buffer.alloc(65)) }).toThrow()
   })
   it('sign message and recover', () => {
     const message = Hash.fromData('The quick brown fox jumps over the lazy dog')
