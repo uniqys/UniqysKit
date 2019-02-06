@@ -61,7 +61,7 @@ export class Signature implements Hashable, Serializable {
 
     return new Signature(Buffer.concat([
       sig.signature,
-      serialize(sig.recovery + 27, UInt8.serialize) // Transform V from 0/1 to 27/28 according to a yellow paper of Ethereum
+      serialize(sig.recovery + 27, UInt8.serialize) // Transform V from 0/1 to 27/28 according to the Ethereum Yellow Paper
     ]))
   }
 
