@@ -76,7 +76,7 @@ export class Signature implements Hashable, Serializable {
   }
   public recover (digest: Hash): Bytes64 {
     try {
-      return new Bytes64(secp256k1.recover(digest.buffer, this.signature.buffer, this.recovery - 27, false).slice(1))
+      return new Bytes64(secp256k1.recover(digest.buffer, this.signature.buffer, (this.recovery + 1) % 2, false).slice(1))
     } catch (e) {
       throw new Error('couldn\'t recover public key from signature')
     }
