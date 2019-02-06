@@ -72,30 +72,13 @@ export class TransactionResult {
   }
 }
 
-export class EventResult {
-  constructor (
-    private readonly store: Store<Buffer, Buffer>
-  ) {}
-
-  public async set (tx: Hash, response: HttpResponse) {
-    await this.store.set(tx.buffer, serialize(response))
-  }
-
-  public async get (tx: Hash): Promise<Optional<HttpResponse>> {
-    return (await this.store.get(tx.buffer)).match(
-      b => Optional.some(deserialize(b, HttpResponse.deserialize)),
-      () => Optional.none()
-    )
-  }
-}
 namespace EventKey {
-  export const nonce = Buffer.from('event-nonce:')
+  export const nonce = Buffer.from('eventNonce:')
 }
 
 export class State {
   public readonly meta: MetaState
   public readonly result: TransactionResult
-  public readonly event: EventResult
   public readonly top: MerklePatriciaTrie
   public readonly app: Store<Buffer, Buffer>
   public readonly rwLock: ReadWriteLock
@@ -106,7 +89,6 @@ export class State {
   ) {
     this.meta = new MetaState(new Namespace(this.store, 'meta:'))
     this.result = new TransactionResult(new Namespace(this.store, 'results:'))
-    this.event = new EventResult(new Namespace(this.store, 'event:'))
     this.top = new MerklePatriciaTrie(new TrieStore(new Namespace(this.store, 'app:')))
     this.app = new Namespace(this.top, Address.zero.buffer)
     this.rwLock = new ReadWriteLock()
