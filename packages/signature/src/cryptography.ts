@@ -49,6 +49,9 @@ export class Signature implements Hashable, Serializable {
     public readonly buffer: Buffer
   ) {
     if (buffer.length !== 65) { throw TypeError() }
+    if ([27, 28].includes(this.recovery)) {
+      throw new Error('invalid signature. should be V is 27 or 28.')
+    }
     this.hash = Hash.fromData(this.buffer)
   }
 
@@ -58,7 +61,7 @@ export class Signature implements Hashable, Serializable {
 
     return new Signature(Buffer.concat([
       sig.signature,
-      serialize(sig.recovery, UInt8.serialize)
+      serialize(sig.recovery + 27, UInt8.serialize) // Transform V from 0/1 to 27/28 according to a yellow paper of Ethereum
     ]))
   }
 
@@ -73,7 +76,7 @@ export class Signature implements Hashable, Serializable {
   }
   public recover (digest: Hash): Bytes64 {
     try {
-      return new Bytes64(secp256k1.recover(digest.buffer, this.signature.buffer, this.recovery, false).slice(1))
+      return new Bytes64(secp256k1.recover(digest.buffer, this.signature.buffer, this.recovery - 27, false).slice(1))
     } catch (e) {
       throw new Error('couldn\'t recover public key from signature')
     }
