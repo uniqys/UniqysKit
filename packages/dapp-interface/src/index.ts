@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-import { Transaction, BlockHeader } from '@uniqys/blockchain'
+import { Transaction, BlockHeader, ValidatorSet } from '@uniqys/blockchain'
 import { Hash } from '@uniqys/signature'
 import { Optional } from '@uniqys/types'
 
@@ -14,6 +14,7 @@ export class AppState {
   constructor (
     public readonly height: number,
     public readonly hash: Hash,
+    public readonly nextValidatorSet: ValidatorSet,
     public readonly eventTransactionRoot: Hash
   ) {}
 }
@@ -31,5 +32,5 @@ export interface Dapp {
 
 export interface EventProvider {
   ready (): Promise<void>
-  getTransactions (fromTimestamp: number, toTimestamp: number, nonce: number): Promise<Transaction[]>
+  getTransactions (fromTimestamp: number, toTimestamp: number, nonce: number, validatorSet: ValidatorSet): Promise<Transaction[]>
 }

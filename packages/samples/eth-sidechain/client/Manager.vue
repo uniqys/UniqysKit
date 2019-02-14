@@ -71,6 +71,35 @@
                   </div>
                 </div>
               </p>
+              <p>
+                <h5 class="card-title">StakeDeposit</h5>
+                <div class="input-group mt-3">
+                  <input type="text" id="eth-stake-deposit-value" class="form-control" placeholder="Value" v-model="eth.stakeDeposit.value">
+                  <div class="input-group-append">
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      id="eth-stake-deposit-submit"
+                      @click.prevent="ethStakeDeposit"
+                    >Submit</button>
+                  </div>
+                </div>
+              </p>
+
+              <p>
+                <h5 class="card-title">StakeWithdraw</h5>
+                <div class="input-group mt-3">
+                  <input type="text" id="eth-stake-withdraw-value" class="form-control" placeholder="Value" v-model="eth.stakeWithdraw.value">
+                  <div class="input-group-append">
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      id="eth-stake-withdraw-submit"
+                      @click.prevent="ethStakeWithdraw"
+                    >Submit</button>
+                  </div>
+                </div>
+              </p>
             </div>
           </div>
         </div>
@@ -135,6 +164,12 @@ export default {
         deposit: {
           value: null
         },
+        stakeDeposit: {
+          value: null
+        },
+        stakeWithdraw: {
+          value: null
+        },
         resolve: null,
         reject: null
       },
@@ -192,12 +227,36 @@ export default {
       this.contract.methods.deposit(this.eth.deposit.value).send({
         from: this.eth.address
       }, (err, txHash) => {
-        if (err) {
-          this.eth.reject = err
-        }
-        if (txHash) {
-          this.eth.resolve = true
-        }
+        if (err) { this.eth.reject = err }
+        if (txHash) { this.eth.resolve = true }
+      })
+    },
+    ethStakeDeposit () {
+      this.eth.resolve = null
+      this.eth.reject = null
+      if (!this.eth.stakeDeposit.value) { // 0, null, undefined
+        this.eth.reject = 'invalid input'
+        return
+      }
+      this.contract.methods.stakeDeposit(this.eth.stakeDeposit.value).send({
+        from: this.eth.address
+      }, (err, txHash) => {
+        if (err) { this.eth.reject = err }
+        if (txHash) { this.eth.resolve = true }
+      })
+    },
+    ethStakeWithdraw () {
+      this.eth.resolve = null
+      this.eth.reject = null
+      if (!this.eth.stakeWithdraw.value) { // 0, null, undefined
+        this.eth.reject = 'invalid input'
+        return
+      }
+      this.contract.methods.stakeWithdraw(this.eth.stakeWithdraw.value).send({
+        from: this.eth.address
+      }, (err, txHash) => {
+        if (err) { this.eth.reject = err }
+        if (txHash) { this.eth.resolve = true }
       })
     },
     update () {

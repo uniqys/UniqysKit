@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-import { Block, BlockHeader, BlockBody, Consensus, ConsensusMessage, Transaction } from '@uniqys/blockchain'
+import { Block, BlockHeader, BlockBody, Consensus, ConsensusMessage, Transaction, ValidatorSet } from '@uniqys/blockchain'
 import { BufferWriter, BufferReader, Serializable, UInt8, UInt32, UInt64, List } from '@uniqys/serialize'
 import { Hash } from '@uniqys/signature'
 
@@ -127,16 +127,19 @@ export namespace Message {
     public readonly type = Type.Response
     constructor (
       public readonly header: BlockHeader,
-      public readonly consensus: Consensus // note: Optional?
+      public readonly consensus: Consensus, // note: Optional?
+      public readonly validatorSet: ValidatorSet
     ) {}
     public static deserialize (reader: BufferReader): ConsentedHeader {
       const header = BlockHeader.deserialize(reader)
       const consensus = Consensus.deserialize(reader)
-      return new ConsentedHeader(header, consensus)
+      const validatorSet = ValidatorSet.deserialize(reader)
+      return new ConsentedHeader(header, consensus, validatorSet)
     }
     public serialize (writer: BufferWriter) {
       this.header.serialize(writer)
       this.consensus.serialize(writer)
+      this.validatorSet.serialize(writer)
     }
   }
 

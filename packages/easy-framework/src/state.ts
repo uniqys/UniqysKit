@@ -14,17 +14,23 @@ import { Account } from './account'
 import { Optional } from '@uniqys/types'
 import { UInt64, deserialize, serialize } from '@uniqys/serialize'
 import { ReadWriteLock } from '@uniqys/lock'
+import { Block, ValidatorSet, MerkleTree } from '@uniqys/blockchain'
+import { AppState } from '@uniqys/dapp-interface'
 
 namespace MetaKey {
   export const height = Buffer.from('height')
   export const latestBlockTimestamp = Buffer.from('latestBlockTimestamp') // timestamp of the latest block
   export const latestEventTimestamp = Buffer.from('latestEventTimestamp') // timestamp of the block which the latest event was included
+  export const eventNonce = Buffer.from('eventNonce')
+  export const eventTransactionRoot = Buffer.from('eventTransactionRoot')
+  export const nextValidatorSet = Buffer.from('nextValidatorSet')
 }
 class MetaState {
   constructor (
     private readonly store: Store<Buffer, Buffer>
   ) { }
 
+  // height
   public async getHeight () {
     return (await this.store.get(MetaKey.height)).match(
       v => deserialize(v, UInt64.deserialize),
@@ -35,6 +41,8 @@ class MetaState {
     const height = await this.getHeight()
     await this.store.set(MetaKey.height, serialize(height + 1, UInt64.serialize))
   }
+
+  // latestBlockTimestamp
   public async getLatestBlockTimestamp () {
     return (await this.store.get(MetaKey.latestBlockTimestamp)).match(
       v => deserialize(v, UInt64.deserialize),
@@ -44,6 +52,8 @@ class MetaState {
   public async setLatestBlockTimestamp (timestamp: number) {
     await this.store.set(MetaKey.latestBlockTimestamp, serialize(timestamp, UInt64.serialize))
   }
+
+  // latestEventTimestamp
   public async getLatestEventTimestamp () {
     return (await this.store.get(MetaKey.latestEventTimestamp)).match(
       v => deserialize(v, UInt64.deserialize),
@@ -52,6 +62,40 @@ class MetaState {
   }
   public async setLatestEventTimestamp (timestamp: number) {
     await this.store.set(MetaKey.latestEventTimestamp, serialize(timestamp, UInt64.serialize))
+  }
+
+  // eventNonce
+  public async getEventNonce (): Promise<number> {
+    return (await this.store.get(MetaKey.eventNonce)).match(
+      v => deserialize(v, UInt64.deserialize),
+      () => 0
+    )
+  }
+  public async incrementEventNonce () {
+    const nonce = await this.getEventNonce()
+    await this.store.set(MetaKey.eventNonce, serialize(nonce + 1, UInt64.serialize))
+  }
+
+  // eventTransactionRoot
+  public async getEventTransactionRoot (): Promise<Hash> {
+    return (await this.store.get(MetaKey.eventTransactionRoot)).match(
+      v => deserialize(v, Hash.deserialize),
+      () => MerkleTree.root([])
+    )
+  }
+  public async setEventTransactionRoot (eventTransactionRoot: Hash) {
+    await this.store.set(MetaKey.eventTransactionRoot, serialize(eventTransactionRoot))
+  }
+
+  // nextValidatorSet
+  public async getNextValidatorSet (): Promise<ValidatorSet> {
+    return (await this.store.get(MetaKey.nextValidatorSet)).match(
+      v => deserialize(v, ValidatorSet.deserialize),
+      () => new ValidatorSet([])
+    )
+  }
+  public async setNextValidatorSet (nextValidatorSet: ValidatorSet) {
+    await this.store.set(MetaKey.nextValidatorSet, serialize(nextValidatorSet))
   }
 }
 
@@ -72,10 +116,6 @@ export class TransactionResult {
   }
 }
 
-namespace EventKey {
-  export const nonce = Buffer.from('eventNonce:')
-}
-
 export class State {
   public readonly meta: MetaState
   public readonly result: TransactionResult
@@ -85,7 +125,8 @@ export class State {
 
   constructor (
     private readonly store: Store<Buffer, Buffer>,
-    private readonly genesisTimestamp: number
+    private readonly genesisBlock: Block,
+    private readonly initialValidatorSet: ValidatorSet
   ) {
     this.meta = new MetaState(new Namespace(this.store, 'meta:'))
     this.result = new TransactionResult(new Namespace(this.store, 'results:'))
@@ -95,18 +136,23 @@ export class State {
   }
   public async ready (): Promise<void> {
     if (await this.meta.getLatestBlockTimestamp() === 0) {
-      await this.meta.setLatestBlockTimestamp(this.genesisTimestamp)
+      await this.meta.setLatestBlockTimestamp(this.genesisBlock.header.timestamp)
     }
     if (await this.meta.getLatestEventTimestamp() === 0) {
-      await this.meta.setLatestEventTimestamp(this.genesisTimestamp)
+      await this.meta.setLatestEventTimestamp(this.genesisBlock.header.timestamp)
+    }
+    if ((await this.meta.getNextValidatorSet()).validators.length === 0) {
+      await this.meta.setNextValidatorSet(this.initialValidatorSet)
     }
     await this.top.ready()
   }
-  public getAppStateHash (): Hash {
-    return this.top.root
-  }
-  public async getHeight (): Promise<number> {
-    return this.meta.getHeight()
+  public async getAppState (): Promise<AppState> {
+    return new AppState(
+      await this.meta.getHeight(),
+      this.top.root,
+      await this.meta.getNextValidatorSet(),
+      await this.meta.getEventTransactionRoot()
+    )
   }
   public async getAccount (address: Address): Promise<Account> {
     return (await this.top.get(address.buffer)).match(
@@ -116,15 +162,5 @@ export class State {
   }
   public async setAccount (address: Address, account: Account): Promise<void> {
     await this.top.set(address.buffer, serialize(account))
-  }
-  public async getEventNonce (): Promise<number> {
-    return (await this.store.get(EventKey.nonce)).match(
-      v => deserialize(v, UInt64.deserialize),
-      () => 0
-    )
-  }
-  public async incrementEventNonce () {
-    const nonce = await this.getEventNonce()
-    await this.store.set(EventKey.nonce, serialize(nonce + 1, UInt64.serialize))
   }
 }

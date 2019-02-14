@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-import { Blockchain, Block, TransactionList, Transaction, TransactionType, Consensus, ConsensusMessage, Proposal, Vote, MerkleTree } from '@uniqys/blockchain'
+import { Blockchain, Block, TransactionList, Transaction, TransactionType, ValidatorSet, Consensus, ConsensusMessage, Proposal, Vote, MerkleTree } from '@uniqys/blockchain'
 import { KeyPair, Hash } from '@uniqys/signature'
 import { Optional } from '@uniqys/types'
 import { AsyncLoop } from '@uniqys/async-loop'
@@ -33,6 +33,7 @@ export namespace ConsensusOptions {
 export class ConsensusEngine {
   private consensusOptions: ConsensusOptions
   private timeout: ConsensusTimeout
+  private validatorSet: ValidatorSet
   private consensusLoop = new AsyncLoop(() => this.proceedConsensus())
   private state = new State()
   private readonly event = new EventEmitter()
@@ -48,9 +49,12 @@ export class ConsensusEngine {
   ) {
     this.consensusOptions = Object.assign({}, ConsensusOptions.defaults, options)
     this.timeout = new ConsensusTimeout(this.consensusOptions)
+    this.validatorSet = this.blockchain.initialValidatorSet
     this.consensusLoop.on('error', err => this.event.emit('error', err))
     this.remoteNode.onNewHeight((node) => this.catchUpState(node))
-    this.executor.onExecuted(appState => this.setNewHeight(appState.height + 1, appState.hash, appState.eventTransactionRoot))
+    this.executor.onExecuted(async appState => {
+      await this.setNewHeight(appState.height + 1, appState.hash, appState.nextValidatorSet, appState.eventTransactionRoot)
+    })
   }
   public get isValidator () {
     return this._keyPair && this.validatorSet.exists(this._keyPair.address)
@@ -65,7 +69,7 @@ export class ConsensusEngine {
   public async start () {
     logger('start consensus engine')
     if (this.isValidator) logger('validator %s', this.keyPair.address.toString())
-    this.setNewHeight(this.executor.lastAppState.height + 1, this.executor.lastAppState.hash, MerkleTree.root([]))
+    await this.setNewHeight(this.executor.lastAppState.height + 1, this.executor.lastAppState.hash, this.validatorSet, MerkleTree.root([]))
     this.consensusLoop.start()
   }
   public async stop () {
@@ -170,6 +174,11 @@ export class ConsensusEngine {
     }
     if (!this.state.appStateHash.equals((await this.blockchain.blockOf(this.state.height - 1)).header.appStateHash)) {
       logger('enter propose: need appState proof block')
+      await this.enterPropose()
+      return
+    }
+    if (!this.state.nextValidatorSetRoot.equals(this.validatorSet.hash)) {
+      logger('enter propose: need next validator set proof block')
       await this.enterPropose()
       return
     }
@@ -328,11 +337,12 @@ export class ConsensusEngine {
         const currentTimestamp = Math.floor((new Date().getTime()) / 1000)
         if (!block.header.lastBlockHash.equals(lastBlockHeader.hash)) throw new Error('lastBlockHash mismatch')
         if (!block.header.appStateHash.equals(this.state.appStateHash)) throw new Error('appStateHash mismatch')
-        if (block.header.timestamp <= lastBlockHeader.timestamp ||
+        if (block.header.timestamp < lastBlockHeader.timestamp ||
             block.header.timestamp > currentTimestamp + this.consensusOptions.allowBlockTimestampError ||
             block.header.timestamp < currentTimestamp - this.consensusOptions.allowBlockTimestampError) {
           throw new Error('invalid timestamp')
         }
+        if (!block.header.nextValidatorSetRoot.equals(this.state.nextValidatorSetRoot)) throw new Error('nextValidatorSet mismatch')
         const eventTxs = block.body.transactionList.transactions.filter((tx) => tx.type === TransactionType.Event)
         const eventTxRoot = MerkleTree.root(eventTxs)
         if (!eventTxRoot.equals(this.state.eventTransactionRoot)) throw new Error('eventTransactionRoot mismatch')
@@ -411,10 +421,9 @@ export class ConsensusEngine {
       await (async () => {
         const lastBlockHash = await this.blockchain.hashOf(this.state.height - 1)
         const lastBlockConsensus = await this.blockchain.consensusOf(this.state.height - 1)
-        const nextValidatorSet = this.validatorSet // static validator set
         return Block.construct(
           this.state.height, Math.floor((new Date().getTime()) / 1000), lastBlockHash,
-          nextValidatorSet.hash, this.state.appStateHash,
+          this.state.nextValidatorSetRoot, this.state.appStateHash,
           new TransactionList(transactions), lastBlockConsensus
         )
       })()
@@ -451,14 +460,12 @@ export class ConsensusEngine {
     setTimeout(() => task().catch(err => this.event.emit('error', err)), ms)
   }
 
-  private setNewHeight (height: number, appStateHash: Hash, eventTransactionRoot: Hash) {
+  private async setNewHeight (height: number, appStateHash: Hash, nextValidatorSet: ValidatorSet, eventTransactionRoot: Hash) {
+    await this.blockchain.blockStore.setValidatorSet(nextValidatorSet)
+    this.validatorSet = await this.blockchain.validatorSetOf(height)
     this.state.lock.writeLock.use(async () => {
       logger('new height %d with app state %s', height, appStateHash.toHexString())
-      this.state.newHeight(height, appStateHash, this.validatorSet, eventTransactionRoot)
+      this.state.newHeight(height, appStateHash, this.validatorSet, nextValidatorSet.hash, eventTransactionRoot)
     }).catch(err => this.event.emit('error', err))
-  }
-
-  private get validatorSet () {
-    return this.blockchain.initialValidatorSet
   }
 }

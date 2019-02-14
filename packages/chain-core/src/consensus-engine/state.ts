@@ -94,6 +94,8 @@ export class State {
   public get appStateHash () { return this._appStateHash }
   private _validatorSet = new ValidatorSet([])
   public get validatorSet () { return this._validatorSet }
+  private _nextValidatorSetRoot = Hash.zero
+  public get nextValidatorSetRoot () { return this._nextValidatorSetRoot }
   private _eventTransactionRoot = MerkleTree.root([])
   public get eventTransactionRoot () { return this._eventTransactionRoot }
   public lockedRound = 0
@@ -103,10 +105,11 @@ export class State {
   public round = 1
   public step = Step.NewRound
   private roundState = new Map<number, RoundState>()
-  public newHeight (height: number, appStateHash: Hash, validatorSet: ValidatorSet, eventTransactionRoot: Hash) {
+  public newHeight (height: number, appStateHash: Hash, validatorSet: ValidatorSet, nextValidatorSetRoot: Hash, eventTransactionRoot: Hash) {
     this._height = height
     this._appStateHash = appStateHash
     this._validatorSet = validatorSet
+    this._nextValidatorSetRoot = nextValidatorSetRoot
     this._eventTransactionRoot = eventTransactionRoot
     this.lockedRound = 0
     this.lockedBlock = undefined

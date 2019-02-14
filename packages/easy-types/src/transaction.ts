@@ -7,6 +7,7 @@
 */
 
 import { HttpRequest } from './http-message'
+import { ValidatorSet } from '@uniqys/blockchain'
 import { Serializable, serialize, BufferReader, BufferWriter, UInt64 } from '@uniqys/serialize'
 import { Address, Hashable, Hash, Signature, Signer } from '@uniqys/signature'
 
@@ -26,6 +27,24 @@ export class Transaction implements Hashable, Serializable {
   public serialize (writer: BufferWriter) {
     UInt64.serialize(this.nonce, writer)
     this.request.serialize(writer)
+  }
+}
+
+export class EventTransaction implements Serializable {
+  public get nonce () { return this.transaction.nonce }
+  public get request () { return this.transaction.request }
+  constructor (
+    public readonly validatorSet: ValidatorSet,
+    public readonly transaction: Transaction
+  ) {}
+  public static deserialize (reader: BufferReader): EventTransaction {
+    const validatorSet = ValidatorSet.deserialize(reader)
+    const transaction = Transaction.deserialize(reader)
+    return new EventTransaction(validatorSet, transaction)
+  }
+  public serialize (writer: BufferWriter) {
+    this.validatorSet.serialize(writer)
+    this.transaction.serialize(writer)
   }
 }
 

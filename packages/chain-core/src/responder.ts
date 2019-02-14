@@ -17,7 +17,8 @@ export class Responder {
   public async getConsentedHeader (msg: Message.GetConsentedHeader, _: Protocol): Promise<Message.ConsentedHeader> {
     const header = await this.blockchain.headerOf(msg.height)
     const consensus = await this.blockchain.consensusOf(msg.height)
-    return new Message.ConsentedHeader(header, consensus)
+    const validatorSet = await this.blockchain.validatorSetOf(msg.height)
+    return new Message.ConsentedHeader(header, consensus, validatorSet)
   }
 
   public async getHeaders (msg: Message.GetHeaders, _: Protocol): Promise<Message.Headers> {

@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-import { HttpHeaders, HttpRequest, HttpResponse, Transaction, SignedTransaction } from '@uniqys/easy-types'
+import { HttpHeaders, HttpRequest, HttpResponse, Transaction, EventTransaction, SignedTransaction } from '@uniqys/easy-types'
 import { BlockHeader } from '@uniqys/blockchain'
 import { Signature } from '@uniqys/signature'
 import http from 'http'
@@ -96,21 +96,21 @@ export namespace SignedRequest {
 }
 
 export namespace EventRequest {
-  export async function unpack (eventTx: Transaction, blockHeader: BlockHeader, to: URL): Promise<http.IncomingMessage> {
+  export async function unpack (eventTx: EventTransaction, blockHeader: BlockHeader, to: URL): Promise<http.IncomingMessage> {
     return new Promise<http.IncomingMessage>((resolve, reject) => {
-      const headers = Headers.unpack(eventTx.request.headers)
+      const headers = Headers.unpack(eventTx.transaction.request.headers)
       headers['uniqys-timestamp'] = blockHeader.timestamp.toString(10)
       headers['uniqys-blockhash'] = blockHeader.hash.toHexString()
       const req = http.request({
         protocol: to.protocol,
         host: to.hostname,
         port: to.port,
-        method: eventTx.request.method,
-        path: urljoin('/uniqys', eventTx.request.path),
+        method: eventTx.transaction.request.method,
+        path: urljoin('/uniqys', eventTx.transaction.request.path),
         headers: headers
       }, res => resolve(res))
       req.on('error', reject)
-      req.write(eventTx.request.body)
+      req.write(eventTx.transaction.request.body)
       req.end()
     })
   }

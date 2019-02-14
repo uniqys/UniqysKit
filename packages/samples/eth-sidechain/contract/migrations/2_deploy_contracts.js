@@ -14,6 +14,8 @@
 var SampleToken = artifacts.require("./SampleToken.sol");
 
 module.exports = function (deployer) {
-  const address = '0x' + require('../../uniqys-node/validatorKey.json').address
-  deployer.deploy(SampleToken, address);
+  const conf = require('../../uniqys-node/dapp.json')
+  const address = `0x${conf.validatorSet[0].address}`
+  const power = conf.validatorSet[0].power
+  deployer.deploy(SampleToken, address, power);
 };

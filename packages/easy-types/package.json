@@ -21,6 +21,7 @@
     "test:jest": "jest --forceExit --detectOpenHandles --coverage --verbose"
   },
   "dependencies": {
+    "@uniqys/blockchain": "^0.1.2",
     "@uniqys/serialize": "^0.1.2",
     "@uniqys/signature": "^0.1.2"
   },

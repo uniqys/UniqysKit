@@ -3,19 +3,7 @@
   "timestamp": 1548897681,
   "validatorSet": [
     {
-      "address": "9fa56db36a2df52a214fb6601736353def07e23a",
-      "power": 1
-    },
-    {
-      "address": "e4c96f17d550e5da468547b86fd1458be32e301e",
-      "power": 1
-    },
-    {
-      "address": "fc568a5276124477d93d194e2dc7a82fbb455b50",
-      "power": 1
-    },
-    {
-      "address": "59f4d234c20f964255d5e84e7f08f795a56cf270",
+      "address": "1b43b325dad27c5d8e17110f3f23a6a3490d144f",
       "power": 1
     }
   ],

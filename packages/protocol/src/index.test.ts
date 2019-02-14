@@ -8,7 +8,7 @@
 
 import { ProtocolHandler, Protocol, Message, ProtocolMeta } from '.'
 import { Channel } from '@uniqys/p2p-network'
-import { Block, TransactionList, Transaction, TransactionType, Consensus, Vote, ConsensusMessage, Proposal } from '@uniqys/blockchain'
+import { Block, TransactionList, Transaction, TransactionType, Consensus, Vote, ConsensusMessage, Proposal, ValidatorSet } from '@uniqys/blockchain'
 import { Hash, KeyPair } from '@uniqys/signature'
 import { Source, Sink } from 'pull-stream'
 import PeerInfo from 'peer-info'
@@ -56,6 +56,7 @@ describe('sync protocol', () => {
   let transaction: Transaction
   let block: Block
   let consensus: Consensus
+  let validatorSet: ValidatorSet
   beforeEach(() => {
     const stream1to2 = new ThroughDuplex<Buffer>()
     const stream2to1 = new ThroughDuplex<Buffer>()
@@ -65,6 +66,7 @@ describe('sync protocol', () => {
     block = Block.construct(1, 100, Hash.fromData('genesis'), Hash.fromData('validators'), Hash.fromData('state'),
         new TransactionList([]), new Consensus(new Vote(0, 1, Hash.fromData('genesis')), []))
     consensus = new Consensus(new Vote(1, 1, block.hash), [])
+    validatorSet = new ValidatorSet([])
   })
   it('send and receive hello event', (done) => {
     const protocol1 = new Protocol('peer1', channel1, makeHandler({
@@ -140,7 +142,7 @@ describe('sync protocol', () => {
     const protocol1 = new Protocol('peer1', channel1, makeHandler({
       getConsentedHeader: (msg) => {
         expect(msg.height).toBe(17)
-        return Promise.resolve(new Message.ConsentedHeader(block.header, consensus))
+        return Promise.resolve(new Message.ConsentedHeader(block.header, consensus, validatorSet))
       }
     }))
     protocol1.start()
@@ -149,6 +151,7 @@ describe('sync protocol', () => {
     const msg = await protocol2.fetchConsentedHeader(new Message.GetConsentedHeader(17))
     expect(msg.header.hash.equals(block.header.hash)).toBeTruthy()
     expect(msg.consensus.hash.equals(consensus.hash)).toBeTruthy()
+    expect(msg.validatorSet.hash.equals(validatorSet.hash)).toBeTruthy()
   })
   it('fetch headers', async () => {
     const protocol1 = new Protocol('peer1', channel1, makeHandler({
@@ -202,7 +205,7 @@ describe('sync protocol', () => {
     const protocol2 = new Protocol('peer2', channel2, makeHandler({
       getConsentedHeader: async () => {
         await protocol2['channel'].sendMessage(new Message.Headers([]))
-        return new Message.ConsentedHeader(block.header, consensus)
+        return new Message.ConsentedHeader(block.header, consensus, validatorSet)
       }
     }))
     protocol2.start()

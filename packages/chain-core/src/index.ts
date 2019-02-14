@@ -186,7 +186,7 @@ export class ChainCore implements dapi.Core {
       const node = new RemoteNode(protocol.peerId, protocol, msg.height)
       this.addRemoteNode(node)
       protocol.onEnd(() => {
-        logger('goodby %s', node.peerId)
+        logger('goodbye %s', node.peerId)
         this.remoteNode.delete(node)
       })
     } else {

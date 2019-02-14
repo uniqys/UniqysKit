@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-import { Blockchain, Block, BlockHeader, Consensus, ValidatorSet } from '@uniqys/blockchain'
+import { Blockchain, Block, BlockHeader, Consensus } from '@uniqys/blockchain'
 import { AsyncLoop } from '@uniqys/async-loop'
 import { Message } from '@uniqys/protocol'
 import { PriorityQueue, Utility } from '@uniqys/priority-queue'
@@ -180,13 +180,11 @@ export class Synchronizer {
   }
 
   private async fetchLastConsentedHeader (best: RemoteNode): Promise<Message.ConsentedHeader> {
-    // if (this.options.dynamicValidatorSet) {
-    //  this.catchUpValidatorSet(best)
-    // }
     return best.use(async () => {
-      const consented = await best.protocol.fetchConsentedHeader(new Message.GetConsentedHeader(best.height))
+      const height = best.height
+      const consented = await best.protocol.fetchConsentedHeader(new Message.GetConsentedHeader(height))
       try {
-        consented.consensus.validate(consented.header.hash, this.blockchain.genesisBlock.hash, await this.trustedValidatorSet())
+        consented.consensus.validate(consented.header.hash, this.blockchain.genesisBlock.hash, consented.validatorSet)
       } catch (err) {
         this.dropRemoteNode(best)
         throw err
@@ -293,7 +291,7 @@ export class Synchronizer {
         if (height > knownHeight) {
           if (height === knownHeight + 1) {
             pending.block.validate()
-            pending.consensus.validate(pending.block.hash, this.blockchain.genesisBlock.hash, await this.trustedValidatorSet())
+            pending.consensus.validate(pending.block.hash, this.blockchain.genesisBlock.hash, await this.blockchain.validatorSetOf(height))
             // take lock and recheck height
             await this.blockchain.blockStore.rwLock.writeLock.use(async () => {
               const knownHeight = await this.blockchain.height
@@ -340,14 +338,5 @@ export class Synchronizer {
       .map(node => node.protocol.sendNewBlock(newBlockMsg)))
     await Promise.all(this.remoteNode.pickBlockReceivers(height)
       .map(node => node.protocol.sendNewBlockHeight(newBlockHeightMsg)))
-  }
-
-  private async trustedValidatorSet (): Promise<ValidatorSet> {
-    if (this.options.dynamicValidatorSet) {
-      throw new Error('not implemented')
-    } else {
-      // static
-      return this.blockchain.initialValidatorSet
-    }
   }
 }

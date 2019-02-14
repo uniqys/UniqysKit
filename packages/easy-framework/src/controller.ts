@@ -8,7 +8,7 @@
 
 import { Dapp, AppState, EventProvider } from '@uniqys/dapp-interface'
 import { Transaction as CoreTransaction, BlockHeader, TransactionType, MerkleTree } from '@uniqys/blockchain'
-import { Transaction, SignedTransaction } from '@uniqys/easy-types'
+import { EventTransaction, SignedTransaction } from '@uniqys/easy-types'
 import { deserialize } from '@uniqys/serialize'
 import { Optional } from '@uniqys/types'
 import { State } from './state'
@@ -28,9 +28,8 @@ export class Controller implements Dapp {
 
   public async connect (): Promise<AppState> {
     await this.state.ready()
-    const root = this.state.getAppStateHash()
-    const height = await this.state.getHeight()
-    return new AppState(height, root, MerkleTree.root([]))
+    if (this.eventProvider) { await this.eventProvider.ready() }
+    return this.state.getAppState()
   }
 
   public async validateTransaction (coreTx: CoreTransaction): Promise<boolean> {
@@ -58,9 +57,10 @@ export class Controller implements Dapp {
     // Check for event transactions to include in next block
     const latestBlockTimestamp = await this.state.meta.getLatestBlockTimestamp()
     const latestEventTimestamp = await this.state.meta.getLatestEventTimestamp()
-    const nextEventNonce = await this.state.getEventNonce() + 1
+    const nextEventNonce = await this.state.meta.getEventNonce() + 1
+    const nextValidatorSet = await this.state.meta.getNextValidatorSet()
     if (this.eventProvider && latestEventTimestamp < latestBlockTimestamp) {
-      selected.push(...await this.eventProvider.getTransactions(latestEventTimestamp, latestBlockTimestamp, nextEventNonce))
+      selected.push(...await this.eventProvider.getTransactions(latestEventTimestamp, latestBlockTimestamp, nextEventNonce, nextValidatorSet))
     }
 
     if (selected.length > 0) {
@@ -71,7 +71,7 @@ export class Controller implements Dapp {
     // Check for pending new event transactions
     const currentTimestamp = Math.floor(new Date().getTime() / 1000)
     const newEventTxs = this.eventProvider && (latestEventTimestamp < currentTimestamp)
-      ? await this.eventProvider.getTransactions(latestEventTimestamp, currentTimestamp, nextEventNonce)
+      ? await this.eventProvider.getTransactions(latestEventTimestamp, currentTimestamp, nextEventNonce, nextValidatorSet)
       : []
     if (this.eventProvider && newEventTxs.length > 0) {
       // Pending event transaction existed
@@ -83,6 +83,7 @@ export class Controller implements Dapp {
   }
 
   public async executeTransactions (coreTxs: CoreTransaction[], header: BlockHeader): Promise<AppState> {
+    let eventExists: boolean = false
     for (const coreTx of coreTxs) {
       switch (coreTx.type) {
         case TransactionType.Normal: {
@@ -109,17 +110,18 @@ export class Controller implements Dapp {
           break
         }
         case TransactionType.Event: {
-          const tx = deserialize(coreTx.data, Transaction.deserialize)
+          eventExists = true
+          const tx = deserialize(coreTx.data, EventTransaction.deserialize)
           await this.state.rwLock.writeLock.use(async () => {
             const root = this.state.top.root
             try {
-              const nextNonce = await this.state.getEventNonce() + 1
+              const nextNonce = await this.state.meta.getEventNonce() + 1
               if (tx.nonce !== nextNonce) { throw new Error('non continuous nonce') }
-              await this.state.incrementEventNonce()
+              await this.state.meta.incrementEventNonce()
               this.memcachedImpl.changeMode(OperationMode.ReadWrite)
               const res = await Response.pack(await EventRequest.unpack(tx, header, this.app))
-              await this.state.event.set(coreTx.hash, res)
               if (400 <= res.status && res.status < 600) { throw new Error(res.message) }
+              if (tx.validatorSet.validators.length > 0) { await this.state.meta.setNextValidatorSet(tx.validatorSet) }
             } catch (err) {
               logger('error in action: %s', err.message)
               await this.state.top.rollback(root)
@@ -132,23 +134,27 @@ export class Controller implements Dapp {
         default: throw new Error()
       }
     }
-    await this.state.meta.incrementHeight()
-    await this.state.meta.setLatestBlockTimestamp(header.timestamp)
 
-    const eventTxs = coreTxs.filter(tx => tx.type === TransactionType.Event)
-    if (eventTxs.length > 0) { await this.state.meta.setLatestEventTimestamp(header.timestamp) }
+    // update state info
+    await this.state.rwLock.writeLock.use(async () => {
+      await this.state.meta.incrementHeight()
+      if (eventExists) {
+        const prevBlockTimestamp = await this.state.meta.getLatestBlockTimestamp()
+        await this.state.meta.setLatestEventTimestamp(prevBlockTimestamp)
+      }
+      await this.state.meta.setLatestBlockTimestamp(header.timestamp)
 
-    const latestEventTimestamp = await this.state.meta.getLatestEventTimestamp()
-    const nextEventNonce = await this.state.getEventNonce() + 1
-    const newEventTxs = this.eventProvider
-      ? await this.eventProvider.getTransactions(latestEventTimestamp, header.timestamp, nextEventNonce)
-      : []
-    // sort to unify merkle root
-    newEventTxs.sort((tx1, tx2) => Buffer.compare(tx1.hash.buffer, tx2.hash.buffer))
-    const eventTransactionRoot = MerkleTree.root(newEventTxs)
+      const latestEventTimestamp = await this.state.meta.getLatestEventTimestamp()
+      const eventNonce = await this.state.meta.getEventNonce() + 1
+      const nextValidatorSet = await this.state.meta.getNextValidatorSet()
+      const eventTxs = this.eventProvider
+        ? await this.eventProvider.getTransactions(latestEventTimestamp, header.timestamp, eventNonce, nextValidatorSet)
+        : []
+      eventTxs.sort((tx1, tx2) => Buffer.compare(tx1.hash.buffer, tx2.hash.buffer))
+      const eventTxRoot = MerkleTree.root(eventTxs)
+      await this.state.meta.setEventTransactionRoot(eventTxRoot)
+    })
 
-    const root = this.state.getAppStateHash()
-    const height = await this.state.getHeight()
-    return new AppState(height, root, eventTransactionRoot)
+    return this.state.getAppState()
   }
 }

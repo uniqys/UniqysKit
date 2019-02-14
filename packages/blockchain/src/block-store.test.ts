@@ -11,7 +11,7 @@ import { InMemoryStore } from '@uniqys/store'
 import { Block } from './block'
 import { Hash } from '@uniqys/signature'
 import { TransactionList } from './transaction'
-import { Consensus, Vote } from './consensus'
+import { Consensus, Vote, ValidatorSet } from './consensus'
 
 describe('block store', () => {
   let block: Block
@@ -44,6 +44,11 @@ describe('block store', () => {
   it('set and get body of height', async () => {
     await store.setBody(2, block.body)
     expect(await store.getBody(2)).toEqual(block.body)
+  })
+  it('set and get validator set of height', async () => {
+    const validatorSet = new ValidatorSet([])
+    await store.setValidatorSet(validatorSet)
+    expect(await store.getValidatorSet(validatorSet.hash)).toEqual(validatorSet)
   })
   it('throw if not stored', async () => {
     await expect(store.getHeader(1)).rejects.toThrow()

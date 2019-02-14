@@ -14,14 +14,16 @@
 pragma solidity >=0.4.21;
 
 import "@uniqys/event-provider-eth/contracts/ERC20Depositable.sol";
+import "@uniqys/event-provider-eth/contracts/ERC20Stakable.sol";
 
-contract SampleToken is ERC20Depositable {
+contract SampleToken is ERC20Depositable, ERC20Stakable {
     string public name = "SampleToken";
     string public symbol = "SMPL";
     uint public decimals = 18;
     uint public INITIAL_SUPPLY = 10000;
 
-    constructor(address owner) public {
+    constructor(address owner, uint256 power) public {
         _mint(owner, INITIAL_SUPPLY);
+        _stakeDeposit(owner, power);
     }
 }
