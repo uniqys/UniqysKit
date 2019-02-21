@@ -12,7 +12,7 @@ import { EventTransaction, SignedTransaction } from '@uniqys/easy-types'
 import { deserialize } from '@uniqys/serialize'
 import { Hash } from '@uniqys/signature'
 import { Optional } from '@uniqys/types'
-import { State } from './state'
+import { State, TransactionResult } from './state'
 import { EasyMemcached, OperationMode } from './memcached-implementation'
 import { SignedRequest, EventRequest, Response } from './packer'
 import { URL } from 'url'
@@ -100,7 +100,7 @@ export class Controller implements Dapp {
               await this.state.setAccount(sender, next)
               this.memcachedImpl.changeMode(OperationMode.ReadWrite)
               const res = await Response.pack(await SignedRequest.unpack(tx, header, coreTx.hash, this.app))
-              await this.state.result.set(coreTx.hash, res)
+              await this.state.result.set(coreTx.hash, new TransactionResult(header.height, res))
               if (400 <= res.status && res.status < 600) { throw new Error(res.message) }
               validTxHashes.push(coreTx.hash)
             } catch (err) {

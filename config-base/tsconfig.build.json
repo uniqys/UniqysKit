@@ -18,6 +18,7 @@
     "skipDefaultLibCheck": true,
     "experimentalDecorators": true,
     "pretty": true,
+    "skipLibCheck": true
   },
   "include": []
 }

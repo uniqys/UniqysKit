@@ -8,17 +8,18 @@
     "bootstrap": "lerna bootstrap --hoist --ci",
     "clean": "lerna clean",
     "build": "lerna run build --concurrency 4",
-    "test": "run-s test:build test:lint test:jest",
+    "test": "run-s test:build test:lint test:jest test:sol",
     "test:build": "lerna run test:build --concurrency 8",
     "test:lint": "lerna run test:lint --concurrency 8",
-    "test:jest": "lerna run test:jest --concurrency 4"
+    "test:jest": "lerna run test:jest --concurrency 4",
+    "test:sol": "lerna run test:sol --concurrency 4"
   },
   "engines": {
     "node": ">=10.9.0"
   },
   "devDependencies": {
     "check-node-version": "^3.2.0",
-    "lerna": "^3.2.1",
+    "lerna": "^3.13.1",
     "npm-run-all": "^4.1.5",
     "run-node": "^1.0.0",
     "tslint": "^5.11.0",

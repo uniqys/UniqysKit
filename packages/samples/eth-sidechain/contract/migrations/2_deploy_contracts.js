@@ -11,11 +11,12 @@
   limitations under the License.
 */
 
-var SampleToken = artifacts.require("./SampleToken.sol");
+const SampleToken = artifacts.require("./SampleToken.sol");
 
 module.exports = function (deployer) {
+  const genesis = require('../../uniqys-node/genesisHash.json')
   const conf = require('../../uniqys-node/dapp.json')
-  const address = `0x${conf.validatorSet[0].address}`
-  const power = conf.validatorSet[0].power
-  deployer.deploy(SampleToken, address, power);
+  const addresses = conf.validatorSet.map(v => `0x${v.address}`)
+  const powers = conf.validatorSet.map(v => v.power)
+  deployer.deploy(SampleToken, `0x${genesis.genesisHash}`, addresses, powers)
 };

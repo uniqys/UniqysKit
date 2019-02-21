@@ -10,3 +10,6 @@ trim_trailing_whitespace = true
 
 [.vscode/*.json]
 indent_size = 4
+
+[*.sol]
+indent_size = 4

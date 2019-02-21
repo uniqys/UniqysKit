@@ -1,17 +1,16 @@
-const path = require('path')
-
 module.exports = {
-  contracts_build_directory: path.join(__dirname, "../static/contracts"),
   compilers: {
     solc: {
       version: "0.5.2"
     }
   },
   networks: {
-    development: {
+    test: {
       host: "localhost",
-      port: 7545,
+      port: 6545,
+      gas: 8000000,
       network_id: "*"
     }
   }
-}
+};
+require('ts-node').register({ files: true })

@@ -1,23 +1,30 @@
 {
-  "name": "@uniqys/event-provider-eth",
+  "name": "@uniqys/event-provider-ethereum",
   "version": "0.2.0",
   "description": "Uniqys Ethereum Event Provider",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "MPL-2.0",
-  "repository": "https://github.com/uniqys/UniqysKit/tree/master/packages/event-provider",
+  "repository": "https://github.com/uniqys/UniqysKit/tree/master/packages/event-provider/ethereum",
   "publishConfig": {
     "access": "public"
   },
   "files": [
     "/dist"
   ],
-  "main": "./dist/index.js",
+  "main": "./dist/src/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "lint": "tslint -c tslint.json -p tsconfig.json",
-    "test": "run-s test:build test:lint",
+    "build": "run-s build:ts build:sol",
+    "build:ts": "tsc -p tsconfig.build.json",
+    "build:sol": "truffle compile",
+    "lint:ts": "tslint -c tslint.json -p tsconfig.json",
+    "lint:sol": "solhint contracts/**/*.sol",
+    "lint": "run-p lint:*",
+    "test": "run-s test:build test:lint test:jest test:sol",
     "test:build": "tsc -p tsconfig.json --noEmit",
-    "test:lint": "npm run lint"
+    "test:lint": "npm run lint",
+    "test:jest": "jest --forceExit --detectOpenHandles --verbose",
+    "test:sol": "ts-node ./scripts/run-test",
+    "migrate": "truffle migrate"
   },
   "dependencies": {
     "@uniqys/blockchain": "^0.2.0",
@@ -25,17 +32,25 @@
     "@uniqys/easy-types": "^0.2.0",
     "@uniqys/serialize": "0.2.0",
     "@uniqys/signature": "^0.2.0",
+    "@uniqys/types": "^0.2.0",
     "debug": "^3.1.0",
     "openzeppelin-solidity": "^2.1.1",
+    "solidity-bytes-utils": "^0.0.7",
     "web3": "1.0.0-beta.37"
   },
   "devDependencies": {
+    "@types/chai": "^4.1.7",
     "@types/debug": "0.0.30",
     "@types/jest": "^23.3.0",
     "@types/node": "^10.9.4",
+    "@types/mocha": "^5.2.6",
     "@types/web3": "^1.0.18",
+    "ganache-cli": "^6.3.0",
     "npm-run-all": "^4.1.5",
+    "solhint": "^2.0.0",
+    "truffle": "^5.0.2",
     "tslint": "^5.11.0",
+    "ts-node": "^8.0.3",
     "typescript": "^3.0.3"
   }
 }

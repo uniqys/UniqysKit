@@ -11,19 +11,29 @@
   limitations under the License.
 */
 
-pragma solidity >=0.4.21;
+pragma solidity 0.5.2;
+pragma experimental ABIEncoderV2;
 
-import "@uniqys/event-provider-eth/contracts/ERC20Depositable.sol";
-import "@uniqys/event-provider-eth/contracts/ERC20Stakable.sol";
+import "@uniqys/event-provider-ethereum/contracts/Depositable.sol";
+import "@uniqys/event-provider-ethereum/contracts/Stakable.sol";
 
-contract SampleToken is ERC20Depositable, ERC20Stakable {
+contract SampleToken is Depositable, Stakable {
     string public name = "SampleToken";
     string public symbol = "SMPL";
     uint public decimals = 18;
-    uint public INITIAL_SUPPLY = 10000;
+    uint public INITIAL_SUPPLY = 1000;
 
-    constructor(address owner, uint256 power) public {
-        _mint(owner, INITIAL_SUPPLY);
-        _stakeDeposit(owner, power);
+    constructor(
+        bytes32 genesisHash,
+        address[] memory validators,
+        uint256[] memory powers
+    )
+        Depositable(genesisHash)
+        public
+    {
+        for (uint i = 0; i < validators.length; i++) {
+            _mint(validators[i], INITIAL_SUPPLY);
+            _stakeDeposit(validators[i], powers[i]);
+        }
     }
 }

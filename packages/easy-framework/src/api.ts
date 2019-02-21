@@ -55,8 +55,8 @@ export class OuterApi extends Router {
         const hash = maybeHash(ctx.params.id)
         ctx.assert(hash, 400)
         const opt = await this.state.result.get(hash!)
-        if (opt.isSome()) {
-          const res = opt.value
+        if (opt.isSome() && (await this.blockchain.height) >= opt.value.height + 1) {
+          const res = opt.value.response
           ctx.response.status = res.status
           ctx.response.message = res.message
           for (const [key, value] of res.headers.list) {
@@ -122,10 +122,30 @@ export class OuterApi extends Router {
         ctx.assert(height, 400)
         ctx.body = [ (await this.blockchain.hashOf(height!)).toHexString() ]
       })
-      .get('/transaction/proof/:height/:target', async (ctx, _next) => {
-        const height = await this.maybeValidHeight(ctx.params.height)
+      .get('/transaction/:txHash', async (ctx, _next) => {
+        const opt = await this.state.result.get(Hash.fromHexString(ctx.params.txHash))
+        if (!opt.isSome()) {
+          ctx.status = 400
+          return
+        }
+        const { height } = opt.value
+        const block = await this.blockchain.bodyOf(height)
+        const tx = block.transactionList.transactions.find(t => t.hash.toHexString() === ctx.params.txHash)
+        if (tx === undefined) {
+          ctx.body = []
+          return
+        }
+        ctx.body = [ serialize(tx).toString('hex') ]
+      })
+      .get('/transaction/proof/:txHash', async (ctx, _next) => {
+        const opt = await this.state.result.get(Hash.fromHexString(ctx.params.txHash))
+        if (!opt.isSome()) {
+          ctx.status = 400
+          return
+        }
+        const { height } = opt.value
         ctx.assert(height, 400)
-        const proof = await this.state.getMerkleProof(height!, Hash.fromHexString(ctx.params.target))
+        const proof = await this.state.getMerkleProof(height, Hash.fromHexString(ctx.params.txHash))
         ctx.body = proof.map(h => h.toHexString())
       })
     this.use()

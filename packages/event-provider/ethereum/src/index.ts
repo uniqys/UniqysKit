@@ -16,13 +16,13 @@ import Web3 from 'web3'
 import { EventLog } from 'web3/types'
 import Contract from 'web3/eth/contract'
 
-export interface EthOptions {
+export interface EthereumOptions {
   providerEndPoint: string,
   confirmationTime: number,
   artifactPath: string
 }
-export namespace EthOptions {
-  export const defaults: EthOptions = {
+export namespace EthereumOptions {
+  export const defaults: EthereumOptions = {
     providerEndPoint: 'http://localhost:7545',
     confirmationTime: 1500,
     artifactPath: ''
@@ -34,13 +34,13 @@ interface StakeUpdateEvent {
   power: number
 }
 
-export default class EthCrossChain implements dapi.EventProvider {
-  public readonly ethOptions: EthOptions
+export default class EthereumSideChain implements dapi.EventProvider {
+  public readonly ethOptions: EthereumOptions
   public readonly web3: Web3
   public contract?: Contract = undefined
 
-  constructor (dappConfDir: string, options: EthOptions) {
-    this.ethOptions = Object.assign({}, EthOptions.defaults, options)
+  constructor (dappConfDir: string, options: EthereumOptions) {
+    this.ethOptions = Object.assign({}, EthereumOptions.defaults, options)
     this.ethOptions.artifactPath = path.resolve(dappConfDir, this.ethOptions.artifactPath)
     this.web3 = new Web3(this.ethOptions.providerEndPoint)
   }

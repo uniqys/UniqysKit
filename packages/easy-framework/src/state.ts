@@ -12,7 +12,7 @@ import { HttpResponse } from '@uniqys/easy-types'
 import { Address, Hash } from '@uniqys/signature'
 import { Account } from './account'
 import { Optional } from '@uniqys/types'
-import { UInt64, List, deserialize, serialize } from '@uniqys/serialize'
+import { UInt64, List, deserialize, serialize, BufferWriter, BufferReader, Serializable } from '@uniqys/serialize'
 import { ReadWriteLock } from '@uniqys/lock'
 import { Block, ValidatorSet, MerkleTree } from '@uniqys/blockchain'
 import { AppState } from '@uniqys/dapp-interface'
@@ -128,18 +128,35 @@ class MetaState {
   }
 }
 
-export class TransactionResult {
+export class TransactionResult implements Serializable {
+  constructor (
+    public readonly height: number,
+    public readonly response: HttpResponse
+  ) {}
+
+  public static deserialize (reader: BufferReader): TransactionResult {
+    const height = UInt64.deserialize(reader)
+    const response = HttpResponse.deserialize(reader)
+    return new TransactionResult(height, response)
+  }
+  public serialize (writer: BufferWriter) {
+    UInt64.serialize(this.height, writer)
+    this.response.serialize(writer)
+  }
+}
+
+export class TransactionResultStore {
   constructor (
     private readonly store: Store<Buffer, Buffer>
   ) {}
 
-  public async set (tx: Hash, response: HttpResponse) {
-    await this.store.set(tx.buffer, serialize(response))
+  public async set (tx: Hash, txResult: TransactionResult) {
+    await this.store.set(tx.buffer, serialize(txResult))
   }
 
-  public async get (tx: Hash): Promise<Optional<HttpResponse>> {
+  public async get (tx: Hash): Promise<Optional<TransactionResult>> {
     return (await this.store.get(tx.buffer)).match(
-      b => Optional.some(deserialize(b, HttpResponse.deserialize)),
+      b => Optional.some(deserialize(b, TransactionResult.deserialize)),
       () => Optional.none()
     )
   }
@@ -147,7 +164,7 @@ export class TransactionResult {
 
 export class State {
   public readonly meta: MetaState
-  public readonly result: TransactionResult
+  public readonly result: TransactionResultStore
   public readonly top: MerklePatriciaTrie
   public readonly app: Store<Buffer, Buffer>
   public readonly rwLock: ReadWriteLock
@@ -158,7 +175,7 @@ export class State {
     private readonly initialValidatorSet: ValidatorSet
   ) {
     this.meta = new MetaState(new Namespace(this.store, 'meta:'))
-    this.result = new TransactionResult(new Namespace(this.store, 'results:'))
+    this.result = new TransactionResultStore(new Namespace(this.store, 'results:'))
     this.top = new MerklePatriciaTrie(new TrieStore(new Namespace(this.store, 'app:')))
     this.app = new Namespace(this.top, Address.zero.buffer)
     this.rwLock = new ReadWriteLock()
@@ -208,7 +225,7 @@ export class State {
   }
 
   public getMerkleRoot (appRoot: Hash, validTxHashes: Hash[]): Hash {
-    // AppStateHash is a merkle root of appRoot and properly executed transactions
+    // AppStateHash is a merkle root of appRoot and properly-executed transactions
     return MerkleTree.root([appRoot, ...validTxHashes])
   }
 

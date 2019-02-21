@@ -18,9 +18,9 @@
   <div>
     <div class="navbar navbar-light bg-light">
       <div class="container">
-        <div class="navbar-brand">Uniqys Ethereum Cross Chain</div>
+        <div class="navbar-brand">Uniqys Ethereum Side Chain</div>
         <div class="navbar-text">
-          A sample of Ethereum Cross Chain.
+          A sample of Ethereum Side Chain.
         </div>
       </div>
     </div>
@@ -72,6 +72,20 @@
                 </div>
               </p>
               <p>
+                <h5 class="card-title">Withdraw</h5>
+                <div class="input-group mt-3">
+                  <input type="text" id="eth-withdraw-value" class="form-control" placeholder="Value" v-model="eth.withdraw.value">
+                  <div class="input-group-append">
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      id="eth-withdraw-submit"
+                      @click.prevent="ethWithdraw"
+                    >Submit</button>
+                  </div>
+                </div>
+              </p>
+              <p>
                 <h5 class="card-title">StakeDeposit</h5>
                 <div class="input-group mt-3">
                   <input type="text" id="eth-stake-deposit-value" class="form-control" placeholder="Value" v-model="eth.stakeDeposit.value">
@@ -85,7 +99,6 @@
                   </div>
                 </div>
               </p>
-
               <p>
                 <h5 class="card-title">StakeWithdraw</h5>
                 <div class="input-group mt-3">
@@ -158,6 +171,10 @@ export default {
         deposit: {
           value: null
         },
+        withdraw: {
+          value: null,
+          withdrawable: []
+        },
         stakeDeposit: {
           value: null
         },
@@ -225,6 +242,45 @@ export default {
         if (txHash) { this.eth.resolve = true }
       })
     },
+    async fetchLatestWithdrawableTxInfo () {
+      const txInfoList = (await this.easy.get(`/withdrawable/${this.uniqys.address}`)).data
+      return txInfoList[txInfoList.length - 1]
+    },
+    async ethWithdraw () {
+      this.eth.resolve = null
+      this.eth.reject = null
+      if (!this.eth.withdraw.value) {
+        this.eth.reject = 'invalid input'
+        return
+      }
+      // uniqys
+      await this.easy.post('/withdraw', this.eth.withdraw.value, { sign: true, headers: {'Content-Type': 'text/plain'} })
+        .catch((err) => this.eth.reject = `Error at Uniqys: ${err.toString()}`)
+
+      // eth
+      const txInfo = await this.fetchLatestWithdrawableTxInfo()
+      const tx = await this.easy.api.transaction(txInfo.txHash)
+      const proof = await this.easy.api.merkleProof(txInfo.txHash)
+      const block = await this.easy.api.block(txInfo.height)
+      this.contract.methods.withdraw(
+        `0x${tx}`,
+        proof.map(p => `0x${p}`),
+        [ block.header.height,
+          block.header.timestamp,
+          `0x${block.header.lastBlockHash}`,
+          `0x${block.header.transactionRoot}`,
+          `0x${block.header.lastBlockConsensusRoot}`,
+          `0x${block.header.nextValidatorSetRoot}`,
+          `0x${block.header.appStateHash}` ],
+        block.body.consensus.round,
+        block.body.consensus.signatures.map(s => `0x${s}`)
+      ).send({
+        from: this.eth.address
+      }), (err, txHash) => {
+        if (err) { this.eth.reject = err }
+        if (txHash) { this.eth.resolve = true }
+      }
+    },
     ethStakeDeposit () {
       this.eth.resolve = null
       this.eth.reject = null
@@ -255,19 +311,14 @@ export default {
     },
     update () {
       // eth update
-      this.contract.methods.balanceOf(this.eth.address).call((err, res) => {
-        if (err) { this.eth.reject = err.toString() }
-        this.eth.balance = parseInt(res) || 0
-      })
+      this.contract.methods.balanceOf(this.eth.address).call({ from: this.eth.address })
+        .then(res => { this.eth.balance = parseInt(res) || 0 })
+        .catch(err => { this.eth.reject = err.toString() })
       // uniqys udpate
       this.uniqys.address = this.easy.address.toString()
       this.easy.api.account(this.uniqys.address)
-        .then(account => {
-          this.uniqys.balance = account.balance || 0
-        })
-        .catch(err => {
-          this.uniqys.reject = err
-        })
+        .then(account => { this.uniqys.balance = account.balance || 0 })
+        .catch(err => { this.uniqys.reject = err })
     }
   },
   created () {
@@ -277,7 +328,7 @@ export default {
       const network = await this.web3.eth.net.getId()
       this.contract = new this.web3.eth.Contract(artifact.abi, artifact.networks[network].address)
       this.eth.address = this.account
-      setInterval(this.update, 500)
+      setInterval(this.update, 1000)
       this.update()
     })()
   }

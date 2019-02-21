@@ -9,7 +9,7 @@
 import { Transaction, TransactionList, TransactionType } from './transaction'
 import { MerkleTree } from './merkle-tree'
 import { Hash } from '@uniqys/signature'
-import { serialize, deserialize } from '@uniqys/serialize'
+import { serialize, deserialize, SizedBuffer, UInt8 } from '@uniqys/serialize'
 
 describe('transaction', () => {
   it('is serializable', () => {
@@ -18,7 +18,13 @@ describe('transaction', () => {
   })
   it('is hashable', () => {
     const transaction = new Transaction(TransactionType.Normal, Buffer.from('foo'))
-    expect(transaction.hash.equals(Hash.fromData('foo'))).toBeTruthy()
+    const hash = Hash.fromData(
+      Buffer.concat([
+        serialize(TransactionType.Normal, UInt8.serialize),
+        serialize(Buffer.from('foo'), SizedBuffer.serialize)
+      ])
+      )
+    expect(transaction.hash.equals(hash)).toBeTruthy()
   })
 })
 
