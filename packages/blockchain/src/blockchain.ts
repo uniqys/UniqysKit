@@ -55,6 +55,8 @@ export class Blockchain {
     return new Block(header, body)
   }
   public async validatorSetOf (height: number): Promise<ValidatorSet> {
+    // validator set will not be found for all SYNCED blocks
+    // TODO: Fix this
     this.checkReady()
     return this.blockStore.rwLock.readLock.use(async () => {
       // this block's validatorSet is defined in previous block

@@ -26,7 +26,6 @@ const logger = debug('app')
 
 function viaChain (ctx: Koa.Context): string {
   const sender = ctx.header['uniqys-sender']
-  console.log(sender)
   if (!(sender && typeof sender === 'string')) ctx.throw(403, 'access via chain required')
   return sender
 }

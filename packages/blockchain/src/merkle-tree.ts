@@ -11,9 +11,14 @@ import { Hash, Hashable } from '@uniqys/signature'
 // Basic Merkle Tree
 // But, doesn't copy leaf for fix CVE-2012-2459
 export namespace MerkleTree {
-  export function root<T extends Hashable> (items: T[]): Hash {
+  export function root (items: Hash[]): Hash
+  export function root<T extends Hashable> (items: T[]): Hash
+  export function root (items: any) {
     if (items.length === 0) { return Hash.fromData(Buffer.alloc(0)) }
-    if (items.length === 1) { return items[0].hash }
+    if (items.length === 1) {
+      if (items[0] instanceof Hash) { return items[0] }
+      return items[0].hash
+    }
 
     const split = splitPoint(items.length)
     return Hash.fromData(Buffer.concat([

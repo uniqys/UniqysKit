@@ -12,7 +12,7 @@ import { HttpResponse } from '@uniqys/easy-types'
 import { Address, Hash } from '@uniqys/signature'
 import { Account } from './account'
 import { Optional } from '@uniqys/types'
-import { UInt64, deserialize, serialize } from '@uniqys/serialize'
+import { UInt64, List, deserialize, serialize } from '@uniqys/serialize'
 import { ReadWriteLock } from '@uniqys/lock'
 import { Block, ValidatorSet, MerkleTree } from '@uniqys/blockchain'
 import { AppState } from '@uniqys/dapp-interface'
@@ -24,6 +24,12 @@ namespace MetaKey {
   export const eventNonce = Buffer.from('eventNonce')
   export const eventTransactionRoot = Buffer.from('eventTransactionRoot')
   export const nextValidatorSet = Buffer.from('nextValidatorSet')
+  export function appRoot (height: number) {
+    return Buffer.from(`appRoot:${height}`)
+  }
+  export function validTransactionHashes (height: number) {
+    return Buffer.from(`validTransactionHashes:${height}`)
+  }
 }
 class MetaState {
   constructor (
@@ -97,6 +103,29 @@ class MetaState {
   public async setNextValidatorSet (nextValidatorSet: ValidatorSet) {
     await this.store.set(MetaKey.nextValidatorSet, serialize(nextValidatorSet))
   }
+
+  // appRoot
+  public async getAppRoot (height: number): Promise<Hash> {
+    return (await this.store.get(MetaKey.appRoot(height))).match(
+      v => deserialize(v, Hash.deserialize),
+      () => Hash.zero
+    )
+  }
+  public async setAppRoot (height: number, root: Hash) {
+    await this.store.set(MetaKey.appRoot(height), serialize(root))
+  }
+
+  // validTransactionHashes
+  public async getValidTransactionHashes (height: number) {
+    return (await this.store.get(MetaKey.validTransactionHashes(height))).match(
+      v => deserialize(v, List.deserialize<Hash>(r => Hash.deserialize(r))),
+      () => []
+    )
+  }
+  public async setValidTransactionHashes (height: number, validTransactionHashes: Hash[]) {
+    await this.store.set(MetaKey.validTransactionHashes(height),
+      serialize(validTransactionHashes, List.serialize<Hash>((v, w) => v.serialize(w))))
+  }
 }
 
 export class TransactionResult {
@@ -134,7 +163,9 @@ export class State {
     this.app = new Namespace(this.top, Address.zero.buffer)
     this.rwLock = new ReadWriteLock()
   }
+
   public async ready (): Promise<void> {
+    await this.top.ready()
     if (await this.meta.getLatestBlockTimestamp() === 0) {
       await this.meta.setLatestBlockTimestamp(this.genesisBlock.header.timestamp)
     }
@@ -144,22 +175,46 @@ export class State {
     if ((await this.meta.getNextValidatorSet()).validators.length === 0) {
       await this.meta.setNextValidatorSet(this.initialValidatorSet)
     }
-    await this.top.ready()
+    const height = await this.meta.getHeight()
+    if (await this.meta.getAppRoot(height) === Hash.zero) {
+      await this.meta.setAppRoot(height, this.top.root)
+    }
   }
+
+  public async newHeight (blockTimestamp: number, validTxHashes: Hash[], eventExists: boolean, eventTxRoot: Hash) {
+    await this.meta.incrementHeight()
+    const height = await this.meta.getHeight()
+    await this.meta.setAppRoot(height, this.top.root)
+    await this.meta.setValidTransactionHashes(height, validTxHashes)
+    if (eventExists) {
+      const prevBlockTimestamp = await this.meta.getLatestBlockTimestamp()
+      await this.meta.setLatestEventTimestamp(prevBlockTimestamp)
+    }
+    await this.meta.setLatestBlockTimestamp(blockTimestamp)
+    await this.meta.setEventTransactionRoot(eventTxRoot)
+  }
+
   public async getAppState (): Promise<AppState> {
+    const height = await this.meta.getHeight()
+    const validTxHashes = await this.meta.getValidTransactionHashes(height)
+    const appRoot = await this.meta.getAppRoot(height)
+    // AppStateHash is a merkle root of appRoot and properly executed transactions
+    const appStateHash = MerkleTree.root([appRoot, ...validTxHashes])
     return new AppState(
-      await this.meta.getHeight(),
-      this.top.root,
+      height,
+      appStateHash,
       await this.meta.getNextValidatorSet(),
       await this.meta.getEventTransactionRoot()
     )
   }
+
   public async getAccount (address: Address): Promise<Account> {
     return (await this.top.get(address.buffer)).match(
         v => deserialize(v, Account.deserialize),
         () => Account.default
     )
   }
+
   public async setAccount (address: Address, account: Account): Promise<void> {
     await this.top.set(address.buffer, serialize(account))
   }

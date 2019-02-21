@@ -10,6 +10,7 @@ import { Dapp, AppState, EventProvider } from '@uniqys/dapp-interface'
 import { Transaction as CoreTransaction, BlockHeader, TransactionType, MerkleTree } from '@uniqys/blockchain'
 import { EventTransaction, SignedTransaction } from '@uniqys/easy-types'
 import { deserialize } from '@uniqys/serialize'
+import { Hash } from '@uniqys/signature'
 import { Optional } from '@uniqys/types'
 import { State } from './state'
 import { EasyMemcached, OperationMode } from './memcached-implementation'
@@ -84,6 +85,8 @@ export class Controller implements Dapp {
 
   public async executeTransactions (coreTxs: CoreTransaction[], header: BlockHeader): Promise<AppState> {
     let eventExists: boolean = false
+    const validTxHashes: Hash[] = []
+
     for (const coreTx of coreTxs) {
       switch (coreTx.type) {
         case TransactionType.Normal: {
@@ -93,13 +96,13 @@ export class Controller implements Dapp {
             const root = this.state.top.root
             try {
               const next = (await this.state.getAccount(sender)).incrementNonce()
-              // skip non continuous nonce transaction
               if (tx.nonce !== next.nonce) { throw new Error('non continuous nonce') }
               await this.state.setAccount(sender, next)
               this.memcachedImpl.changeMode(OperationMode.ReadWrite)
-              const res = await Response.pack(await SignedRequest.unpack(tx, header, this.app))
+              const res = await Response.pack(await SignedRequest.unpack(tx, header, coreTx.hash, this.app))
               await this.state.result.set(coreTx.hash, res)
               if (400 <= res.status && res.status < 600) { throw new Error(res.message) }
+              validTxHashes.push(coreTx.hash)
             } catch (err) {
               logger('error in action: %s', err.message)
               await this.state.top.rollback(root)
@@ -119,9 +122,10 @@ export class Controller implements Dapp {
               if (tx.nonce !== nextNonce) { throw new Error('non continuous nonce') }
               await this.state.meta.incrementEventNonce()
               this.memcachedImpl.changeMode(OperationMode.ReadWrite)
-              const res = await Response.pack(await EventRequest.unpack(tx, header, this.app))
+              const res = await Response.pack(await EventRequest.unpack(tx, header, coreTx.hash, this.app))
               if (400 <= res.status && res.status < 600) { throw new Error(res.message) }
               if (tx.validatorSet.validators.length > 0) { await this.state.meta.setNextValidatorSet(tx.validatorSet) }
+              validTxHashes.push(coreTx.hash)
             } catch (err) {
               logger('error in action: %s', err.message)
               await this.state.top.rollback(root)
@@ -137,13 +141,7 @@ export class Controller implements Dapp {
 
     // update state info
     await this.state.rwLock.writeLock.use(async () => {
-      await this.state.meta.incrementHeight()
-      if (eventExists) {
-        const prevBlockTimestamp = await this.state.meta.getLatestBlockTimestamp()
-        await this.state.meta.setLatestEventTimestamp(prevBlockTimestamp)
-      }
-      await this.state.meta.setLatestBlockTimestamp(header.timestamp)
-
+      // fetch next event transaction root
       const latestEventTimestamp = await this.state.meta.getLatestEventTimestamp()
       const eventNonce = await this.state.meta.getEventNonce() + 1
       const nextValidatorSet = await this.state.meta.getNextValidatorSet()
@@ -152,7 +150,8 @@ export class Controller implements Dapp {
         : []
       eventTxs.sort((tx1, tx2) => Buffer.compare(tx1.hash.buffer, tx2.hash.buffer))
       const eventTxRoot = MerkleTree.root(eventTxs)
-      await this.state.meta.setEventTransactionRoot(eventTxRoot)
+
+      await this.state.newHeight(header.timestamp, validTxHashes, eventExists, eventTxRoot)
     })
 
     return this.state.getAppState()
