@@ -8,6 +8,32 @@
 
 import { AxiosInstance, AxiosPromise } from 'axios'
 
+export interface BlockHeader {
+  height: number,
+  timestamp: number,
+  lastBlockHash: string,
+  transactionRoot: string,
+  lastBlockConsensusRoot: string,
+  nextValidatorSetRoot: string,
+  appStateHash: string
+}
+
+export interface BlockBody {
+  transactions: string[],
+  consensus: {
+    height: number,
+    round: number,
+    blockHash: string,
+    signatures: string[]
+  }
+}
+
+export interface Block {
+  header: BlockHeader,
+  body: BlockBody,
+  hash: string
+}
+
 export class Api {
   constructor (
     private readonly client: AxiosInstance
@@ -24,5 +50,20 @@ export class Api {
   }
   public awaiting<T = any> (id: string): AxiosPromise<T> {
     return this.client.get(`/uniqys/awaiting/${id}`)
+  }
+  public async height (): Promise<number> {
+    return (await this.client.get('/uniqys/height')).data[0]
+  }
+  public async block (height: number): Promise<Block> {
+    return (await this.client.get(`/uniqys/block/${height}`)).data
+  }
+  public async blockHeader (height: number): Promise<BlockHeader> {
+    return (await this.client.get(`/uniqys/block/${height}/header`)).data
+  }
+  public async blockBody (height: number): Promise<BlockBody> {
+    return (await this.client.get(`/uniqys/block/${height}/body`)).data
+  }
+  public async blockHash (height: number): Promise<string> {
+    return (await this.client.get(`/uniqys/block/${height}/hash`)).data[0]
   }
 }
