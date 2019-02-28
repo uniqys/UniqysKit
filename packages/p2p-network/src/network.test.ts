@@ -57,13 +57,13 @@ describe('network', () => {
       }
     }
     // tslint:enable
-    const foo1 = jest.fn(call)
-    const bar1 = jest.fn(call)
+    const foo1 = jest.fn<void, any[]>(call)
+    const bar1 = jest.fn<void, any[]>(call)
     net1.addProtocol({ protocol: 'foo', handshake: foo1 })
     net1.addProtocol({ protocol: 'bar', handshake: bar1 })
 
-    const foo2 = jest.fn(call)
-    const bar2 = jest.fn(call)
+    const foo2 = jest.fn<void, any[]>(call)
+    const bar2 = jest.fn<void, any[]>(call)
     net2.addProtocol({ protocol: 'foo', handshake: foo2 })
     net2.addProtocol({ protocol: 'bar', handshake: bar2 })
 

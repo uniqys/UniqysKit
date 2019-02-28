@@ -50,7 +50,7 @@ export class Signature implements Hashable, Serializable {
   ) {
     if (buffer.length !== 65) { throw TypeError() }
     if (![27, 28].includes(this.recovery)) {
-      throw new Error('invalid signature. V should be 27 or 28.')
+      throw new Error('invalid signature. V must be 27 or 28.')
     }
     this.hash = Hash.fromData(this.buffer)
   }

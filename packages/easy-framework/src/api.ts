@@ -11,6 +11,8 @@ import BodyParser from 'koa-bodyparser'
 import { State } from './state'
 import { Address, Hash } from '@uniqys/signature'
 import { Mutex } from '@uniqys/lock'
+import { Blockchain, BlockHeader, BlockBody, Consensus } from '@uniqys/blockchain'
+import { serialize } from '@uniqys/serialize'
 
 function maybeHash (str: string): Hash | undefined {
   try { return Hash.fromHexString(str) } catch { return undefined }
@@ -18,10 +20,33 @@ function maybeHash (str: string): Hash | undefined {
 function maybeAddress (str: string): Address | undefined {
   try { return Address.fromString(str) } catch { return undefined }
 }
+function getHeaderObject (header: BlockHeader) {
+  return {
+    height: header.height,
+    timestamp: header.timestamp,
+    lastBlockHash: header.lastBlockHash.toHexString(),
+    transactionRoot: header.lastBlockConsensusRoot.toHexString(),
+    lastBlockConsensusRoot: header.lastBlockConsensusRoot.toHexString(),
+    nextValidatorSetRoot: header.nextValidatorSetRoot.toHexString(),
+    appStateHash: header.appStateHash.toHexString()
+  }
+}
+function getBodyObject (body: BlockBody, consensus: Consensus) {
+  return {
+    transactions: body.transactionList.transactions.map(t => serialize(t).toString('hex')),
+    consensus: {
+      height: consensus.vote.height,
+      round: consensus.vote.round,
+      blockHash: consensus.vote.blockHash.toHexString(),
+      signatures: consensus.signatures.map(v => v.buffer.toString('hex'))
+    }
+  }
+}
 
 export class OuterApi extends Router {
   constructor (
-    protected readonly state: State
+    protected readonly state: State,
+    protected readonly blockchain: Blockchain
   ) {
     super()
     this
@@ -67,16 +92,55 @@ export class OuterApi extends Router {
         const account = await this.state.getAccount(address!)
         ctx.body = [ account.balance ]
       })
+      .get('/height/', async (ctx, _next) => {
+        ctx.body = [ await this.blockchain.height ]
+      })
+      .get('/block/:height/', async (ctx, _next) => {
+        const height = await this.maybeValidHeight(ctx.params.height)
+        ctx.assert(height, 400)
+        const header = getHeaderObject(await this.blockchain.headerOf(height!))
+        const body = getBodyObject(await this.blockchain.bodyOf(height!), await this.blockchain.consensusOf(height!))
+        const hash = (await this.blockchain.hashOf(height!)).toHexString()
+        ctx.body = {
+          header: header,
+          body: body,
+          hash: hash
+        }
+      })
+      .get('/block/:height/header', async (ctx, _next) => {
+        const height = await this.maybeValidHeight(ctx.params.height)
+        ctx.assert(height, 400)
+        ctx.body = getHeaderObject(await this.blockchain.headerOf(height!))
+      })
+      .get('/block/:height/body', async (ctx, _next) => {
+        const height = await this.maybeValidHeight(ctx.params.height)
+        ctx.assert(height, 400)
+        ctx.body = getBodyObject(await this.blockchain.bodyOf(height!), await this.blockchain.consensusOf(height!))
+      })
+      .get('/block/:height/hash', async (ctx, _next) => {
+        const height = await this.maybeValidHeight(ctx.params.height)
+        ctx.assert(height, 400)
+        ctx.body = [ (await this.blockchain.hashOf(height!)).toHexString() ]
+      })
     this.use()
+  }
+
+  private async maybeValidHeight (str: string): Promise<number | undefined> {
+    // number or 'latest'
+    if (isNaN(Number(str)) && str !== 'latest') { return undefined }
+    const height = str === 'latest' ? await this.blockchain.height : Number(str)
+    if (height > await this.blockchain.height) { return undefined }
+    return height
   }
 }
 
 export class InnerApi extends OuterApi {
   private readonly mutex = new Mutex()
   constructor (
-    state: State
+    state: State,
+    blockchain: Blockchain
   ) {
-    super(state)
+    super(state, blockchain)
     this
       .put('/accounts/:address/balance', BodyParser(), async (ctx, _next) => {
         const address = maybeAddress(ctx.params.address)
