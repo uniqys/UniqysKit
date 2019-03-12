@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/sample-eth-sidechain",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "A simple Ethereum sidechain sample.",
   "author": "Uniqys Project (https://uniqys.net)",
   "private": true,
@@ -16,9 +16,9 @@
     "migrate": "cd contract && truffle migrate --reset"
   },
   "dependencies": {
-    "@uniqys/cli": "^0.1.2",
-    "@uniqys/easy-client": "^0.1.2",
-    "@uniqys/event-provider-eth": "^0.1.2",
+    "@uniqys/cli": "^0.2.0",
+    "@uniqys/easy-client": "^0.2.0",
+    "@uniqys/event-provider-eth": "^0.2.0",
     "axios": "^0.18.0",
     "debug": "^3.1.0",
     "koa": "^2.5.2",
@@ -42,7 +42,7 @@
     "npm-run-all": "^4.1.5",
     "solhint": "^1.5.0",
     "truffle": "^5.0.2",
-    "ts-node": "^7.0.0",
+    "ts-node": "^8.0.3",
     "tslint": "^5.11.0",
     "typescript": "^3.0.3",
     "vue-loader": "^15.2.6",

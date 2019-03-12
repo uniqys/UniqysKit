@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/types",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "base types of Uniqys Kit",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "Apache-2.0",
@@ -30,6 +30,6 @@
     "typescript": "^3.0.3"
   },
   "dependencies": {
-    "@uniqys/serialize": "^0.1.2"
+    "@uniqys/serialize": "^0.2.0"
   }
 }

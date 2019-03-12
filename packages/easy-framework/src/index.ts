@@ -84,8 +84,8 @@ export class Easy {
     const memcachedImpl = new EasyMemcached(state.app)
     const controller = new Controller(appUrl, state, memcachedImpl, eventProvider)
     this.core = new ChainCore(controller, blockchain, peerInfo, keyPair, options)
-    this.gateway = new Gateway(this.core, state, new OuterApi(state), appUrl)
-    this.innerApi = Easy.serveApi(new InnerApi(state))
+    this.gateway = new Gateway(this.core, state, new OuterApi(state, blockchain), appUrl)
+    this.innerApi = Easy.serveApi(new InnerApi(state, blockchain))
     this.innerMemcached = new MemcachedCompatibleServer(memcachedImpl)
   }
   public async listen () {
