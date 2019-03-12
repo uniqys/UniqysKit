@@ -11,7 +11,7 @@ import BodyParser from 'koa-bodyparser'
 import { State } from './state'
 import { Address, Hash } from '@uniqys/signature'
 import { Mutex } from '@uniqys/lock'
-import { Blockchain, BlockHeader, BlockBody, Consensus } from '@uniqys/blockchain'
+import { Blockchain, BlockHeader, BlockBody, Consensus, MerkleTree } from '@uniqys/blockchain'
 import { serialize } from '@uniqys/serialize'
 
 function maybeHash (str: string): Hash | undefined {
@@ -25,7 +25,7 @@ function getHeaderObject (header: BlockHeader) {
     height: header.height,
     timestamp: header.timestamp,
     lastBlockHash: header.lastBlockHash.toHexString(),
-    transactionRoot: header.lastBlockConsensusRoot.toHexString(),
+    transactionRoot: header.transactionRoot.toHexString(),
     lastBlockConsensusRoot: header.lastBlockConsensusRoot.toHexString(),
     nextValidatorSetRoot: header.nextValidatorSetRoot.toHexString(),
     appStateHash: header.appStateHash.toHexString()
@@ -51,7 +51,7 @@ export class OuterApi extends Router {
     super()
     this
       // async result
-      .get('/awaiting/:id/', async (ctx, _next) => {
+      .get('/awaiting/:id', async (ctx, _next) => {
         const hash = maybeHash(ctx.params.id)
         ctx.assert(hash, 400)
         const opt = await this.state.result.get(hash!)
@@ -92,10 +92,10 @@ export class OuterApi extends Router {
         const account = await this.state.getAccount(address!)
         ctx.body = [ account.balance ]
       })
-      .get('/height/', async (ctx, _next) => {
+      .get('/height', async (ctx, _next) => {
         ctx.body = [ await this.blockchain.height ]
       })
-      .get('/block/:height/', async (ctx, _next) => {
+      .get('/block/:height', async (ctx, _next) => {
         const height = await this.maybeValidHeight(ctx.params.height)
         ctx.assert(height, 400)
         const header = getHeaderObject(await this.blockchain.headerOf(height!))
@@ -121,6 +121,13 @@ export class OuterApi extends Router {
         const height = await this.maybeValidHeight(ctx.params.height)
         ctx.assert(height, 400)
         ctx.body = [ (await this.blockchain.hashOf(height!)).toHexString() ]
+      })
+      .get('/transaction/proof/:height/:target', async (ctx, _next) => {
+        const height = await this.maybeValidHeight(ctx.params.height)
+        ctx.assert(height, 400)
+        const txHashes = (await this.blockchain.bodyOf(height!)).transactionList.transactions.map(t => t.hash)
+        const proof = MerkleTree.proof(txHashes, Hash.fromHexString(ctx.params.target))
+        ctx.body = proof.map(h => h.toHexString())
       })
     this.use()
   }

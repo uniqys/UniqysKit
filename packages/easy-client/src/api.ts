@@ -66,4 +66,7 @@ export class Api {
   public async blockHash (height: number): Promise<string> {
     return (await this.client.get(`/uniqys/block/${height}/hash`)).data[0]
   }
+  public async merkleProof (height: number, txHash: string): Promise<string[]> {
+    return (await this.client.get(`/uniqys/transaction/proof/${height}/${txHash}`)).data
+  }
 }
