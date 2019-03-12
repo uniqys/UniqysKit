@@ -148,7 +148,6 @@ export class Controller implements Dapp {
       const eventTxs = this.eventProvider
         ? await this.eventProvider.getTransactions(latestEventTimestamp, header.timestamp, eventNonce, nextValidatorSet)
         : []
-      eventTxs.sort((tx1, tx2) => Buffer.compare(tx1.hash.buffer, tx2.hash.buffer))
       const eventTxRoot = MerkleTree.root(eventTxs)
 
       await this.state.newHeight(header.timestamp, validTxHashes, eventExists, eventTxRoot)
