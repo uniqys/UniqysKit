@@ -142,15 +142,9 @@
 
 <script>
 import axios from 'axios'
-// TODO: fetch key from web3
-const keyPair = require('../uniqys-node/validatorKey.json')
-const localStorageKey = 'easy_private_key'
-
-localStorage.setItem(localStorageKey, keyPair.privateKey)
-let easy = new Easy(location.origin)
 
 export default {
-  props: ['web3', 'account'],
+  props: ['easy', 'web3', 'account'],
   data () {
     return {
       contract: null,
@@ -175,7 +169,7 @@ export default {
       },
       uniqys: {
         balance: 0,
-        address: easy.address.toString(),
+        address: null,
         transfer: {
           to: null,
           value: null,
@@ -193,7 +187,7 @@ export default {
         this.uniqys.reject = 'invalid input'
         return
       }
-      easy.post('/transfer', { to: this.uniqys.transfer.to, value: this.uniqys.transfer.value }, { sign: true })
+      this.easy.post('/transfer', { to: this.uniqys.transfer.to, value: this.uniqys.transfer.value }, { sign: true })
         .then(() => {
           this.uniqys.resolve = true
         })
@@ -266,7 +260,8 @@ export default {
         this.eth.balance = parseInt(res) || 0
       })
       // uniqys udpate
-      easy.api.account(this.uniqys.address)
+      this.uniqys.address = this.easy.address.toString()
+      this.easy.api.account(this.uniqys.address)
         .then(account => {
           this.uniqys.balance = account.balance || 0
         })
@@ -276,15 +271,14 @@ export default {
     }
   },
   created () {
-    // eth setup
+    // setup
     (async () => {
       const artifact = (await axios.get('/contracts/SampleToken.json')).data
       const network = await this.web3.eth.net.getId()
       this.contract = new this.web3.eth.Contract(artifact.abi, artifact.networks[network].address)
       this.eth.address = this.account
-      setInterval(() => {
-        this.update()
-      }, 500)
+      setInterval(this.update, 500)
+      this.update()
     })()
   }
 }

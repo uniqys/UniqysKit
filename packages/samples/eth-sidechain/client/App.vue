@@ -16,7 +16,7 @@
 
 <template>
   <div id="app">
-    <Manager v-if="web3" :web3="web3" :account="account"/>
+    <Manager v-if="web3" :easy="easy" :web3="web3" :account="account"/>
   </div>
 </template>
 
@@ -30,6 +30,7 @@ export default {
   },
   data () {
     return {
+      easy: null,
       web3: null,
       account: ''
     }
@@ -38,6 +39,7 @@ export default {
     if (Web3.givenProvider) {
       console.log('Web3 injected browser: OK.')
       this.web3 = new Web3(Web3.givenProvider)
+      this.easy = new Easy.Web3(Web3.givenProvider, location.origin)
     } else {
       alert('Web3 is not injected')
       return
@@ -57,7 +59,6 @@ export default {
         this.account = accounts[0]
       }
     })
-    this.ready = true
   }
 }
 </script>
