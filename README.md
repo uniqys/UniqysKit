@@ -33,10 +33,10 @@ Easy Framework is ready for developers to use, and it now provides you necessary
 
 ## Getting started
 
-### Setup for [ndenv](https://github.com/riywo/ndenv)
+### Setup for [nodenv](https://github.com/nodenv/nodenv)
 
 ```sh
-$ ndenv install v10.9.0
+$ nodenv install
 ```
 
 ### Install
