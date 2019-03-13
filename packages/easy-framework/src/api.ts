@@ -11,7 +11,7 @@ import BodyParser from 'koa-bodyparser'
 import { State } from './state'
 import { Address, Hash } from '@uniqys/signature'
 import { Mutex } from '@uniqys/lock'
-import { Blockchain, BlockHeader, BlockBody, Consensus, MerkleTree } from '@uniqys/blockchain'
+import { Blockchain, BlockHeader, BlockBody, Consensus } from '@uniqys/blockchain'
 import { serialize } from '@uniqys/serialize'
 
 function maybeHash (str: string): Hash | undefined {
