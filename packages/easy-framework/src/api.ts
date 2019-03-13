@@ -125,8 +125,7 @@ export class OuterApi extends Router {
       .get('/transaction/proof/:height/:target', async (ctx, _next) => {
         const height = await this.maybeValidHeight(ctx.params.height)
         ctx.assert(height, 400)
-        const txHashes = (await this.blockchain.bodyOf(height!)).transactionList.transactions.map(t => t.hash)
-        const proof = MerkleTree.proof(txHashes, Hash.fromHexString(ctx.params.target))
+        const proof = await this.state.getMerkleProof(height!, Hash.fromHexString(ctx.params.target))
         ctx.body = proof.map(h => h.toHexString())
       })
     this.use()

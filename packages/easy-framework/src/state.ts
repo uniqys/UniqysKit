@@ -198,14 +198,24 @@ export class State {
     const height = await this.meta.getHeight()
     const validTxHashes = await this.meta.getValidTransactionHashes(height)
     const appRoot = await this.meta.getAppRoot(height)
-    // AppStateHash is a merkle root of appRoot and properly executed transactions
-    const appStateHash = MerkleTree.root([appRoot, ...validTxHashes])
+    const appStateHash = this.getMerkleRoot(appRoot, validTxHashes)
     return new AppState(
       height,
       appStateHash,
       await this.meta.getNextValidatorSet(),
       await this.meta.getEventTransactionRoot()
     )
+  }
+
+  public getMerkleRoot (appRoot: Hash, validTxHashes: Hash[]): Hash {
+    // AppStateHash is a merkle root of appRoot and properly executed transactions
+    return MerkleTree.root([appRoot, ...validTxHashes])
+  }
+
+  public async getMerkleProof (height: number, target: Hash): Promise<Hash[]> {
+    const validTxHashes = await this.meta.getValidTransactionHashes(height)
+    const appRoot = await this.meta.getAppRoot(height)
+    return MerkleTree.proof([appRoot, ...validTxHashes], target)
   }
 
   public async getAccount (address: Address): Promise<Account> {
