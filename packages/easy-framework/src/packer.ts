@@ -78,6 +78,7 @@ export namespace SignedRequest {
     return new Promise<http.IncomingMessage>((resolve, reject) => {
       const headers = Headers.unpack(signedTx.transaction.request.headers)
       headers['uniqys-sender'] = signedTx.signer.toString()
+      headers['uniqys-nonce'] = signedTx.nonce.toString(10)
       headers['uniqys-blockheight'] = blockHeader.height.toString(10)
       headers['uniqys-timestamp'] = blockHeader.timestamp.toString(10)
       headers['uniqys-blockhash'] = blockHeader.hash.toHexString()
@@ -101,6 +102,7 @@ export namespace EventRequest {
   export async function unpack (eventTx: EventTransaction, blockHeader: BlockHeader, coreTxHash: Hash, to: URL): Promise<http.IncomingMessage> {
     return new Promise<http.IncomingMessage>((resolve, reject) => {
       const headers = Headers.unpack(eventTx.transaction.request.headers)
+      headers['uniqys-nonce'] = eventTx.nonce.toString(10)
       headers['uniqys-blockheight'] = blockHeader.height.toString(10)
       headers['uniqys-timestamp'] = blockHeader.timestamp.toString(10)
       headers['uniqys-blockhash'] = blockHeader.hash.toHexString()
