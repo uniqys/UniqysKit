@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/config-validator",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "validate json configuration",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "Apache-2.0",
