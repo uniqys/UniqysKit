@@ -25,7 +25,7 @@ function getHeaderObject (header: BlockHeader) {
     height: header.height,
     timestamp: header.timestamp,
     lastBlockHash: header.lastBlockHash.toHexString(),
-    transactionRoot: header.lastBlockConsensusRoot.toHexString(),
+    transactionRoot: header.transactionRoot.toHexString(),
     lastBlockConsensusRoot: header.lastBlockConsensusRoot.toHexString(),
     nextValidatorSetRoot: header.nextValidatorSetRoot.toHexString(),
     appStateHash: header.appStateHash.toHexString()
@@ -51,12 +51,12 @@ export class OuterApi extends Router {
     super()
     this
       // async result
-      .get('/awaiting/:id/', async (ctx, _next) => {
+      .get('/awaiting/:id', async (ctx, _next) => {
         const hash = maybeHash(ctx.params.id)
         ctx.assert(hash, 400)
         const opt = await this.state.result.get(hash!)
-        if (opt.isSome()) {
-          const res = opt.value
+        if (opt.isSome() && (await this.blockchain.height) >= opt.value.height + 1) {
+          const res = opt.value.response
           ctx.response.status = res.status
           ctx.response.message = res.message
           for (const [key, value] of res.headers.list) {
@@ -92,10 +92,10 @@ export class OuterApi extends Router {
         const account = await this.state.getAccount(address!)
         ctx.body = [ account.balance ]
       })
-      .get('/height/', async (ctx, _next) => {
+      .get('/height', async (ctx, _next) => {
         ctx.body = [ await this.blockchain.height ]
       })
-      .get('/block/:height/', async (ctx, _next) => {
+      .get('/block/:height', async (ctx, _next) => {
         const height = await this.maybeValidHeight(ctx.params.height)
         ctx.assert(height, 400)
         const header = getHeaderObject(await this.blockchain.headerOf(height!))
@@ -121,6 +121,32 @@ export class OuterApi extends Router {
         const height = await this.maybeValidHeight(ctx.params.height)
         ctx.assert(height, 400)
         ctx.body = [ (await this.blockchain.hashOf(height!)).toHexString() ]
+      })
+      .get('/transaction/:txHash', async (ctx, _next) => {
+        const opt = await this.state.result.get(Hash.fromHexString(ctx.params.txHash))
+        if (!opt.isSome()) {
+          ctx.status = 400
+          return
+        }
+        const { height } = opt.value
+        const block = await this.blockchain.bodyOf(height)
+        const tx = block.transactionList.transactions.find(t => t.hash.toHexString() === ctx.params.txHash)
+        if (tx === undefined) {
+          ctx.body = []
+          return
+        }
+        ctx.body = [ serialize(tx).toString('hex') ]
+      })
+      .get('/transaction/proof/:txHash', async (ctx, _next) => {
+        const opt = await this.state.result.get(Hash.fromHexString(ctx.params.txHash))
+        if (!opt.isSome()) {
+          ctx.status = 400
+          return
+        }
+        const { height } = opt.value
+        ctx.assert(height, 400)
+        const proof = await this.state.getMerkleProof(height, Hash.fromHexString(ctx.params.txHash))
+        ctx.body = proof.map(h => h.toHexString())
       })
     this.use()
   }

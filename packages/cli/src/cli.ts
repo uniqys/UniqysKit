@@ -13,6 +13,7 @@ import init from './commands/init'
 import start from './commands/start'
 import genKey from './commands/generate-key'
 import dappConf from './commands/generate-dapp-config'
+import genesis from './commands/generate-genesis-hash'
 import devInit from './commands/dev-init'
 
 yargs
@@ -21,6 +22,7 @@ yargs
   .command(init)
   .command(start)
   .command(genKey)
+  .command(genesis)
   .command(dappConf)
   .command(devInit)
   .demandCommand()

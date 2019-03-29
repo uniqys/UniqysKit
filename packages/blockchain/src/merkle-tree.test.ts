@@ -18,7 +18,7 @@ class MockHashable implements Hashable {
   }
 }
 
-const concatHash = (a: Hash, b: Hash): Hash => Hash.fromData(Buffer.concat([a.buffer, b.buffer]))
+const concatHash = (a: Hash, b: Hash): Hash => Hash.fromData(Buffer.concat([a.buffer, b.buffer].sort(Buffer.compare)))
 
 describe('MerkleTree', () => {
   it('root is H(a) if items are [a]', () => {
@@ -77,5 +77,47 @@ describe('MerkleTree', () => {
         e.hash
       )
     )).toBeTruthy()
+  })
+  it('root is hash of 0 byte if items are empty', () => {
+    expect(MerkleTree.root([]).equals(Hash.fromData(Buffer.alloc(0)))).toBeTruthy()
+  })
+  it('creates valid proof for c of [a, b, c, d, e]', () => {
+    const a = new MockHashable('a')
+    const b = new MockHashable('b')
+    const c = new MockHashable('c')
+    const d = new MockHashable('d')
+    const e = new MockHashable('e')
+    const root = MerkleTree.root([a, b, c, d, e])
+    const proof = MerkleTree.proof([a, b, c, d, e], c)
+    expect(MerkleTree.verify(proof, root, c.hash)).toBeTruthy()
+    expect(proof.length).toBe(3)
+  })
+  it('creates valid proof for e of [a, b, c, d, e]', () => {
+    const a = new MockHashable('a')
+    const b = new MockHashable('b')
+    const c = new MockHashable('c')
+    const d = new MockHashable('d')
+    const e = new MockHashable('e')
+    const root = MerkleTree.root([a, b, c, d, e])
+    const proof = MerkleTree.proof([a, b, c, d, e], e)
+    expect(MerkleTree.verify(proof, root, e.hash)).toBeTruthy()
+    expect(proof.length).toBe(1)
+  })
+  it('rejects invalid proof', () => {
+    const a = new MockHashable('a')
+    const b = new MockHashable('b')
+    const c = new MockHashable('c')
+    const d = new MockHashable('d')
+    const e = new MockHashable('e')
+    const root = MerkleTree.root([a, b, c, d, e])
+    expect(MerkleTree.verify(MerkleTree.proof([a, b, c, d, e], a), root, b.hash)).toBeFalsy()
+  })
+  it('throws if target does not exist', () => {
+    const a = new MockHashable('a')
+    const b = new MockHashable('b')
+    const c = new MockHashable('c')
+    const d = new MockHashable('d')
+    const e = new MockHashable('e')
+    expect(() => { MerkleTree.proof([a, b, c, d], e) }).toThrow()
   })
 })

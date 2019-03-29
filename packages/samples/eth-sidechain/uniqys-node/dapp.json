@@ -1,0 +1,20 @@
+{
+  "unique": "fa8e5662538529f9ba2bb3fd987f3146abf2e49ccdd4549d6e7c4f87893f66e4e9067606b90ca9b0",
+  "timestamp": 1547711426,
+  "validatorSet": [
+    {
+      "address": "1b43b325dad27c5d8e17110f3f23a6a3490d144f",
+      "power": 1
+    }
+  ],
+  "eventProvider": {
+    "package": "../../../event-provider/ethereum",
+    "options": {
+      "providerEndPoint": "http://localhost:7545",
+      "confirmationTime": 0,
+      "artifactPath": "../static/contracts/SampleToken.json"
+    }
+  },
+  "initApp": "",
+  "startApp": "npm run start"
+}

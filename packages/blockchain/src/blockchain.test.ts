@@ -14,7 +14,7 @@ import { TransactionList } from './transaction'
 import { BlockStore } from './block-store'
 import { InMemoryStore } from '@uniqys/store'
 
-async function setBlock (blockchain: Blockchain, block: Block, consensus: Consensus): Promise<void> {
+async function setBlock (blockchain: Blockchain, block: Block, consensus: Consensus, validatorSet: ValidatorSet): Promise<void> {
   const height = block.header.height
   await Promise.all([
     blockchain.blockStore.setHeader(height, block.header),
@@ -22,6 +22,7 @@ async function setBlock (blockchain: Blockchain, block: Block, consensus: Consen
   ])
   await blockchain.blockStore.setHeight(height)
   await blockchain.blockStore.setLastConsensus(consensus)
+  await blockchain.blockStore.setValidatorSet(validatorSet)
 }
 
 /* tslint:disable:no-unused-expression */
@@ -34,7 +35,7 @@ describe('blockchain', () => {
     signer = new KeyPair()
     validatorSet = new ValidatorSet([ new Validator(signer.address, 100) ])
     const unique = Hash.fromData('genesis')
-    genesis = Block.construct(1, 100, unique, Hash.fromData('state'), validatorSet.hash,
+    genesis = Block.construct(1, 100, unique, validatorSet.hash, Hash.fromData('state'),
       new TransactionList([]), new Consensus(new Vote(0, 1, unique), []))
     const vote = new Vote(1, 1, genesis.hash)
     const digest = ConsensusMessage.PrecommitMessage.digest(vote, genesis.hash)
@@ -55,7 +56,7 @@ describe('blockchain', () => {
     const blockchain = new Blockchain(store, genesis, validatorSet)
     await blockchain.ready()
     expect(await blockchain.height).toBe(0)
-    await setBlock(blockchain, genesis, genesisConsensus)
+    await setBlock(blockchain, genesis, genesisConsensus, validatorSet)
     expect(await blockchain.height).toBe(1)
 
     const restoreChain = new Blockchain(store, genesis, validatorSet)
@@ -64,14 +65,14 @@ describe('blockchain', () => {
   })
   it('throw if stored other chain', async () => {
     const unique = Hash.fromData('foobar')
-    const otherGenesis = Block.construct(1, 100, unique, Hash.fromData('state'), validatorSet.hash,
+    const otherGenesis = Block.construct(1, 100, unique, validatorSet.hash, Hash.fromData('state'),
       new TransactionList([]), new Consensus(new Vote(0, 1, unique), []))
     const vote = new Vote(1, 1, otherGenesis.hash)
     const digest = ConsensusMessage.PrecommitMessage.digest(vote, otherGenesis.hash)
     const store = new BlockStore(new InMemoryStore())
     const otherChain = new Blockchain(store, otherGenesis, validatorSet)
     await otherChain.ready()
-    await setBlock(otherChain, otherGenesis, new Consensus(vote, [signer.sign(digest)]))
+    await setBlock(otherChain, otherGenesis, new Consensus(vote, [signer.sign(digest)]), new ValidatorSet([ new Validator(signer.address, 200) ]))
     const blockchain = new Blockchain(store, genesis, validatorSet)
     await expect(blockchain.ready()).rejects.toThrow()
   })
@@ -79,17 +80,18 @@ describe('blockchain', () => {
     let blockchain: Blockchain
     let block2: Block
     let consensus2: Consensus
+    let validatorSet2: ValidatorSet
     beforeAll(async () => {
       blockchain = new Blockchain(new BlockStore(new InMemoryStore()), genesis, validatorSet)
       await blockchain.ready()
-      await setBlock(blockchain, genesis, genesisConsensus)
+      await setBlock(blockchain, genesis, genesisConsensus, validatorSet)
 
-      const nextValidatorSet = new ValidatorSet([ new Validator(signer.address, 200) ])
-      block2 = Block.construct(2, 110, genesis.hash, Hash.fromData('state'), nextValidatorSet.hash, new TransactionList([]), genesisConsensus)
+      validatorSet2 = new ValidatorSet([ new Validator(signer.address, 200) ])
+      block2 = Block.construct(2, 110, genesis.hash, validatorSet2.hash, Hash.fromData('state'), new TransactionList([]), genesisConsensus)
       const vote2 = new Vote(2, 1, block2.hash)
       const digest2 = ConsensusMessage.PrecommitMessage.digest(vote2, genesis.hash)
       consensus2 = new Consensus(new Vote(2, 1, block2.hash), [signer.sign(digest2)])
-      await setBlock(blockchain, block2, consensus2)
+      await setBlock(blockchain, block2, consensus2, validatorSet2)
     })
     it('can get chain height', async () => {
       expect(await blockchain.height).toBe(2)
@@ -118,6 +120,12 @@ describe('blockchain', () => {
       expect(await blockchain.consensusOf(1)).toEqual(genesisConsensus)
       expect(await blockchain.consensusOf(2)).toEqual(consensus2)
       await expect(blockchain.consensusOf(3)).rejects.toThrow()
+    })
+    it('can get validator set of height', async () => {
+      expect(await blockchain.validatorSetOf(1)).toEqual(validatorSet)
+      // expect(await blockchain.validatorSetOf(2)).toEqual(validatorSet)
+      // expect(await blockchain.validatorSetOf(3)).toEqual(validatorSet2)
+      // await expect(blockchain.validatorSetOf(4)).rejects.toThrow()
     })
   })
 })

@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@uniqys/blockchain": "^0.2.0",
-    "@uniqys/signature": "^0.2.0"
+    "@uniqys/signature": "^0.2.0",
+    "@uniqys/types": "^0.2.0"
   }
 }

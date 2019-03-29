@@ -8,13 +8,15 @@
 
 import { Store } from '@uniqys/store'
 import { ReadWriteLock } from '@uniqys/lock'
+import { Hash } from '@uniqys/signature'
 import { serialize, deserialize, UInt64 } from '@uniqys/serialize'
 import { BlockHeader, BlockBody } from './block'
-import { Consensus } from './consensus'
+import { Consensus, ValidatorSet } from './consensus'
 
 namespace Key {
   const HEADER_PREFIX = 'header:'
   const BODY_PREFIX = 'body:'
+  const VSET_PREFIX = 'validatorSet:'
   const HEIGHT_KEY = 'height'
   const CONSENSUS_KEY = 'consensus'
   export const height = Buffer.from(HEIGHT_KEY)
@@ -29,6 +31,12 @@ namespace Key {
     return serialize(height, (h, w) => {
       w.ensure(1).write(BODY_PREFIX, 0, 1)
       UInt64.serialize(h, w)
+    })
+  }
+  export function validatorSet (root: Hash): Buffer {
+    return serialize(root, (r, w) => {
+      w.ensure(1).write(VSET_PREFIX, 0, 1)
+      r.serialize(w)
     })
   }
 }
@@ -64,6 +72,12 @@ export class BlockStore {
       () => Promise.reject(new Error(`not found body(${height})`))
     )
   }
+  public async getValidatorSet (root: Hash): Promise<ValidatorSet> {
+    return (await this.store.get(Key.validatorSet(root))).match(
+      v => Promise.resolve(deserialize(v, ValidatorSet.deserialize)),
+      () => Promise.reject(new Error(`not found validatorSet(${root})`))
+    )
+  }
 
   public async setHeight (height: number): Promise<void> {
     await this.store.set(Key.height, serialize(height, UInt64.serialize))
@@ -77,5 +91,8 @@ export class BlockStore {
   }
   public async setBody (height: number, body: BlockBody): Promise<void> {
     await this.store.set(Key.body(height), serialize(body))
+  }
+  public async setValidatorSet (validatorSet: ValidatorSet): Promise<void> {
+    await this.store.set(Key.validatorSet(validatorSet.hash), serialize(validatorSet))
   }
 }

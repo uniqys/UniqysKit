@@ -1,0 +1,42 @@
+{
+  "dapp": "dapp.json",
+  "dataDir": ".data",
+  "validatorKey": "validatorKey.json",
+  "easy": {
+    "gateway": {
+      "port": 8080,
+      "host": "0.0.0.0"
+    },
+    "app": {
+      "port": 5650,
+      "host": "127.0.0.1"
+    },
+    "innerApi": {
+      "port": 5651,
+      "host": "127.0.0.1"
+    },
+    "innerMemcached": {
+      "port": 5652,
+      "host": "127.0.0.1"
+    }
+  },
+  "network": {
+    "port": 5665,
+    "address": "0.0.0.0",
+    "libp2pConfig": {
+      "peerDiscovery": {
+        "mdns": {
+          "interval": 1000,
+          "broadcast": true,
+          "serviceTag": "uniqys.local",
+          "enabled": false
+        },
+        "bootstrap": {
+          "interval": 5000,
+          "list": [],
+          "enabled": false
+        }
+      }
+    }
+  }
+}

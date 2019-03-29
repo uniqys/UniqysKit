@@ -45,7 +45,13 @@ const command: CommandModule = {
     const chainStore = new LevelDownStore(new leveldown(path.join(dataDir, 'chain')))
     const blockchain = new Blockchain(new BlockStore(chainStore), dappConfig.genesisBlock, dappConfig.initialValidatorSet)
     const peerInfo = await promisify(PeerInfo.create)()
-    const easy = new Easy(blockchain, stateStore, peerInfo, keyPair, config)
+    const eventProvider = dappConfig.eventProvider
+      ? (() => {
+        const EventProvider = require(dappConfig.eventProvider.package).default
+        return new EventProvider(dappCwd, dappConfig.eventProvider.options)
+      })()
+      : undefined
+    const easy = new Easy(blockchain, stateStore, peerInfo, keyPair, eventProvider, config)
 
     // listen easy apis
     await easy.listen()

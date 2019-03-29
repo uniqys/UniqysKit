@@ -28,6 +28,7 @@ export class Blockchain {
           this.blockStore.setBody(1, this.genesisBlock.body)
         ])
       }
+      await this.blockStore.setValidatorSet(this.initialValidatorSet)
     })
     const storedGenesis = await this.blockStore.getHeader(1)
     if (!storedGenesis.hash.equals(this.genesisBlock.hash)) {
@@ -52,6 +53,16 @@ export class Blockchain {
       this.blockStore.getBody(height)
     ])
     return new Block(header, body)
+  }
+  public async validatorSetOf (height: number): Promise<ValidatorSet> {
+    // validator set will not be found for all SYNCED blocks
+    // TODO: Fix this
+    this.checkReady()
+    return this.blockStore.rwLock.readLock.use(async () => {
+      // this block's validatorSet is defined in previous block
+      const header = await this.blockStore.getHeader(height === 1 ? 1 : height - 1)
+      return this.blockStore.getValidatorSet(header.nextValidatorSetRoot)
+    })
   }
   public async consensusOf (height: number): Promise<Consensus> {
     this.checkReady()

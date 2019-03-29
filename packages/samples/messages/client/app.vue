@@ -98,8 +98,10 @@
               <p class="mb-1">
                 <small>
                   Sender: {{message.sender}}<br>
+                  Block height: {{message.height}}<br>
                   Time: {{getDateStr(message.timestamp)}}<br>
-                  Block hash: {{message.blockhash}}
+                  Block hash: {{message.blockhash}}<br>
+                  Tx hash: {{message.txhash}}
                 </small>
               </p>
               <button

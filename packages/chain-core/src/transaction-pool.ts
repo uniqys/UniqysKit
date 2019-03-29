@@ -9,6 +9,7 @@
 import { Transaction } from '@uniqys/blockchain'
 import { Hash } from '@uniqys/signature'
 import { Message } from '@uniqys/protocol'
+import { Optional } from '@uniqys/types'
 import { RemoteNodeSet } from './remote-node'
 import debug from 'debug'
 const logger = debug('chain-core:tx-pool')
@@ -30,7 +31,7 @@ export class TransactionPool {
   constructor (
     private readonly remoteNode: RemoteNodeSet,
     private readonly validator: (tx: Transaction) => Promise<boolean>,
-    private readonly selector: (txs: Transaction[]) => Promise<Transaction[]>,
+    private readonly selector: (txs: Transaction[]) => Promise<Optional<Transaction[]>>,
     options?: Partial<TransactionPoolOptions>
   ) {
     this.options = Object.assign({}, TransactionPoolOptions.defaults, options)
@@ -64,8 +65,8 @@ export class TransactionPool {
     ))
   }
 
-  public selectTransactions (): Promise<Transaction[]> {
-    return this.pool.size === 0 ? Promise.resolve([]) : this.selector(Array.from(this.pool.values()))
+  public selectTransactions (): Promise<Optional<Transaction[]>> {
+    return this.selector(Array.from(this.pool.values()))
   }
 
   private async propagateTransaction (tx: Transaction): Promise<void> {

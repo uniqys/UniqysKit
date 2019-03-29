@@ -6,11 +6,12 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-import { HttpHeaders, HttpRequest, HttpResponse, Transaction, SignedTransaction } from '@uniqys/easy-types'
+import { HttpHeaders, HttpRequest, HttpResponse, Transaction, EventTransaction, SignedTransaction } from '@uniqys/easy-types'
 import { BlockHeader } from '@uniqys/blockchain'
-import { Signature } from '@uniqys/signature'
+import { Signature, Hash } from '@uniqys/signature'
 import http from 'http'
 import { URL } from 'url'
+import urljoin from 'url-join'
 
 export namespace Headers {
   export function pack (headers: http.IncomingHttpHeaders): HttpHeaders {
@@ -73,12 +74,15 @@ export namespace SignedRequest {
     sign.recover(tx.hash) // check signature
     return new SignedTransaction(sign, tx)
   }
-  export async function unpack (signedTx: SignedTransaction, blockHeader: BlockHeader, to: URL): Promise<http.IncomingMessage> {
+  export async function unpack (signedTx: SignedTransaction, blockHeader: BlockHeader, coreTxHash: Hash, to: URL): Promise<http.IncomingMessage> {
     return new Promise<http.IncomingMessage>((resolve, reject) => {
       const headers = Headers.unpack(signedTx.transaction.request.headers)
       headers['uniqys-sender'] = signedTx.signer.toString()
+      headers['uniqys-nonce'] = signedTx.nonce.toString(10)
+      headers['uniqys-blockheight'] = blockHeader.height.toString(10)
       headers['uniqys-timestamp'] = blockHeader.timestamp.toString(10)
       headers['uniqys-blockhash'] = blockHeader.hash.toHexString()
+      headers['uniqys-txhash'] = coreTxHash.toHexString()
       const req = http.request({
         protocol: to.protocol,
         host: to.hostname,
@@ -89,6 +93,30 @@ export namespace SignedRequest {
       }, res => resolve(res))
       req.on('error', reject)
       req.write(signedTx.transaction.request.body)
+      req.end()
+    })
+  }
+}
+
+export namespace EventRequest {
+  export async function unpack (eventTx: EventTransaction, blockHeader: BlockHeader, coreTxHash: Hash, to: URL): Promise<http.IncomingMessage> {
+    return new Promise<http.IncomingMessage>((resolve, reject) => {
+      const headers = Headers.unpack(eventTx.transaction.request.headers)
+      headers['uniqys-nonce'] = eventTx.nonce.toString(10)
+      headers['uniqys-blockheight'] = blockHeader.height.toString(10)
+      headers['uniqys-timestamp'] = blockHeader.timestamp.toString(10)
+      headers['uniqys-blockhash'] = blockHeader.hash.toHexString()
+      headers['uniqys-txhash'] = coreTxHash.toHexString()
+      const req = http.request({
+        protocol: to.protocol,
+        host: to.hostname,
+        port: to.port,
+        method: eventTx.transaction.request.method,
+        path: urljoin('/uniqys', eventTx.transaction.request.path),
+        headers: headers
+      }, res => resolve(res))
+      req.on('error', reject)
+      req.write(eventTx.transaction.request.body)
       req.end()
     })
   }

@@ -6,16 +6,19 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-import { Transaction, SignedTransaction } from './transaction'
+import { Transaction, EventTransaction, SignedTransaction } from './transaction'
 import { HttpRequest } from './http-message'
+import { ValidatorSet } from '@uniqys/blockchain'
 import { KeyPair } from '@uniqys/signature'
 import { serialize, deserialize } from '@uniqys/serialize'
 
 /* tslint:disable:no-unused-expression */
 describe('transaction', () => {
   let signer: KeyPair
+  let vset: ValidatorSet
   beforeAll(() => {
     signer = new KeyPair()
+    vset = new ValidatorSet([])
   })
   it('contains http request', () => {
     const request = new HttpRequest('POST', '/foo_action')
@@ -23,6 +26,11 @@ describe('transaction', () => {
     expect(tx).toBeInstanceOf(Transaction)
     expect(tx.nonce).toBe(1)
     expect(tx.request).toEqual(request)
+  })
+  it('contains validator set', () => {
+    const tx = new Transaction(100, new HttpRequest('POST', '/fizz_action'))
+    const event = new EventTransaction(vset, tx)
+    expect(event.validatorSet).toBeInstanceOf(ValidatorSet)
   })
   it('can be signed', () => {
     const tx = new Transaction(42, new HttpRequest('POST', '/bar_action'))
@@ -34,11 +42,16 @@ describe('transaction', () => {
     const tx = new Transaction(100, new HttpRequest('POST', '/fizz_action'))
     const signed = SignedTransaction.sign(signer, tx)
     expect(deserialize(serialize(signed), SignedTransaction.deserialize)).toEqual(signed)
+    const event = new EventTransaction(vset, tx)
+    expect(deserialize(serialize(event), EventTransaction.deserialize)).toEqual(event)
   })
   it('has alias', () => {
     const tx = new Transaction(42, new HttpRequest('POST', '/bar_action'))
     const signed = SignedTransaction.sign(signer, tx)
     expect(signed.nonce).toBe(tx.nonce)
     expect(signed.request).toBe(tx.request)
+    const event = new EventTransaction(vset, tx)
+    expect(event.nonce).toBe(tx.nonce)
+    expect(event.request).toBe(tx.request)
   })
 })
