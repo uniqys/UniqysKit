@@ -1,5 +1,20 @@
 {
   "extends": [
-    "config:base"
-  ]
+    "config:base",
+    ":preserveSemverRanges"
+  ],
+  "major": false,
+  "node": false,
+  "circleci": false,
+  "packageRules": [
+    {
+      "packagePatterns": ["^web3"],
+      "enabled": false
+    }
+  ],
+  "minor": {
+    "groupName": "all dependencies"
+  },
+  "schedule": "before 9am on Wednesday",
+  "timezone": "Asia/Tokyo"
 }
