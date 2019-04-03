@@ -52,7 +52,8 @@ export class Controller implements Dapp {
       const tx = deserialize(coreTx.data, SignedTransaction.deserialize)
       const account = await this.state.getAccount(tx.signer)
       if (tx.nonce <= account.nonce) throw new Error(`transaction nonce is too low: current ${account.nonce}, got ${tx.nonce}`)
-      if (serialize(coreTx).byteLength > this.options.transactionSizeLimit) throw new Error(`transaction byte size exceeds the limit`)
+      const transactionSize = serialize(coreTx).byteLength
+      if (transactionSize > this.options.transactionSizeLimit) throw new Error(`transaction size exceeds the limit: limit ${this.options.transactionSizeLimit} bytes, got ${transactionSize} bytes`)
       return true
     } catch (err) {
       logger('validate transaction failed: %s', err.message)
