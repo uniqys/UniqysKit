@@ -84,7 +84,7 @@ export class Easy {
     const appUrl = new URL(`http://${this.options.app.host}:${this.options.app.port}`)
     const state = new State(stateStore, blockchain.genesisBlock, blockchain.initialValidatorSet)
     const memcachedImpl = new EasyMemcached(state.app)
-    const controller = new Controller(appUrl, state, memcachedImpl, eventProvider)
+    const controller = new Controller(appUrl, state, memcachedImpl, eventProvider, this.options.controller)
     this.core = new ChainCore(controller, blockchain, peerInfo, keyPair, options)
     this.gateway = new Gateway(this.core, state, new OuterApi(state, blockchain), appUrl)
     this.innerApi = Easy.serveApi(new InnerApi(state, blockchain))
