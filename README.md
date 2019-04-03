@@ -24,10 +24,6 @@ Uniqys Kit has two main components:
 
 These two packages were designed to remove some of the current obstacles in creating or using DApps.
 
-### How Does It Work?
-
-Please check our [documentation](https://uniqys.github.io/UniqysKitDocs/).
-
 ### TL;DR
 
 - Chain Core establishes an application-friendly blockchain network.
@@ -37,16 +33,20 @@ Please check our [documentation](https://uniqys.github.io/UniqysKitDocs/).
 - Easy Framework achieves "DApp development ≒ Web app development".
   - Building a REST API and a frontend is all you need to do to develop a DApp.
   - No programming language restriction.
-  - Data storing on blockchain will be as simple as using a Memcached protocol.
-  - Sending a transaction is sending a POST request.
+  - Data storing on blockchain can be done with using a pre-existing Memcached library.
+  - Sending a transaction is sending a signed HTTP request.
 - Track external events (i.e. Ethereum Events) in the blockchain network so that it can become a side chain.
+
+### How Does It Work?
+
+Please check our [documentation](https://uniqys.github.io/UniqysKitDocs/).
 
 ## Getting Started
 
 ### Installing via npm
 
 ```sh
-$ npm install @uniqys/cli
+$ npm install -g @uniqys/cli
 ```
 
 ### Creating a DApp
