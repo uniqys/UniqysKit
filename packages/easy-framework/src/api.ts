@@ -186,10 +186,11 @@ export class InnerApi extends OuterApi {
         ctx.assert(fromAddr, 400)
         ctx.assert(toAddr, 400)
         ctx.assert(value && typeof (value as any) === 'number', 400)
+
         await this.mutex.use(async () => {
           const fromAccount = await this.state.getAccount(fromAddr!)
-          const toAccount = await this.state.getAccount(toAddr!)
           await this.state.setAccount(fromAddr!, fromAccount.decreaseBalance(value))
+          const toAccount = await this.state.getAccount(toAddr!)
           await this.state.setAccount(toAddr!, toAccount.increaseBalance(value))
         })
         ctx.status = 200
