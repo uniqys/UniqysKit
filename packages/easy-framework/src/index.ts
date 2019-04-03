@@ -15,7 +15,7 @@ import { EventProvider } from '@uniqys/dapp-interface'
 import { Gateway } from './gateway'
 import { OuterApi, InnerApi } from './api'
 import { MemcachedCompatibleServer } from './memcached-compatible-server'
-import { Controller } from './controller'
+import { Controller, ControllerOptions } from './controller'
 import { State } from './state'
 import PeerInfo from 'peer-info'
 import Koa from 'koa'
@@ -45,6 +45,7 @@ export interface EasyOptions {
   innerMemcached: ListenOptions
   app: ListenOptions
   appStartTimeout: number
+  controller: Partial<ControllerOptions>
 }
 export namespace EasyOptions {
   export const defaults: EasyOptions = {
@@ -52,7 +53,8 @@ export namespace EasyOptions {
     innerApi: { port: 5651, host: '127.0.0.1' },
     innerMemcached: { port: 5652, host: '127.0.0.1' },
     app: { port: 5650, host: '127.0.0.1' },
-    appStartTimeout: 5000
+    appStartTimeout: 5000,
+    controller: {}
   }
 }
 export interface Options extends ChainCoreOptions {
@@ -82,7 +84,7 @@ export class Easy {
     const appUrl = new URL(`http://${this.options.app.host}:${this.options.app.port}`)
     const state = new State(stateStore, blockchain.genesisBlock, blockchain.initialValidatorSet)
     const memcachedImpl = new EasyMemcached(state.app)
-    const controller = new Controller(appUrl, state, memcachedImpl, eventProvider)
+    const controller = new Controller(appUrl, state, memcachedImpl, eventProvider, this.options.controller)
     this.core = new ChainCore(controller, blockchain, peerInfo, keyPair, options)
     this.gateway = new Gateway(this.core, state, new OuterApi(state, blockchain), appUrl)
     this.innerApi = Easy.serveApi(new InnerApi(state, blockchain))
