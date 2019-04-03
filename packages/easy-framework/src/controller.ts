@@ -9,7 +9,7 @@
 import { Dapp, AppState, EventProvider } from '@uniqys/dapp-interface'
 import { Transaction as CoreTransaction, BlockHeader, TransactionType, MerkleTree } from '@uniqys/blockchain'
 import { EventTransaction, SignedTransaction } from '@uniqys/easy-types'
-import { deserialize } from '@uniqys/serialize'
+import { serialize, deserialize } from '@uniqys/serialize'
 import { Hash } from '@uniqys/signature'
 import { Optional } from '@uniqys/types'
 import { State, TransactionResult } from './state'
@@ -19,13 +19,27 @@ import { URL } from 'url'
 import debug from 'debug'
 const logger = debug('easy-fw:controller')
 
+export interface ControllerOptions {
+  transactionSizeLimit: number
+}
+export namespace ControllerOptions {
+  export const defaults: ControllerOptions = {
+    transactionSizeLimit: 8 * 1024 * 1024 // 8MB
+  }
+}
+
 export class Controller implements Dapp {
+  private readonly options: ControllerOptions
+
   constructor (
     private readonly app: URL,
     private readonly state: State,
     private readonly memcachedImpl: EasyMemcached,
-    private readonly eventProvider?: EventProvider
-  ) { }
+    private readonly eventProvider?: EventProvider,
+    options?: Partial<ControllerOptions>
+  ) {
+    this.options = Object.assign({}, ControllerOptions.defaults, options)
+  }
 
   public async connect (): Promise<AppState> {
     await this.state.ready()
@@ -38,6 +52,7 @@ export class Controller implements Dapp {
       const tx = deserialize(coreTx.data, SignedTransaction.deserialize)
       const account = await this.state.getAccount(tx.signer)
       if (tx.nonce <= account.nonce) throw new Error(`transaction nonce is too low: current ${account.nonce}, got ${tx.nonce}`)
+      if (serialize(coreTx).byteLength > this.options.transactionSizeLimit) throw new Error(`transaction byte size exceeds the limit`)
       return true
     } catch (err) {
       logger('validate transaction failed: %s', err.message)
