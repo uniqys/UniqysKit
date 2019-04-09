@@ -15,6 +15,9 @@
   "minor": {
     "groupName": "all dependencies"
   },
+  "lockFileMaintenance": {
+    "enabled": true
+  },
   "schedule": "before 9am on Wednesday",
   "timezone": "Asia/Tokyo"
 }
