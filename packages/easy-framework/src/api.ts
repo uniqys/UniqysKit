@@ -152,6 +152,11 @@ export class OuterApi extends Router {
         const validatorSet = await this.blockchain.validatorSetOf(await this.blockchain.height)
         ctx.body = validatorSet.validators.map(v => { return { address: v.address.toString(), power: v.power } })
       })
+      .get('/validators/next', async (ctx, _next) => {
+        // next validator set will be fetched from EF state
+        const validatorSet = await this.state.meta.getNextValidatorSet()
+        ctx.body = validatorSet.validators.map(v => { return { address: v.address.toString(), power: v.power } })
+      })
     this.use()
   }
 
