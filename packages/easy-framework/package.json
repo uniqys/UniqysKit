@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/easy-framework",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Uniqys Easy Framework server",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "MPL-2.0",
@@ -23,9 +23,9 @@
   "dependencies": {
     "@uniqys/async-loop": "^0.3.0",
     "@uniqys/blockchain": "^0.3.0",
-    "@uniqys/chain-core": "^0.3.0",
-    "@uniqys/dapp-interface": "^0.3.0",
-    "@uniqys/easy-types": "^0.3.0",
+    "@uniqys/chain-core": "^0.3.1",
+    "@uniqys/dapp-interface": "^0.3.1",
+    "@uniqys/easy-types": "^0.3.1",
     "@uniqys/lock": "^0.3.0",
     "@uniqys/merkle-patricia-trie": "^0.3.0",
     "@uniqys/serialize": "^0.3.0",

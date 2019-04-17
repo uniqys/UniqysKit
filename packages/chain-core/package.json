@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/chain-core",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Uniqys Chain Core",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "MPL-2.0",
@@ -23,7 +23,7 @@
   "dependencies": {
     "@uniqys/async-loop": "^0.3.0",
     "@uniqys/blockchain": "^0.3.0",
-    "@uniqys/dapp-interface": "^0.3.0",
+    "@uniqys/dapp-interface": "^0.3.1",
     "@uniqys/lock": "^0.3.0",
     "@uniqys/p2p-network": "^0.3.0",
     "@uniqys/priority-queue": "^0.3.0",
