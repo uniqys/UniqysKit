@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-import { HttpHeaders, HttpRequest, HttpResponse, Transaction, EventTransaction, SignedTransaction } from '@uniqys/easy-types'
+import { HttpHeaders, HttpRequest, HttpResponse, Transaction, SignedTransaction } from '@uniqys/easy-types'
 import { BlockHeader } from '@uniqys/blockchain'
 import { Signature, Hash } from '@uniqys/signature'
 import http from 'http'
@@ -99,9 +99,9 @@ export namespace SignedRequest {
 }
 
 export namespace EventRequest {
-  export async function unpack (eventTx: EventTransaction, blockHeader: BlockHeader, coreTxHash: Hash, to: URL): Promise<http.IncomingMessage> {
+  export async function unpack (eventTx: Transaction, blockHeader: BlockHeader, coreTxHash: Hash, to: URL): Promise<http.IncomingMessage> {
     return new Promise<http.IncomingMessage>((resolve, reject) => {
-      const headers = Headers.unpack(eventTx.transaction.request.headers)
+      const headers = Headers.unpack(eventTx.request.headers)
       headers['uniqys-nonce'] = eventTx.nonce.toString(10)
       headers['uniqys-blockheight'] = blockHeader.height.toString(10)
       headers['uniqys-timestamp'] = blockHeader.timestamp.toString(10)
@@ -111,12 +111,12 @@ export namespace EventRequest {
         protocol: to.protocol,
         host: to.hostname,
         port: to.port,
-        method: eventTx.transaction.request.method,
-        path: urljoin('/uniqys', eventTx.transaction.request.path),
+        method: eventTx.request.method,
+        path: urljoin('/uniqys', eventTx.request.path),
         headers: headers
       }, res => resolve(res))
       req.on('error', reject)
-      req.write(eventTx.transaction.request.body)
+      req.write(eventTx.request.body)
       req.end()
     })
   }

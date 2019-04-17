@@ -8,7 +8,7 @@
 
 import { Dapp, AppState, EventProvider } from '@uniqys/dapp-interface'
 import { Transaction as CoreTransaction, BlockHeader, TransactionType, MerkleTree } from '@uniqys/blockchain'
-import { EventTransaction, SignedTransaction } from '@uniqys/easy-types'
+import { Transaction, SignedTransaction } from '@uniqys/easy-types'
 import { serialize, deserialize } from '@uniqys/serialize'
 import { Hash } from '@uniqys/signature'
 import { Optional } from '@uniqys/types'
@@ -75,9 +75,8 @@ export class Controller implements Dapp {
     const latestBlockTimestamp = await this.state.meta.getLatestBlockTimestamp()
     const latestEventTimestamp = await this.state.meta.getLatestEventTimestamp()
     const nextEventNonce = await this.state.meta.getEventNonce() + 1
-    const nextValidatorSet = await this.state.meta.getNextValidatorSet()
     if (this.eventProvider && latestEventTimestamp < latestBlockTimestamp) {
-      selected.push(...await this.eventProvider.getTransactions(latestEventTimestamp, latestBlockTimestamp, nextEventNonce, nextValidatorSet))
+      selected.push(...await this.eventProvider.getTransactions(latestEventTimestamp, latestBlockTimestamp, nextEventNonce))
     }
 
     if (selected.length > 0) {
@@ -88,7 +87,7 @@ export class Controller implements Dapp {
     // Check for pending new event transactions
     const currentTimestamp = Math.floor(new Date().getTime() / 1000)
     const newEventTxs = this.eventProvider && (latestEventTimestamp < currentTimestamp)
-      ? await this.eventProvider.getTransactions(latestEventTimestamp, currentTimestamp, nextEventNonce, nextValidatorSet)
+      ? await this.eventProvider.getTransactions(latestEventTimestamp, currentTimestamp, nextEventNonce)
       : []
     if (this.eventProvider && newEventTxs.length > 0) {
       // Pending event transaction existed
@@ -130,7 +129,7 @@ export class Controller implements Dapp {
         }
         case TransactionType.Event: {
           eventExists = true
-          const tx = deserialize(coreTx.data, EventTransaction.deserialize)
+          const tx = deserialize(coreTx.data, Transaction.deserialize)
           await this.state.rwLock.writeLock.use(async () => {
             const root = this.state.top.root
             try {
@@ -140,7 +139,6 @@ export class Controller implements Dapp {
               this.memcachedImpl.changeMode(OperationMode.ReadWrite)
               const res = await Response.pack(await EventRequest.unpack(tx, header, coreTx.hash, this.app))
               if (400 <= res.status && res.status < 600) { throw new Error(res.message) }
-              if (tx.validatorSet.validators.length > 0) { await this.state.meta.setNextValidatorSet(tx.validatorSet) }
               validTxHashes.push(coreTx.hash)
             } catch (err) {
               logger('error in action: %s', err.message)
@@ -160,9 +158,8 @@ export class Controller implements Dapp {
       // fetch next event transaction root
       const latestEventTimestamp = await this.state.meta.getLatestEventTimestamp()
       const eventNonce = await this.state.meta.getEventNonce() + 1
-      const nextValidatorSet = await this.state.meta.getNextValidatorSet()
       const eventTxs = this.eventProvider
-        ? await this.eventProvider.getTransactions(latestEventTimestamp, header.timestamp, eventNonce, nextValidatorSet)
+        ? await this.eventProvider.getTransactions(latestEventTimestamp, header.timestamp, eventNonce)
         : []
       const eventTxRoot = MerkleTree.root(eventTxs)
 

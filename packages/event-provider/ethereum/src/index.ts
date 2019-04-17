@@ -8,10 +8,9 @@
 
 import path from 'path'
 import * as dapi from '@uniqys/dapp-interface'
-import { Transaction as CoreTransaction, TransactionType, Validator, ValidatorSet } from '@uniqys/blockchain'
+import { Transaction as CoreTransaction, TransactionType } from '@uniqys/blockchain'
 import { serialize } from '@uniqys/serialize'
-import { Transaction, EventTransaction, HttpRequest, HttpHeaders } from '@uniqys/easy-types'
-import { Address } from '@uniqys/signature'
+import { Transaction, HttpRequest, HttpHeaders } from '@uniqys/easy-types'
 import Web3 from 'web3'
 import { EventLog } from 'web3/types'
 import Contract from 'web3/eth/contract'
@@ -27,11 +26,6 @@ export namespace EthereumOptions {
     confirmationTime: 1500,
     artifactPath: ''
   }
-}
-
-interface StakeUpdateEvent {
-  account: string,
-  power: number
 }
 
 export default class EthereumSideChain implements dapi.EventProvider {
@@ -51,7 +45,7 @@ export default class EthereumSideChain implements dapi.EventProvider {
     this.contract = new this.web3.eth.Contract(artifact.abi, artifact.networks[netId].address)
   }
 
-  public async getTransactions (fromTimestamp: number, toTimestamp: number, nonce: number, validatorSet: ValidatorSet): Promise<CoreTransaction[]> {
+  public async getTransactions (fromTimestamp: number, toTimestamp: number, nonce: number): Promise<CoreTransaction[]> {
     if (!this.contract) { return [] }
     const fromBlock = await this.blockLowerBound(fromTimestamp - this.ethOptions.confirmationTime)
     const toBlock = await this.blockLowerBound(toTimestamp - this.ethOptions.confirmationTime) - 1
@@ -62,33 +56,17 @@ export default class EthereumSideChain implements dapi.EventProvider {
     })
     const txs: CoreTransaction[] = []
     events.forEach(event => {
-      if (event.event === 'StakeUpdate') {
-        const data = event.returnValues as StakeUpdateEvent
-        const address = Address.fromString(data.account.substr(2))
-        let validators = validatorSet.validators
-        const index = validators.findIndex(v => v.address.equals(address))
-        if (index === -1 && data.power > 0) {
-          validators.push(new Validator(address, data.power))
-        } else {
-          if (data.power > 0) {
-            validators[index] = new Validator(address, data.power)
-          } else {
-            validators = validators.splice(index, 1)
-          }
-        }
-        validatorSet = new ValidatorSet(validators)
-      }
-      txs.push(this.pack(event, nonce, validatorSet))
+      txs.push(this.pack(event, nonce))
       nonce++
     })
     return txs
   }
 
-  private pack (event: EventLog, nonce: number, validatorSet: ValidatorSet): CoreTransaction {
+  private pack (event: EventLog, nonce: number): CoreTransaction {
     const body = JSON.stringify(event)
     const header = new HttpHeaders([['content-type', 'application/json']])
     const request = new HttpRequest('POST', '/eth', header, Buffer.from(body))
-    const tx = new EventTransaction(validatorSet, new Transaction(nonce, request))
+    const tx = new Transaction(nonce, request)
     return new CoreTransaction(TransactionType.Event, serialize(tx))
   }
 

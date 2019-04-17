@@ -11,7 +11,7 @@ import BodyParser from 'koa-bodyparser'
 import { State } from './state'
 import { Address, Hash } from '@uniqys/signature'
 import { Mutex } from '@uniqys/lock'
-import { Blockchain, BlockHeader, BlockBody, Consensus } from '@uniqys/blockchain'
+import { Blockchain, BlockHeader, BlockBody, Consensus, Validator, ValidatorSet } from '@uniqys/blockchain'
 import { serialize } from '@uniqys/serialize'
 
 function maybeHash (str: string): Hash | undefined {
@@ -148,6 +148,15 @@ export class OuterApi extends Router {
         const proof = await this.state.getMerkleProof(height, Hash.fromHexString(ctx.params.txHash))
         ctx.body = proof.map(h => h.toHexString())
       })
+      .get('/validators', async (ctx, _next) => {
+        const validatorSet = await this.blockchain.validatorSetOf(await this.blockchain.height)
+        ctx.body = validatorSet.validators.map(v => { return { address: v.address.toString(), power: v.power } })
+      })
+      .get('/validators/next', async (ctx, _next) => {
+        // next validator set will be fetched from EF state
+        const validatorSet = await this.state.meta.getNextValidatorSet()
+        ctx.body = validatorSet.validators.map(v => { return { address: v.address.toString(), power: v.power } })
+      })
     this.use()
   }
 
@@ -193,6 +202,16 @@ export class InnerApi extends OuterApi {
           const toAccount = await this.state.getAccount(toAddr!)
           await this.state.setAccount(toAddr!, toAccount.increaseBalance(value))
         })
+        ctx.status = 200
+      })
+      .put('/validators', BodyParser(), async (ctx, _next) => {
+        const body = ctx.request.body as {address: string, power: number}[]
+        const newValidators = body.map(v => {
+          const address = maybeAddress(v.address)
+          ctx.assert(address, 400)
+          return new Validator(address!, v.power)
+        })
+        await this.state.meta.setNextValidatorSet(new ValidatorSet(newValidators))
         ctx.status = 200
       })
     this.use()
