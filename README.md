@@ -9,7 +9,7 @@
 **WARNING:** Uniqys Kit is still in beta version, and we may still make some breaking changes.
 
 Uniqys Kit is a framework for building Decentralized Applications (or DApps).
-It is designed for web developers to easily build DApps: just as you always build your web app.
+It is designed for web developers to easily build DApps; just like you always build your web app.
 
 For details, visit our [project website](https://uniqys.net/kit) and [documentation](https://uniqys.github.io/UniqysKitDocs/).
 
