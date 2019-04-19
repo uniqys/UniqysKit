@@ -13,5 +13,8 @@ lerna-debug.log
 # build output
 dist/
 
+# esm output
+module/
+
 # test output
 coverage/
