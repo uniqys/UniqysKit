@@ -69,7 +69,7 @@ export class Api {
   public async transaction (txHash: string): Promise<string> {
     return (await this.client.get(`/uniqys/transaction/${txHash}`)).data[0]
   }
-  public async merkleProof (txHash: string): Promise<string[]> {
-    return (await this.client.get(`/uniqys/transaction/proof/${txHash}`)).data
+  public async transactionProof (txHash: string): Promise<string[]> {
+    return (await this.client.get(`/uniqys/transaction/${txHash}/proof`)).data
   }
 }
