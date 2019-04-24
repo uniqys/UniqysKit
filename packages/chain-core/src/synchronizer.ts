@@ -19,12 +19,11 @@ const logger = debug('chain-core:sync')
 export interface SynchronizerOptions {
   waitForFetch: number // ms
   catchUpInterval: number // ms
-  dynamicValidatorSet: boolean
-  trustConsensusPeriod: number // s
   maxFetchHeaders: number // count
   maxFetchBodies: number // count
   maxPendingGap: number // height
   propagateRateExponent: number // count ^ R
+  // trustConsensusPeriod: number // s
   // TODO: DoS protection
   // pendingBlocksLimit: number
   // fetchSchedulesLimit: number
@@ -33,12 +32,6 @@ export namespace SynchronizerOptions {
   export const defaults: SynchronizerOptions = {
     waitForFetch: 500,
     catchUpInterval: 1000,
-    // static validator set
-    dynamicValidatorSet: false,
-    trustConsensusPeriod: 0,
-    // dynamic validator set
-    // dynamicValidatorSet: true,
-    // trustConsensusPeriod: 86400, // 1day: according to stake withdraw wait,
     maxFetchHeaders: 1000,
     maxFetchBodies: 100,
     maxPendingGap: 50,

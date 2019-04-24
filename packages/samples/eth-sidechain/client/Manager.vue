@@ -260,7 +260,7 @@ export default {
       // eth
       const txInfo = await this.fetchLatestWithdrawableTxInfo()
       const tx = await this.easy.api.transaction(txInfo.txHash)
-      const proof = await this.easy.api.merkleProof(txInfo.txHash)
+      const proof = await this.easy.api.transactionProof(txInfo.txHash)
       const block = await this.easy.api.block(txInfo.height)
       this.contract.methods.withdraw(
         `0x${tx}`,
