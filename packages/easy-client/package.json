@@ -10,12 +10,18 @@
   },
   "files": [
     "/dist",
-    "/lib"
+    "/lib",
+    "/module"
   ],
   "main": "./dist/index.js",
+  "module": "./module/index.js",
+  "types": "./dist/index.d.ts",
+  "unpkg": "./lib/easy.js",
+  "jsdelivr": "./lib/easy.js",
   "scripts": {
     "build": "run-p build:*",
-    "build:tcs": "tsc -p tsconfig.build.json",
+    "build:tsc-cjs": "tsc -p tsconfig.build.json",
+    "build:tsc-esm": "tsc -p tsconfig.module.json",
     "build:webpack": "webpack",
     "lint": "tslint -c tslint.json -p tsconfig.json",
     "test": "run-s test:build test:lint",

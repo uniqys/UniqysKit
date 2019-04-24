@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.build.json",
+  "compilerOptions": {
+    "target": "es5",
+    "module": "esnext",
+    "outDir": "./module",
+    "declaration": false,
+  }
+}
