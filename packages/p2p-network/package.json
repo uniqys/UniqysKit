@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/p2p-network",
-  "version": "0.3.0",
+  "version": "0.3.2",
   "description": "P2P network implementation for Uniqys",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "MPL-2.0",
@@ -21,9 +21,9 @@
     "test:jest": "jest --forceExit --detectOpenHandles --coverage --verbose"
   },
   "dependencies": {
-    "@uniqys/blockchain": "^0.3.0",
-    "@uniqys/serialize": "^0.3.0",
-    "@uniqys/signature": "^0.3.0",
+    "@uniqys/blockchain": "^0.3.2",
+    "@uniqys/serialize": "^0.3.2",
+    "@uniqys/signature": "^0.3.2",
     "axios": "^0.18.0",
     "debug": "^3.1.0",
     "ejs": "^2.6.1",
