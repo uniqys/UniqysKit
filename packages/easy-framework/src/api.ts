@@ -137,7 +137,7 @@ export class OuterApi extends Router {
         }
         ctx.body = [ serialize(tx).toString('hex') ]
       })
-      .get('/txproof/:txHash', async (ctx, _next) => {
+      .get('/transaction/:txHash/proof', async (ctx, _next) => {
         const opt = await this.state.result.get(Hash.fromHexString(ctx.params.txHash))
         if (!opt.isSome()) {
           ctx.status = 400
