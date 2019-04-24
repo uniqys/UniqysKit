@@ -32,5 +32,5 @@ export interface Dapp {
 
 export interface EventProvider {
   ready (): Promise<void>
-  getTransactions (fromTimestamp: number, toTimestamp: number, nonce: number, validatorSet: ValidatorSet): Promise<Transaction[]>
+  getTransactions (fromTimestamp: number, toTimestamp: number, nonce: number): Promise<Transaction[]>
 }

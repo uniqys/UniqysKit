@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/event-provider-ethereum",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Uniqys Ethereum Event Provider",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "MPL-2.0",
@@ -28,8 +28,8 @@
   },
   "dependencies": {
     "@uniqys/blockchain": "^0.3.0",
-    "@uniqys/dapp-interface": "^0.3.0",
-    "@uniqys/easy-types": "^0.3.0",
+    "@uniqys/dapp-interface": "^0.3.1",
+    "@uniqys/easy-types": "^0.3.1",
     "@uniqys/serialize": "^0.3.0",
     "@uniqys/signature": "^0.3.0",
     "@uniqys/types": "^0.3.0",

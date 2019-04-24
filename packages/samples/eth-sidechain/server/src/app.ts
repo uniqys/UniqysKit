@@ -69,6 +69,15 @@ export class App extends Koa {
               resolve()
             })
           })
+        } else if (eventLog.event === 'StakeUpdate') {
+          const { account, power } = eventLog.returnValues as { account: string, power: number }
+          const address = account.substr(2)
+          const validators = (await api.get('/validators/next')).data as { address: string, power: number }[]
+          const newValidators = validators.filter((v) => v.address.toLowerCase() !== address.toLowerCase())
+          if (power > 0) {
+            newValidators.push({ address, power })
+          }
+          await api.put('/validators', newValidators)
         }
         ctx.status = 200
       })
