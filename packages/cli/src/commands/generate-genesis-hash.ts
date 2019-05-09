@@ -34,6 +34,8 @@ const command: CommandModule = {
       genesisHash: dappConfig.genesisBlock.hash.toHexString()
     }
     fs.writeJsonSync(outPath, genesisHash, { spaces: 2 })
+
+    console.log(`${argv.out} created successfully.`)
   }
 }
 
