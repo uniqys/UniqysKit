@@ -77,6 +77,8 @@ const command: CommandModule = {
       console.log(`init: ${dappConfig.initAppCommand}`)
       execSync(dappConfig.initAppCommand, { cwd: dappCwd })
     }
+
+    console.log(`${argv.out} and ${argv.data} created successfully.`)
   }
 }
 

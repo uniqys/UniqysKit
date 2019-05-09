@@ -58,6 +58,8 @@ const command: CommandModule = {
       startApp: 'echo "no start command specified"'
     }
     fs.writeJsonSync(outPath, dapp, { spaces: 2 })
+
+    console.log(`${argv.out} created successfully.`)
   }
 }
 

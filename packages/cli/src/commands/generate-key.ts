@@ -35,6 +35,8 @@ const command: CommandModule = {
       address: keyPair.address.toString()
     }
     fs.writeJsonSync(outPath, key, { spaces: 2 })
+
+    console.log(`${argv.out} created successfully.`)
   }
 }
 
