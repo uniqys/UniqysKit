@@ -95,6 +95,8 @@ const command: CommandModule = {
     fs.writeJsonSync(dappPath, dapp, { spaces: 2 })
     fs.writeJsonSync(keyPath, key, { spaces: 2 })
     fs.emptyDirSync(dataDir)
+
+    console.log(`${argv.config}, ${argv.dapp}, ${argv.key} and ${argv.data} created successfully.`)
   }
 }
 
