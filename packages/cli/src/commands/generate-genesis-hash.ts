@@ -23,7 +23,7 @@ const command: CommandModule = {
     .option('out', {
       alias: 'o',
       default: 'genesisHash.json',
-      describe: 'Path to generated key',
+      describe: 'Path to generated genesis hash',
       type: 'string'
     }),
   handler: async argv => {
