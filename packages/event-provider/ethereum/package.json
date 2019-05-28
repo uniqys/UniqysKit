@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/event-provider-ethereum",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Uniqys Ethereum Event Provider",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "MPL-2.0",
@@ -27,12 +27,12 @@
     "migrate": "truffle migrate"
   },
   "dependencies": {
-    "@uniqys/blockchain": "^0.3.2",
-    "@uniqys/dapp-interface": "^0.3.2",
-    "@uniqys/easy-types": "^0.3.2",
-    "@uniqys/serialize": "^0.3.2",
-    "@uniqys/signature": "^0.3.2",
-    "@uniqys/types": "^0.3.2",
+    "@uniqys/blockchain": "^0.3.3",
+    "@uniqys/dapp-interface": "^0.3.3",
+    "@uniqys/easy-types": "^0.3.3",
+    "@uniqys/serialize": "^0.3.3",
+    "@uniqys/signature": "^0.3.3",
+    "@uniqys/types": "^0.3.3",
     "debug": "^3.1.0",
     "openzeppelin-solidity": "^2.1.1",
     "solidity-bytes-utils": "^0.0.7",

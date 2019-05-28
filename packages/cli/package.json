@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/cli",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Uniqys Command Line Tool",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "MPL-2.0",
@@ -28,12 +28,12 @@
     "test:lint": "npm run lint"
   },
   "dependencies": {
-    "@uniqys/blockchain": "^0.3.2",
+    "@uniqys/blockchain": "^0.3.3",
     "@uniqys/config-validator": "^0.3.0",
-    "@uniqys/easy-framework": "^0.3.2",
-    "@uniqys/signature": "^0.3.2",
-    "@uniqys/store": "^0.3.2",
-    "@uniqys/types": "^0.3.2",
+    "@uniqys/easy-framework": "^0.3.3",
+    "@uniqys/signature": "^0.3.3",
+    "@uniqys/store": "^0.3.3",
+    "@uniqys/types": "^0.3.3",
     "fs-extra": "^7.0.0",
     "leveldown": "^4.0.1",
     "shlex": "^2.0.1",
