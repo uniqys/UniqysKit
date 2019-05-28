@@ -17,6 +17,7 @@ import path from 'path'
 import fs from 'fs-extra'
 import leveldown from 'leveldown'
 import PeerInfo from 'peer-info'
+import { split } from 'shlex'
 
 // set logger enable
 import debug from 'debug'
@@ -65,7 +66,7 @@ const command: CommandModule = {
     if (typeof memcachedInfo === 'string') throw new Error('UNIX domain socket is unexpected')
 
     // run start command with env
-    const startAppCommandSplitted = dappConfig.startAppCommand.split(' ')
+    const startAppCommandSplitted = split(dappConfig.startAppCommand)
     const startAppCommandMain = startAppCommandSplitted[0]
     const startAppCommandArgs = startAppCommandSplitted.slice(1)
     const appProcess = spawn(startAppCommandMain, startAppCommandArgs, {
