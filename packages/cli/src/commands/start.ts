@@ -12,7 +12,7 @@ import { LevelDownStore } from '@uniqys/store'
 import { DappConfig, NodeConfig, Key } from '../config'
 import { CommandModule } from 'yargs'
 import { promisify } from 'util'
-import { exec } from 'child_process'
+import { spawn } from 'child_process'
 import path from 'path'
 import fs from 'fs-extra'
 import leveldown from 'leveldown'
@@ -41,9 +41,6 @@ const command: CommandModule = {
     const dappConfig = DappConfig.validate(fs.readJsonSync(dappPath))
 
     const dataDir = path.resolve(path.dirname(configPath), config.dataDir)
-    if (!fs.existsSync(dataDir)) {
-      throw new Error(`${dataDir} does not exist.`)
-    }
     const stateStore = new LevelDownStore(new leveldown(path.join(dataDir, 'state')))
     const chainStore = new LevelDownStore(new leveldown(path.join(dataDir, 'chain')))
     const blockchain = new Blockchain(new BlockStore(chainStore), dappConfig.genesisBlock, dappConfig.initialValidatorSet)
@@ -65,7 +62,10 @@ const command: CommandModule = {
     if (typeof memcachedInfo === 'string') throw new Error('UNIX domain socket is unexpected')
 
     // run start command with env
-    const appProcess = exec(dappConfig.startAppCommand, {
+    const startAppCommandSplitted = dappConfig.startAppCommand.split(' ')
+    const startAppCommandMain = startAppCommandSplitted[0]
+    const startAppCommandArgs = startAppCommandSplitted.slice(1)
+    const appProcess = spawn(startAppCommandMain, startAppCommandArgs, {
       cwd: dappCwd,
       env: Object.assign({}, process.env, {
         'EASY_APP_HOST': easy.options.app.host,
@@ -76,8 +76,12 @@ const command: CommandModule = {
         'EASY_MEMCACHED_PORT': memcachedInfo.port.toString()
       })
     })
-    appProcess.stdout.pipe(process.stdout)
-    appProcess.stderr.pipe(process.stderr)
+    appProcess.stdout.on('data', (data) => {
+      console.log(`${data}`)
+    })
+    appProcess.stderr.on('data', (data) => {
+      console.log(`${data}`)
+    })
     process.on('exit', () => {
       appProcess.kill()
     })
