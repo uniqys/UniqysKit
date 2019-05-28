@@ -78,13 +78,8 @@ const command: CommandModule = {
         'EASY_API_PORT': apiInfo.port.toString(),
         'EASY_MEMCACHED_HOST': memcachedInfo.address,
         'EASY_MEMCACHED_PORT': memcachedInfo.port.toString()
-      })
-    })
-    appProcess.stdout.on('data', (data) => {
-      console.log(`${data}`)
-    })
-    appProcess.stderr.on('data', (data) => {
-      console.log(`${data}`)
+      }),
+      stdio: 'inherit'
     })
     process.on('exit', () => {
       appProcess.kill()
