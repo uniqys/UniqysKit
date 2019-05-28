@@ -41,6 +41,9 @@ const command: CommandModule = {
     const dappConfig = DappConfig.validate(fs.readJsonSync(dappPath))
 
     const dataDir = path.resolve(path.dirname(configPath), config.dataDir)
+    if (!fs.existsSync(dataDir)) {
+      throw new Error(`${dataDir} does not exist.`)
+    }
     const stateStore = new LevelDownStore(new leveldown(path.join(dataDir, 'state')))
     const chainStore = new LevelDownStore(new leveldown(path.join(dataDir, 'chain')))
     const blockchain = new Blockchain(new BlockStore(chainStore), dappConfig.genesisBlock, dappConfig.initialValidatorSet)
