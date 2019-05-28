@@ -12,11 +12,12 @@ import { LevelDownStore } from '@uniqys/store'
 import { DappConfig, NodeConfig, Key } from '../config'
 import { CommandModule } from 'yargs'
 import { promisify } from 'util'
-import { exec } from 'child_process'
+import { spawn } from 'child_process'
 import path from 'path'
 import fs from 'fs-extra'
 import leveldown from 'leveldown'
 import PeerInfo from 'peer-info'
+import { split } from 'shlex'
 
 // set logger enable
 import debug from 'debug'
@@ -65,7 +66,10 @@ const command: CommandModule = {
     if (typeof memcachedInfo === 'string') throw new Error('UNIX domain socket is unexpected')
 
     // run start command with env
-    const appProcess = exec(dappConfig.startAppCommand, {
+    const startAppCommandSplitted = split(dappConfig.startAppCommand)
+    const startAppCommandMain = startAppCommandSplitted[0]
+    const startAppCommandArgs = startAppCommandSplitted.slice(1)
+    const appProcess = spawn(startAppCommandMain, startAppCommandArgs, {
       cwd: dappCwd,
       env: Object.assign({}, process.env, {
         'EASY_APP_HOST': easy.options.app.host,
@@ -74,10 +78,9 @@ const command: CommandModule = {
         'EASY_API_PORT': apiInfo.port.toString(),
         'EASY_MEMCACHED_HOST': memcachedInfo.address,
         'EASY_MEMCACHED_PORT': memcachedInfo.port.toString()
-      })
+      }),
+      stdio: 'inherit'
     })
-    appProcess.stdout.pipe(process.stdout)
-    appProcess.stderr.pipe(process.stderr)
     process.on('exit', () => {
       appProcess.kill()
     })
