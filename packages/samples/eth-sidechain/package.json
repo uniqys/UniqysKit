@@ -19,7 +19,7 @@
     "@uniqys/cli": "^0.3.3",
     "@uniqys/easy-client": "^0.3.3",
     "@uniqys/event-provider-ethereum": "^0.3.3",
-    "axios": "^0.18.0",
+    "axios": "^0.19.0",
     "debug": "^3.1.0",
     "koa": "^2.5.2",
     "koa-bodyparser": "^4.2.1",
@@ -30,7 +30,7 @@
     "web3": "1.0.0-beta.37"
   },
   "devDependencies": {
-    "@types/debug": "0.0.30",
+    "@types/debug": "0.0.31",
     "@types/koa": "^2.0.46",
     "@types/koa-bodyparser": "^5.0.1",
     "@types/koa-logger": "^3.1.0",

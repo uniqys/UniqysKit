@@ -25,7 +25,7 @@
     "@uniqys/easy-types": "^0.3.3",
     "@uniqys/signature": "^0.3.3",
     "@uniqys/store": "^0.3.3",
-    "axios": "^0.18.0",
+    "axios": "^0.19.0",
     "debug": "^3.1.0",
     "koa": "^2.5.2",
     "koa-bodyparser": "^4.2.1",
@@ -34,12 +34,12 @@
     "koa-static": "^5.0.0",
     "memcached": "^2.2.2",
     "memdown": "^3.0.0",
-    "peer-info": "^0.14.1",
+    "peer-info": "^0.15.0",
     "vue": "^2.5.16",
     "yargs": "^12.0.2"
   },
   "devDependencies": {
-    "@types/debug": "0.0.30",
+    "@types/debug": "0.0.31",
     "@types/koa": "^2.0.46",
     "@types/koa-bodyparser": "^5.0.1",
     "@types/koa-logger": "^3.1.0",
