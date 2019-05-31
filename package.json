@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "postinstall": "check-node-version --package",
-    "bootstrap": "lerna bootstrap --hoist --ci",
+    "bootstrap": "lerna bootstrap --ci",
     "clean": "lerna clean",
     "build": "lerna run build --concurrency 4",
     "test": "run-s test:build test:lint test:jest test:sol",
