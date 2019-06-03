@@ -8,7 +8,7 @@
   "circleci": false,
   "packageRules": [
     {
-      "packagePatterns": ["^web3"],
+      "packagePatterns": ["^web3", "^axios"],
       "enabled": false
     }
   ],
