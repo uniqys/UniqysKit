@@ -30,7 +30,7 @@
     "web3": "1.0.0-beta.37"
   },
   "devDependencies": {
-    "@types/debug": "0.0.30",
+    "@types/debug": "0.0.31",
     "@types/koa": "^2.0.46",
     "@types/koa-bodyparser": "^5.0.1",
     "@types/koa-logger": "^3.1.0",

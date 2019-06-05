@@ -39,7 +39,7 @@
     "url-join": "^4.0.0"
   },
   "devDependencies": {
-    "@types/debug": "0.0.30",
+    "@types/debug": "0.0.31",
     "@types/jest": "^23.3.0",
     "@types/koa": "^2.0.46",
     "@types/koa-bodyparser": "^5.0.1",
