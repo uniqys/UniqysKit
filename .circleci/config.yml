@@ -18,9 +18,6 @@ jobs:
           name: Install dependencies
           command: npm install --no-package-lock
       - run:
-          name: Bootstrap packages
-          command: npm run bootstrap
-      - run:
           name: Build
           command: npm run build
       - run:
