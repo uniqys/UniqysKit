@@ -64,7 +64,7 @@ $ nodenv install
 ### Install
 
 ```sh
-$ npm install
+$ npm ci
 # This project is created as monorepo. Bootstrap runs automatically after install.
 ```
 
