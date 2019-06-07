@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/protocol",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Uniqys network protocol",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "MPL-2.0",
@@ -21,10 +21,10 @@
     "test:jest": "jest --forceExit --detectOpenHandles --coverage --verbose"
   },
   "dependencies": {
-    "@uniqys/blockchain": "^0.3.3",
-    "@uniqys/p2p-network": "^0.3.3",
-    "@uniqys/serialize": "^0.3.3",
-    "@uniqys/signature": "^0.3.3"
+    "@uniqys/blockchain": "^0.3.4",
+    "@uniqys/p2p-network": "^0.3.4",
+    "@uniqys/serialize": "^0.3.4",
+    "@uniqys/signature": "^0.3.4"
   },
   "devDependencies": {
     "@types/jest": "^23.3.0",
