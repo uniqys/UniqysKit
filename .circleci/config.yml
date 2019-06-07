@@ -18,6 +18,10 @@ jobs:
           name: Install dependencies
           command: npm ci
       - run:
+          # Run bootstrap manually because postinstall will fail
+          name: Bootstrap packages
+          command: npm run bootstrap
+      - run:
           name: Build
           command: npm run build
       - run:
