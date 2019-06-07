@@ -83,7 +83,20 @@ const command: CommandModule = {
     const config = Object.assign({}, NodeConfig.defaults, {
       dapp: path.relative(path.dirname(configPath), dappPath),
       dataDir: path.relative(path.dirname(configPath), dataDir),
-      validatorKey: path.relative(path.dirname(configPath), keyPath)
+      validatorKey: path.relative(path.dirname(configPath), keyPath),
+      network: Object.assign({}, NodeConfig.defaults.network, {
+        // XX: workaround of https://github.com/uniqys/UniqysKit/issues/15
+        libp2pConfig: {
+          peerDiscovery: {
+            mdns: {
+              enabled: false
+            },
+            bootstrap: {
+              enabled: false
+            }
+          }
+        }
+      })
     })
     const key: KeySchema = {
       privateKey: privateKey.buffer.toString('hex'),
