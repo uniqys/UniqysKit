@@ -16,7 +16,7 @@ jobs:
             echo "npm $(npm -v)"
       - run:
           name: Install dependencies
-          command: npm install --no-package-lock
+          command: npm ci
       - run:
           name: Build
           command: npm run build
