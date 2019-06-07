@@ -3,7 +3,7 @@
 :warning: You need to build before running any sample.
 
 ```sh
-npm install
+npm ci
 npm run build
 ```
 
