@@ -4,7 +4,7 @@ jobs:
     working_directory: ~/workspace
     docker:
       - image: node:10.9.0
-        user: uniqys
+        user: node
 
     steps:
       - checkout
