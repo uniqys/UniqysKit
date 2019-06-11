@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/merkle-patricia-trie",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "Merkle Patricia Trie as a merkleized key-value store",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "MPL-2.0",
@@ -30,9 +30,9 @@
     "typescript": "^3.0.3"
   },
   "dependencies": {
-    "@uniqys/serialize": "^0.3.4",
-    "@uniqys/signature": "^0.3.4",
-    "@uniqys/store": "^0.3.4",
-    "@uniqys/types": "^0.3.4"
+    "@uniqys/serialize": "^0.3.5",
+    "@uniqys/signature": "^0.3.5",
+    "@uniqys/store": "^0.3.5",
+    "@uniqys/types": "^0.3.5"
   }
 }

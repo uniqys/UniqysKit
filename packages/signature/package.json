@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/signature",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "cryptographic signature and address for Uniqys",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "Apache-2.0",
@@ -27,8 +27,8 @@
   },
   "dependencies": {
     "@uniqys/config-validator": "^0.3.0",
-    "@uniqys/serialize": "^0.3.4",
-    "@uniqys/types": "^0.3.4",
+    "@uniqys/serialize": "^0.3.5",
+    "@uniqys/types": "^0.3.5",
     "keccak": "^1.4.0",
     "secp256k1": "^3.5.0"
   },
