@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/blockchain",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Uniqys blockchain structure",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "MPL-2.0",
@@ -23,7 +23,7 @@
   "devDependencies": {
     "@types/jest": "^23.3.0",
     "@types/node": "^10.9.4",
-    "@uniqys/types": "^0.3.3",
+    "@uniqys/types": "^0.3.4",
     "jest": "^23.3.0",
     "npm-run-all": "^4.1.5",
     "ts-jest": "^23.0.1",
@@ -33,8 +33,8 @@
   "dependencies": {
     "@uniqys/config-validator": "^0.3.0",
     "@uniqys/lock": "^0.3.0",
-    "@uniqys/serialize": "^0.3.3",
-    "@uniqys/signature": "^0.3.3",
-    "@uniqys/store": "^0.3.3"
+    "@uniqys/serialize": "^0.3.4",
+    "@uniqys/signature": "^0.3.4",
+    "@uniqys/store": "^0.3.4"
   }
 }
