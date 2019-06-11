@@ -19,7 +19,7 @@ export function adapter (signer: Signer, api: Api): (config: RequestConfig) => A
 
     // sign and async response
     // method
-    config.method = config.method || 'GET'
+    config.method = (config.method && config.method.toUpperCase()) || 'GET'
 
     // params
     const url = new URL(config.url!)
