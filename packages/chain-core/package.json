@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/chain-core",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Uniqys Chain Core",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "MPL-2.0",
@@ -22,14 +22,14 @@
   },
   "dependencies": {
     "@uniqys/async-loop": "^0.3.0",
-    "@uniqys/blockchain": "^0.3.3",
-    "@uniqys/dapp-interface": "^0.3.3",
+    "@uniqys/blockchain": "^0.3.4",
+    "@uniqys/dapp-interface": "^0.3.4",
     "@uniqys/lock": "^0.3.0",
-    "@uniqys/p2p-network": "^0.3.3",
+    "@uniqys/p2p-network": "^0.3.4",
     "@uniqys/priority-queue": "^0.3.0",
-    "@uniqys/protocol": "^0.3.3",
-    "@uniqys/signature": "^0.3.3",
-    "@uniqys/types": "^0.3.3",
+    "@uniqys/protocol": "^0.3.4",
+    "@uniqys/signature": "^0.3.4",
+    "@uniqys/types": "^0.3.4",
     "debug": "^3.1.0"
   },
   "devDependencies": {
