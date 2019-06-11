@@ -4,11 +4,12 @@ jobs:
     working_directory: ~/workspace
     docker:
       - image: node:10.9.0
+        user: node
 
     steps:
       - checkout
       - restore_cache:
-          key: npm-cache-v1-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          key: npm-cache-v2-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - run:
           name: System information
           command: |
@@ -16,10 +17,7 @@ jobs:
             echo "npm $(npm -v)"
       - run:
           name: Install dependencies
-          command: npm install --no-package-lock
-      - run:
-          name: Bootstrap packages
-          command: npm run bootstrap
+          command: npm ci
       - run:
           name: Build
           command: npm run build
@@ -27,6 +25,6 @@ jobs:
           name: Test
           command: npm test
       - save_cache:
-          key: npm-cache-v1-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          key: npm-cache-v2-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
             - ~/.npm

@@ -4,8 +4,9 @@
   "author": "Uniqys Project (https://uniqys.net)",
   "private": true,
   "scripts": {
-    "postinstall": "check-node-version --package",
+    "postinstall": "run-s check-node-version bootstrap",
     "bootstrap": "lerna bootstrap --ci",
+    "check-node-version": "check-node-version --package",
     "clean": "lerna clean",
     "build": "lerna run build --concurrency 4",
     "test": "run-s test:build test:lint test:jest test:sol",
