@@ -55,7 +55,15 @@ export class OuterApi extends Router {
         const hash = maybeHash(ctx.params.id)
         ctx.assert(hash, 400)
         const opt = await this.state.result.get(hash!)
-        if (opt.isSome() && (await this.blockchain.height) >= opt.value.height + 1) {
+        if (opt.isSome() && (400 <= opt.value.response.status && opt.value.response.status < 600)) {
+          const res = opt.value.response
+          ctx.response.status = res.status
+          ctx.response.message = res.message
+          for (const [key, value] of res.headers.list) {
+            ctx.response.append(key, value)
+          }
+          ctx.response.body = res.body
+        } else if (opt.isSome() && (await this.blockchain.height) >= opt.value.height + 1) {
           const res = opt.value.response
           ctx.response.status = res.status
           ctx.response.message = res.message
