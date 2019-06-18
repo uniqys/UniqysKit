@@ -5,6 +5,7 @@
 </p>
 
 [![CircleCI](https://circleci.com/gh/uniqys/UniqysKit.svg?style=svg)](https://circleci.com/gh/uniqys/UniqysKit)
+[![Build Status](https://dev.azure.com/Uniqys/UniqysKit/_apis/build/status/uniqys.UniqysKit?branchName=master)](https://dev.azure.com/Uniqys/UniqysKit/_build/latest?definitionId=1&branchName=master)
 
 **WARNING:** Uniqys Kit is still in beta version, and we may still make some breaking changes.
 
