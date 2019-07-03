@@ -14,7 +14,7 @@
   limitations under the License.
 */
 
-import { Serializable, Deserializer, BufferWriter } from '../../serialize'
+import { Serializable, Deserializer, BufferWriter } from '@uniqys/serialize'
 
 export class Byte implements Serializable {
   public static readonly serializedLength: 1 = 1
