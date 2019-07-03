@@ -15,7 +15,7 @@
 */
 
 import { Byte, Bytes4, Bytes8, Bytes20, Bytes32, Bytes64 } from './bytes'
-import { serialize, deserialize } from '@uniqys/serialize'
+import { serialize, deserialize } from '../../serialize'
 
 /* tslint:disable:no-unused-expression */
 describe('Byte', () => {
