@@ -19,12 +19,8 @@ steps:
   displayName: 'Install Node.js'
 
 - script: |
-    npm ci
+    npm ci && npm run build
   displayName: 'npm ci'
-
-- script: |
-    npm run build
-  displayName: 'npm build'
 
 - script: |
     npm run test
