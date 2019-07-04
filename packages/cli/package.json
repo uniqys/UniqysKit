@@ -21,7 +21,9 @@
     "gen-schema:key": "typescript-json-schema tsconfig.build.json KeySchema --include src/config/key.ts --out src/config/schema/key.json --required",
     "build": "run-s build:ts build:copy",
     "build:ts": "tsc -p tsconfig.build.json",
-    "build:copy": "del .¥dist¥config¥schema && mkdir .¥dist¥config¥schema && run-for-every-file --src .¥src¥config¥schema¥ --file '*.json' --run 'cp .¥src¥config¥schema¥{{file-name}}.json .¥dist¥config¥schema¥'",
+    "build:copy": "run-script-os",
+    "build:copy:darwin:linux": "mkdir -p ./dist/config/schema && run-for-every-file --src ./src/config/schema/ --file '*.json' --run 'cp ./src/config/schema/{{file-name}}.json ./dist/config/schema/'",
+    "build:copy:win32": "del .\\dist\\config\\schema && md .\\dist\\config\\schema && copy .\\src\\config\\schema\\*.json .\\dist\\config\\schema\\'",
     "lint": "tslint -c tslint.json -p tsconfig.json",
     "test": "run-s test:build test:lint",
     "test:build": "tsc -p tsconfig.json --noEmit",
@@ -36,6 +38,7 @@
     "@uniqys/types": "^0.3.5",
     "fs-extra": "^7.0.0",
     "leveldown": "^4.0.1",
+    "run-script-os": "^1.0.7",
     "shlex": "^2.0.1",
     "yargs": "^12.0.2"
   },
