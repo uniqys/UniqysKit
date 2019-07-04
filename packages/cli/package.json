@@ -38,7 +38,6 @@
     "@uniqys/types": "^0.3.5",
     "fs-extra": "^7.0.0",
     "leveldown": "^4.0.1",
-    "run-script-os": "^1.0.7",
     "shlex": "^2.0.1",
     "yargs": "^12.0.2"
   },
