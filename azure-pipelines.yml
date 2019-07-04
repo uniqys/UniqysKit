@@ -5,10 +5,15 @@
 
 strategy:
   matrix:
+    Linux_Node10.9.0:
+      nodeVersion: '10.9.0'
+      os: 'ubuntu-16.04'
+    MacOS_Node10.9.0:
+      nodeVersion: '10.9.0'
+      os: 'macos-10.14'
     Windows_Node10.9.0:
       nodeVersion: '10.9.0'
       os: 'vs2017-win2016'
-
 pool:
   vmImage: $(os)
 
@@ -19,9 +24,13 @@ steps:
   displayName: 'Install Node.js'
 
 - script: |
-    npm ci && npm run build
+    npm ci
   displayName: 'npm ci'
 
 - script: |
-    npm run test
-  displayName: 'exec test'
+    npm run build
+  displayName: 'npm run build'
+
+- script: |
+    npm test
+  displayName: 'npm test'
