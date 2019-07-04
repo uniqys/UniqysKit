@@ -21,8 +21,11 @@ steps:
 - script: |
     npm install
     npm run bootstrap
+  displayName: 'npm install'
+
+- script: |
     npm run build
-  displayName: 'npm install and build'
+  displayName: 'npm build'
 
 - script: |
     npm run test
