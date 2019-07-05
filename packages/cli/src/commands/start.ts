@@ -79,7 +79,8 @@ const command: CommandModule = {
         'EASY_MEMCACHED_HOST': memcachedInfo.address,
         'EASY_MEMCACHED_PORT': memcachedInfo.port.toString()
       }),
-      stdio: 'inherit'
+      stdio: 'inherit',
+      shell: true
     })
     process.on('exit', () => {
       appProcess.kill()
