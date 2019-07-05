@@ -29,7 +29,7 @@ These two packages were designed to remove some of the current obstacles in crea
 
 - Chain Core establishes an application-friendly blockchain network.
   - **Scalable:** Creates a single blockchain for every single DApp.
-  - **Fast:** Instant finality and high transaction throughput are obtained with the Tendermint alogorithm.
+  - **Fast:** Instant finality and high transaction throughput are obtained with the Tendermint algorithm.
   - **Flexible:** Developers can decide the most suitable transaction fees and incentives to the network maintainer.
 - Easy Framework achieves "DApp development ≒ Web app development".
   - Building a REST API and a frontend is all you need to do to develop a DApp.
