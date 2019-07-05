@@ -21,6 +21,10 @@ export function toString (hexStr: string, encoding: string = 'utf8') {
   return toBuffer(hexStr).toString(encoding)
 }
 
+export async function expectRevertError (fn: () => Promise<any>) {
+  await assertAsyncThrows(assert, fn, /revert/)
+}
+
 // assert.throws doesn't support async function
 export async function assertAsyncThrows (assert: Chai.Assert, fn: () => Promise<any>, messageMatcher: RegExp) {
   let err
@@ -37,7 +41,15 @@ export async function initSigner (account: string): Promise<{ signer: KeyPair, p
   const privateKey = KeyPair.generatePrivateKey()
   const signer = new KeyPair(privateKey)
   const address = hexStr(signer.address.buffer)
-  await web3.eth.sendTransaction({ from: account, to: address, value: web3.utils.toWei('1', 'ether') })
+
+  let balance: string = web3.utils.fromWei(await web3.eth.getBalance(account), 'ether')
+  if (balance.indexOf('.') !== -1) {
+    balance = balance.split('.')[0]
+  }
+  const { toBN } = web3.utils
+  const value = web3.utils.toWei(toBN(balance).sub(toBN('10')), 'ether').toString()
+
+  await web3.eth.sendTransaction({ from: account, to: address, value })
 
   const password = `signer:${account}`
   await web3.eth.personal.importRawKey(hexStr(privateKey.buffer), password)
