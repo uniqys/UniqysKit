@@ -21,7 +21,7 @@ module.exports = {
   },
 };
 
-const pwd = process.env.PWD || process.pwd()
+const pwd = process.env.PWD || process.cwd()
 const project = pwd.endsWith('coverageEnv') ? 'tsconfig.coverage.json' : 'tsconfig.json'
 
 require('ts-node').register({ files: true, project })
