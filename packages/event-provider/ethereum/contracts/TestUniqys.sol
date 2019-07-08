@@ -11,7 +11,7 @@ pragma experimental ABIEncoderV2;
 
 import "./Uniqys.sol";
 
-library TestUniqys {
+contract TestUniqys {
     function getPrecommitId() public pure returns (uint8) {
         return Uniqys._getPrecommitId();
     }

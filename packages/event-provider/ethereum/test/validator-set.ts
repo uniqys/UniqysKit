@@ -13,7 +13,7 @@ import { Vote, BlockHeader, ConsensusMessage, MerkleTree } from "@uniqys/blockch
 import { KeyPair, Hash } from '@uniqys/signature'
 import { serialize, UInt64, UInt32 } from '@uniqys/serialize'
 import { Bytes32 } from '@uniqys/types'
-import { hexStr, assertAsyncThrows, initSigner } from './test-utils'
+import { hexStr, expectRevertError, initSigner } from './test-utils'
 
 
 contract('ValidatorSet', function (accounts) {
@@ -26,7 +26,7 @@ contract('ValidatorSet', function (accounts) {
   before(async () => {
     validatorSet = await ValidatorSet.new()
     for (let i = 0; i < 4; i++) {
-      const { signer, privateKey } = await initSigner(accounts[i])
+      const { signer, privateKey } = await initSigner(accounts[i + 1])
       signers.push(signer)
       privateKeys.push(privateKey)
       addresses.push(hexStr(signer.address.buffer))
@@ -50,7 +50,7 @@ contract('ValidatorSet', function (accounts) {
 
   it('properly removes validator from list', async () => {
     const validatorSet = await ValidatorSet.new()
-    const { signer } = await initSigner(accounts[3])
+    const signer = signers[3]
     const address = hexStr(signer.address.buffer)
 
     await validatorSet.updatePower(address, 100, { from: address })
@@ -142,21 +142,7 @@ contract('ValidatorSet', function (accounts) {
 
     await validatorSet.verifyTransaction(...getArgs(c))
 
-    await assertAsyncThrows(
-      assert,
-      async () => {
-        await validatorSet.verifyTransaction(...getArgs(e))
-      },
-      /Could not prove transaction existence from proof/
-    )
-
-    await assertAsyncThrows(
-      assert,
-      async () => {
-        await validatorSet.verifyTransaction(...getArgs(z))
-      },
-      /Could not prove transaction existence from proof/
-    )
-
+    await expectRevertError(async () => await validatorSet.verifyTransaction(...getArgs(e)))
+    await expectRevertError(async () => await validatorSet.verifyTransaction(...getArgs(z)))
   })
 })
