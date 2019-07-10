@@ -85,7 +85,6 @@ const command: CommandModule = {
     process.on('exit', () => {
       appProcess.kill()
     })
-
     // start core
     await easy.start()
   }
