@@ -34,6 +34,17 @@ export class EasyClient {
     // add sign adapter
     config.adapter = adapter(signer, this.api)
     this.app = Axios.create(config)
+    this.app.interceptors.request.use(undefined, (error) => this.handleError(error))
+    this.app.interceptors.response.use(undefined, (error) => this.handleError(error))
+  }
+
+  private handleError (error: Error) {
+    const helpMessages = [
+      'An error has occurred.',
+      'Do you need our help? We can support for you in https://gitter.im/uniqys/UniqysKit'
+    ]
+    console.info(helpMessages.join('\n'))
+    return Promise.reject(error)
   }
 
   // delegate
