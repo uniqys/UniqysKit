@@ -34,7 +34,7 @@ yargs
   .fail((_, err) => {
     console.error(err)
     const helpMessage = 'Do you need our help? We can support for you in https://gitter.im/uniqys/UniqysKit'
-    console.info(chalk.red.bgBlack.bold(helpMessage))
+    console.info(chalk.blue.bgBlack.bold(helpMessage))
     process.exit(1)
   })
   .strict()
