@@ -1,6 +1,6 @@
 {
   "name": "@uniqys/store",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "common key-value store class",
   "author": "Uniqys Project (https://uniqys.net)",
   "license": "Apache-2.0",
@@ -21,7 +21,7 @@
     "test:jest": "jest --forceExit --detectOpenHandles --coverage --verbose"
   },
   "dependencies": {
-    "@uniqys/types": "^0.3.5",
+    "@uniqys/types": "^0.3.6",
     "abstract-leveldown": "^5.0.0",
     "levelup": "^3.1.1"
   },
