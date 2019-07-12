@@ -36,6 +36,7 @@
     "@uniqys/signature": "^0.3.5",
     "@uniqys/store": "^0.3.5",
     "@uniqys/types": "^0.3.5",
+    "chalk": "^2.4.2",
     "fs-extra": "^7.0.0",
     "leveldown": "^4.0.1",
     "shlex": "^2.0.1",

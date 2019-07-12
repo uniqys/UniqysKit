@@ -8,6 +8,7 @@
 */
 
 import yargs from 'yargs'
+import chalk from 'chalk'
 
 import init from './commands/init'
 import start from './commands/start'
@@ -30,5 +31,11 @@ yargs
   .version().alias('v', 'version')
   .epilog("Use 'uniqys <command> --help' for description of a command.")
   .wrap(null)
+  .fail((_, err) => {
+    console.error(err)
+    const helpMessage = 'Do you need our help? We can support for you in https://gitter.im/uniqys/UniqysKit'
+    console.info(chalk.blue.bgBlack.bold(helpMessage))
+    process.exit(1)
+  })
   .strict()
   .parse()
