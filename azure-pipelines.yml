@@ -24,7 +24,7 @@ pool:
   vmImage: $(os)
 
 steps:
-- task: NodeTool@0
+- task: NodeTool@0.210.1
   inputs:
     versionSpec: $(nodeVersion)
   displayName: 'Install Node.js'

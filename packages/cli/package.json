@@ -53,6 +53,6 @@
     "run-script-os": "^1.0.7",
     "tslint": "^5.11.0",
     "typescript": "^3.0.3",
-    "typescript-json-schema": "^0.38.0"
+    "typescript-json-schema": "^0.54.0"
   }
 }
